@@ -597,6 +597,40 @@
             color: #7f8c8d;
         }
 
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #3498db;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .contact-details {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .contact-role {
+            font-size: 12px;
+            color: #3498db;
+            font-style: italic;
+            margin-top: 2px;
+        }
+
         @media (max-width: 1024px) {
             .content-area {
                 grid-template-columns: 1fr;
@@ -808,6 +842,49 @@
         </div>
     </div>
 
+    <div id="carrierContactsModal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeModal('carrierContactsModal')">&times;</span>
+            <h2 id="carrierContactsTitle">Carrier Contacts</h2>
+
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-success btn-small" onclick="showAddContactForm()">+ Add Contact</button>
+            </div>
+
+            <div id="addContactForm" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">New Contact</h3>
+                <form id="contactForm" onsubmit="addContact(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="contactName">Name:</label>
+                            <input type="text" id="contactName" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="contactEmail">Email:</label>
+                            <input type="email" id="contactEmail" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="contactPhone">Phone:</label>
+                            <input type="tel" id="contactPhone">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="contactRole">Role/Title:</label>
+                            <input type="text" id="contactRole" placeholder="e.g., Account Manager">
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-primary btn-small">Add Contact</button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="hideAddContactForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="carrierContactsList">
+                <!-- Contacts will be populated here -->
+            </div>
+        </div>
+    </div>
+
     <div id="contextMenu" class="context-menu">
         <div class="context-menu-item danger" onclick="deleteAcquisition()">Delete Acquisition</div>
     </div>
@@ -987,11 +1064,22 @@ Mergers & Acquisitions Team`
                 carriers.push({
                     ...shuffled[i],
                     status: Math.random() > 0.4 ? 'done' : 'outstanding',
-                    repEmail: `rep.${shuffled[i].code.toLowerCase()}@carrier.com`
+                    repEmail: `rep.${shuffled[i].code.toLowerCase()}@carrier.com`,
+                    contacts: [
+                        {
+                            id: 'contact-' + Date.now() + '-' + i,
+                            name: 'Primary Contact',
+                            email: `rep.${shuffled[i].code.toLowerCase()}@carrier.com`,
+                            phone: '',
+                            role: 'Account Manager'
+                        }
+                    ]
                 });
             }
             return carriers;
         }
+
+        let currentCarrierForContacts = null;
 
         let contextMenuAcquisitionId = null;
 
@@ -1075,10 +1163,11 @@ Mergers & Acquisitions Team`
             acquisition.carriers.forEach(carrier => {
                 const carrierItem = document.createElement('div');
                 carrierItem.className = `carrier-item ${carrier.status}`;
+                const contactCount = carrier.contacts ? carrier.contacts.length : 0;
                 carrierItem.innerHTML = `
                     <div class="carrier-info">
-                        <div class="carrier-name" onclick="emailCarrier('${carrier.code}')">${carrier.name}</div>
-                        <div class="carrier-code">Code: ${carrier.code}</div>
+                        <div class="carrier-name" onclick="showCarrierContacts('${carrier.code}')" style="cursor: pointer;">${carrier.name}</div>
+                        <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
                     </div>
                     <div class="carrier-actions">
                         <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}"
@@ -1357,6 +1446,103 @@ Mergers & Acquisitions Team`
             }
         }
 
+        function showCarrierContacts(carrierCode) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            if (!carrier) return;
+
+            currentCarrierForContacts = carrierCode;
+
+            // Initialize contacts array if it doesn't exist
+            if (!carrier.contacts) {
+                carrier.contacts = [];
+            }
+
+            document.getElementById('carrierContactsTitle').textContent = `${carrier.name} - Contacts`;
+            renderCarrierContacts();
+            document.getElementById('carrierContactsModal').style.display = 'block';
+        }
+
+        function renderCarrierContacts() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const contactsList = document.getElementById('carrierContactsList');
+            contactsList.innerHTML = '';
+
+            if (carrier.contacts.length === 0) {
+                contactsList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No contacts added yet</div></div>';
+                return;
+            }
+
+            carrier.contacts.forEach(contact => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.innerHTML = `
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-details">✉ ${contact.email}${contact.phone ? ' | 📞 ' + contact.phone : ''}</div>
+                        ${contact.role ? `<div class="contact-role">${contact.role}</div>` : ''}
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeContact('${contact.id}')">Remove</button>
+                `;
+                contactsList.appendChild(contactItem);
+            });
+        }
+
+        function showAddContactForm() {
+            document.getElementById('addContactForm').style.display = 'block';
+        }
+
+        function hideAddContactForm() {
+            document.getElementById('addContactForm').style.display = 'none';
+            document.getElementById('contactForm').reset();
+        }
+
+        function addContact(event) {
+            event.preventDefault();
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const newContact = {
+                id: 'contact-' + Date.now(),
+                name: document.getElementById('contactName').value,
+                email: document.getElementById('contactEmail').value,
+                phone: document.getElementById('contactPhone').value,
+                role: document.getElementById('contactRole').value
+            };
+
+            carrier.contacts.push(newContact);
+            renderCarrierContacts();
+            renderCarriersList(); // Update contact count
+            hideAddContactForm();
+        }
+
+        function removeContact(contactId) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const contact = carrier.contacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            if (confirm(`Remove ${contact.name} from contacts?`)) {
+                carrier.contacts = carrier.contacts.filter(c => c.id !== contactId);
+                renderCarrierContacts();
+                renderCarriersList(); // Update contact count
+            }
+        }
+
         function addCarrier(event) {
             event.preventDefault();
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
@@ -1377,7 +1563,8 @@ Mergers & Acquisitions Team`
                 code: code,
                 name: name,
                 status: status,
-                repEmail: repEmail
+                repEmail: repEmail,
+                contacts: []
             };
 
             acquisition.carriers.push(newCarrier);
