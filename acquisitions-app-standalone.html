@@ -503,6 +503,46 @@
             font-size: 16px;
         }
 
+        .context-menu {
+            display: none;
+            position: fixed;
+            background: white;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            min-width: 150px;
+        }
+
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #2c3e50;
+            transition: background 0.2s ease;
+        }
+
+        .context-menu-item:hover {
+            background: #f8f9fa;
+        }
+
+        .context-menu-item.danger {
+            color: #e74c3c;
+        }
+
+        .context-menu-item.danger:hover {
+            background: #fee;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
         @media (max-width: 1024px) {
             .content-area {
                 grid-template-columns: 1fr;
@@ -549,7 +589,10 @@
             <div class="content-area">
                 <div class="section carrier-section">
                     <div class="section-header">
-                        <h2 id="currentAcquisitionName">Select an acquisition</h2>
+                        <div>
+                            <h2 id="currentAcquisitionName">Select an acquisition</h2>
+                            <button class="btn btn-success btn-small" onclick="showAddCarrierModal()" style="margin-top: 8px;">+ Add Carrier</button>
+                        </div>
                         <div class="status-legend">
                             <span class="legend-item"><span class="status-indicator done"></span> Completed</span>
                             <span class="legend-item"><span class="status-indicator outstanding"></span> Outstanding</span>
@@ -659,6 +702,39 @@
                 <button type="submit" class="btn btn-primary">Add Activity</button>
             </form>
         </div>
+    </div>
+
+    <div id="addCarrierModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addCarrierModal')">&times;</span>
+            <h2>Add Carrier</h2>
+            <form id="addCarrierForm" onsubmit="addCarrier(event)">
+                <div class="form-group">
+                    <label for="carrierName">Carrier Name:</label>
+                    <input type="text" id="carrierName" required>
+                </div>
+                <div class="form-group">
+                    <label for="carrierCode">Carrier Code:</label>
+                    <input type="text" id="carrierCode" required placeholder="e.g., ABC-123">
+                </div>
+                <div class="form-group">
+                    <label for="carrierEmail">Carrier Rep Email:</label>
+                    <input type="email" id="carrierEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="carrierStatus">Status:</label>
+                    <select id="carrierStatus" required>
+                        <option value="outstanding">Outstanding</option>
+                        <option value="done">Completed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Carrier</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item danger" onclick="deleteAcquisition()">Delete Acquisition</div>
     </div>
 
     <script>
@@ -842,6 +918,8 @@ Mergers & Acquisitions Team`
             return carriers;
         }
 
+        let contextMenuAcquisitionId = null;
+
         function renderAcquisitionTabs() {
             const tabsContainer = document.getElementById('acquisitionTabs');
             tabsContainer.innerHTML = '';
@@ -850,11 +928,52 @@ Mergers & Acquisitions Team`
                 tab.className = 'tab';
                 tab.textContent = acq.name;
                 tab.onclick = () => selectAcquisition(acq.id);
+                tab.oncontextmenu = (e) => showContextMenu(e, acq.id);
                 if (acq.id === currentAcquisitionId) {
                     tab.classList.add('active');
                 }
                 tabsContainer.appendChild(tab);
             });
+        }
+
+        function showContextMenu(event, acquisitionId) {
+            event.preventDefault();
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenuAcquisitionId = acquisitionId;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+        }
+
+        function deleteAcquisition() {
+            if (!contextMenuAcquisitionId) return;
+
+            const acquisition = acquisitions.find(a => a.id === contextMenuAcquisitionId);
+            if (!acquisition) return;
+
+            if (confirm(`Are you sure you want to delete "${acquisition.name}"? This action cannot be undone.`)) {
+                acquisitions = acquisitions.splice(acquisitions.findIndex(a => a.id === contextMenuAcquisitionId), 1);
+                acquisitions = acquisitions.filter(a => a.id !== contextMenuAcquisitionId);
+
+                // Remove activities for this acquisition
+                activities = activities.filter(a => a.acquisitionId !== contextMenuAcquisitionId);
+
+                // If we deleted the current acquisition, select another one
+                if (currentAcquisitionId === contextMenuAcquisitionId) {
+                    currentAcquisitionId = acquisitions.length > 0 ? acquisitions[0].id : null;
+                }
+
+                renderAcquisitionTabs();
+                if (currentAcquisitionId) {
+                    selectAcquisition(currentAcquisitionId);
+                } else {
+                    renderCarriersList();
+                    renderActivityLog();
+                }
+            }
+
+            document.getElementById('contextMenu').style.display = 'none';
+            contextMenuAcquisitionId = null;
         }
 
         function selectAcquisition(acquisitionId) {
@@ -1101,6 +1220,53 @@ Mergers & Acquisitions Team`
             });
         }
 
+        function showAddCarrierModal() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+            document.getElementById('addCarrierModal').style.display = 'block';
+        }
+
+        function addCarrier(event) {
+            event.preventDefault();
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const name = document.getElementById('carrierName').value;
+            const code = document.getElementById('carrierCode').value;
+            const repEmail = document.getElementById('carrierEmail').value;
+            const status = document.getElementById('carrierStatus').value;
+
+            // Check if carrier code already exists
+            if (acquisition.carriers.find(c => c.code === code)) {
+                alert('A carrier with this code already exists in this acquisition');
+                return;
+            }
+
+            const newCarrier = {
+                code: code,
+                name: name,
+                status: status,
+                repEmail: repEmail
+            };
+
+            acquisition.carriers.push(newCarrier);
+            renderCarriersList();
+
+            // Log activity
+            addActivityLog({
+                type: 'note',
+                contact: 'System',
+                carrier: name,
+                notes: `New carrier added to acquisition`
+            });
+
+            closeModal('addCarrierModal');
+            document.getElementById('addCarrierForm').reset();
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
@@ -1108,6 +1274,11 @@ Mergers & Acquisitions Team`
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
+            }
+            // Hide context menu when clicking anywhere
+            const contextMenu = document.getElementById('contextMenu');
+            if (contextMenu && !event.target.closest('.context-menu')) {
+                contextMenu.style.display = 'none';
             }
         }
 
