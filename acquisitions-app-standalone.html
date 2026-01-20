@@ -952,7 +952,7 @@ Mergers & Acquisitions Team`
             if (!acquisition) return;
 
             if (confirm(`Are you sure you want to delete "${acquisition.name}"? This action cannot be undone.`)) {
-                acquisitions = acquisitions.splice(acquisitions.findIndex(a => a.id === contextMenuAcquisitionId), 1);
+                // Remove the acquisition from the array
                 acquisitions = acquisitions.filter(a => a.id !== contextMenuAcquisitionId);
 
                 // Remove activities for this acquisition
