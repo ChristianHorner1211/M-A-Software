@@ -543,6 +543,46 @@
             background: #229954;
         }
 
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .remove-carrier-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #95a5a6;
+            transition: all 0.2s ease;
+        }
+
+        .remove-carrier-item:hover {
+            background: #e8eef3;
+        }
+
+        .remove-carrier-info {
+            flex: 1;
+        }
+
+        .remove-carrier-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .remove-carrier-code {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
         @media (max-width: 1024px) {
             .content-area {
                 grid-template-columns: 1fr;
@@ -591,7 +631,10 @@
                     <div class="section-header">
                         <div>
                             <h2 id="currentAcquisitionName">Select an acquisition</h2>
-                            <button class="btn btn-success btn-small" onclick="showAddCarrierModal()" style="margin-top: 8px;">+ Add Carrier</button>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <button class="btn btn-success btn-small" onclick="showAddCarrierModal()">+ Add Carrier</button>
+                                <button class="btn btn-secondary btn-small" onclick="showRemoveCarrierModal()">- Remove Carrier</button>
+                            </div>
                         </div>
                         <div class="status-legend">
                             <span class="legend-item"><span class="status-indicator done"></span> Completed</span>
@@ -730,6 +773,19 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Add Carrier</button>
             </form>
+        </div>
+    </div>
+
+    <div id="removeCarrierModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('removeCarrierModal')">&times;</span>
+            <h2>Remove Carrier</h2>
+            <div class="form-group">
+                <label>Select Carrier to Remove:</label>
+                <div id="removeCarrierList" style="max-height: 400px; overflow-y: auto; border: 1px solid #dce4ec; border-radius: 4px; padding: 10px;">
+                    <!-- Carrier list will be populated here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1227,6 +1283,61 @@ Mergers & Acquisitions Team`
                 return;
             }
             document.getElementById('addCarrierModal').style.display = 'block';
+        }
+
+        function showRemoveCarrierModal() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            if (acquisition.carriers.length === 0) {
+                alert('No carriers to remove');
+                return;
+            }
+
+            const removeCarrierList = document.getElementById('removeCarrierList');
+            removeCarrierList.innerHTML = '';
+
+            acquisition.carriers.forEach(carrier => {
+                const carrierItem = document.createElement('div');
+                carrierItem.className = 'remove-carrier-item';
+                carrierItem.innerHTML = `
+                    <div class="remove-carrier-info">
+                        <div class="remove-carrier-name">${carrier.name}</div>
+                        <div class="remove-carrier-code">Code: ${carrier.code}</div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeCarrier('${carrier.code}')">Remove</button>
+                `;
+                removeCarrierList.appendChild(carrierItem);
+            });
+
+            document.getElementById('removeCarrierModal').style.display = 'block';
+        }
+
+        function removeCarrier(carrierCode) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            if (!carrier) return;
+
+            if (confirm(`Are you sure you want to remove "${carrier.name}"?`)) {
+                // Remove the carrier from the array
+                acquisition.carriers = acquisition.carriers.filter(c => c.code !== carrierCode);
+
+                // Log activity
+                addActivityLog({
+                    type: 'note',
+                    contact: 'System',
+                    carrier: carrier.name,
+                    notes: `Carrier removed from acquisition`
+                });
+
+                renderCarriersList();
+                showRemoveCarrierModal(); // Refresh the modal
+            }
         }
 
         function addCarrier(event) {
