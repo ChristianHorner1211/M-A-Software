@@ -484,6 +484,13 @@
             background: #f8f9fa;
             border-radius: 4px;
             margin-bottom: 10px;
+            transition: max-height 0.3s ease;
+        }
+
+        .carrier-checkboxes.collapsed {
+            max-height: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         .carrier-checkbox {
@@ -500,6 +507,29 @@
             font-size: 13px;
             cursor: pointer;
             margin: 0;
+        }
+
+        .collapse-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 0;
+            margin-bottom: 5px;
+        }
+
+        .collapse-header:hover {
+            color: #3498db;
+        }
+
+        .collapse-icon {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
         }
 
         .empty-state {
@@ -747,7 +777,10 @@
                 </div>
                 <div class="template-preview">
                     <div class="form-group">
-                        <label>Select Carriers:</label>
+                        <div class="collapse-header" onclick="toggleCarrierList()">
+                            <label style="margin: 0; cursor: pointer;">Select Carriers:</label>
+                            <span class="collapse-icon" id="carrierCollapseIcon">▼</span>
+                        </div>
                         <div id="carrierCheckboxes" class="carrier-checkboxes"></div>
                     </div>
                     <div class="form-group">
@@ -1233,6 +1266,14 @@ Mergers & Acquisitions Team`
             document.getElementById('newAcquisitionForm').reset();
         }
 
+        function toggleCarrierList() {
+            const checkboxContainer = document.getElementById('carrierCheckboxes');
+            const icon = document.getElementById('carrierCollapseIcon');
+
+            checkboxContainer.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
         function showEmailTemplates() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
@@ -1243,6 +1284,11 @@ Mergers & Acquisitions Team`
             modal.style.display = 'block';
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             checkboxContainer.innerHTML = '';
+
+            // Reset collapsed state when opening
+            checkboxContainer.classList.remove('collapsed');
+            document.getElementById('carrierCollapseIcon').classList.remove('collapsed');
+
             acquisition.carriers.forEach(carrier => {
                 const div = document.createElement('div');
                 div.className = 'carrier-checkbox';
