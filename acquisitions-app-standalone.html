@@ -444,7 +444,22 @@
         .template-selector {
             display: flex;
             flex-direction: column;
+        }
+
+        .template-list {
+            display: flex;
+            flex-direction: column;
             gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .template-list.collapsed {
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
         }
 
         .template-btn {
@@ -475,22 +490,23 @@
         }
 
         .carrier-checkboxes {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 8px;
-            max-height: 150px;
+            max-height: 300px;
             overflow-y: auto;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 4px;
-            margin-bottom: 10px;
             transition: max-height 0.3s ease;
+            margin-top: 10px;
         }
 
         .carrier-checkboxes.collapsed {
             max-height: 0;
             padding: 0;
             overflow: hidden;
+            margin-top: 0;
         }
 
         .carrier-checkbox {
@@ -769,27 +785,34 @@
             <h2>Email Templates</h2>
             <div class="email-templates">
                 <div class="template-selector">
-                    <button class="template-btn" onclick="loadTemplate('initial')">Initial Conversion Request</button>
-                    <button class="template-btn" onclick="loadTemplate('followup')">Follow-up Reminder</button>
-                    <button class="template-btn" onclick="loadTemplate('urgent')">Urgent Request</button>
-                    <button class="template-btn" onclick="loadTemplate('confirmation')">Conversion Confirmation</button>
-                    <button class="template-btn" onclick="loadTemplate('completion')">Completion Notice</button>
-                </div>
-                <div class="template-preview">
-                    <div class="form-group">
+                    <div class="collapse-header" onclick="toggleTemplateList()">
+                        <label style="margin: 0; cursor: pointer; font-weight: 600;">Email Templates</label>
+                        <span class="collapse-icon" id="templateCollapseIcon">▼</span>
+                    </div>
+                    <div id="templateList" class="template-list">
+                        <button class="template-btn" onclick="loadTemplate('initial')">Initial Conversion Request</button>
+                        <button class="template-btn" onclick="loadTemplate('followup')">Follow-up Reminder</button>
+                        <button class="template-btn" onclick="loadTemplate('urgent')">Urgent Request</button>
+                        <button class="template-btn" onclick="loadTemplate('confirmation')">Conversion Confirmation</button>
+                        <button class="template-btn" onclick="loadTemplate('completion')">Completion Notice</button>
+                    </div>
+
+                    <div style="margin-top: 20px;">
                         <div class="collapse-header" onclick="toggleCarrierList()">
-                            <label style="margin: 0; cursor: pointer;">Select Carriers:</label>
+                            <label style="margin: 0; cursor: pointer; font-weight: 600;">Select Carriers</label>
                             <span class="collapse-icon" id="carrierCollapseIcon">▼</span>
                         </div>
                         <div id="carrierCheckboxes" class="carrier-checkboxes"></div>
                     </div>
+                </div>
+                <div class="template-preview">
                     <div class="form-group">
                         <label for="emailSubject">Subject:</label>
                         <input type="text" id="emailSubject" class="full-width">
                     </div>
                     <div class="form-group">
                         <label for="emailBody">Message:</label>
-                        <textarea id="emailBody" rows="12" class="full-width"></textarea>
+                        <textarea id="emailBody" rows="15" class="full-width"></textarea>
                     </div>
                     <button class="btn btn-primary" onclick="sendEmail()">Send Email</button>
                 </div>
@@ -1266,6 +1289,14 @@ Mergers & Acquisitions Team`
             document.getElementById('newAcquisitionForm').reset();
         }
 
+        function toggleTemplateList() {
+            const templateList = document.getElementById('templateList');
+            const icon = document.getElementById('templateCollapseIcon');
+
+            templateList.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
         function toggleCarrierList() {
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             const icon = document.getElementById('carrierCollapseIcon');
@@ -1285,9 +1316,11 @@ Mergers & Acquisitions Team`
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             checkboxContainer.innerHTML = '';
 
-            // Reset collapsed state when opening
+            // Reset collapsed states when opening
             checkboxContainer.classList.remove('collapsed');
             document.getElementById('carrierCollapseIcon').classList.remove('collapsed');
+            document.getElementById('templateList').classList.remove('collapsed');
+            document.getElementById('templateCollapseIcon').classList.remove('collapsed');
 
             acquisition.carriers.forEach(carrier => {
                 const div = document.createElement('div');
