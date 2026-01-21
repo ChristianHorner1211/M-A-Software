@@ -1195,6 +1195,15 @@
             <div id="carrierContactsList">
                 <!-- Contacts will be populated here -->
             </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="font-size: 18px; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e8eef3; padding-bottom: 10px;">
+                    📧 Email History
+                </h3>
+                <div id="carrierEmailHistory">
+                    <!-- Email history will be populated here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2319,6 +2328,12 @@ Mergers & Acquisitions Team`
             await saveActivityToFirebase(activityItem);
 
             renderActivityLog();
+
+            // If carrier contacts modal is open, refresh email history
+            const carrierModal = document.getElementById('carrierContactsModal');
+            if (carrierModal && carrierModal.style.display === 'block') {
+                renderCarrierEmailHistory();
+            }
         }
 
         function renderActivityLog() {
@@ -2444,8 +2459,9 @@ Mergers & Acquisitions Team`
                 carrier.contacts = [];
             }
 
-            document.getElementById('carrierContactsTitle').textContent = `${carrier.name} - Contacts`;
+            document.getElementById('carrierContactsTitle').textContent = `${carrier.name} - Contacts & History`;
             renderCarrierContacts();
+            renderCarrierEmailHistory();
             document.getElementById('carrierContactsModal').style.display = 'block';
         }
 
@@ -2476,6 +2492,57 @@ Mergers & Acquisitions Team`
                     <button class="btn btn-danger btn-small" onclick="removeContact('${contact.id}')">Remove</button>
                 `;
                 contactsList.appendChild(contactItem);
+            });
+        }
+
+        function renderCarrierEmailHistory() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const emailHistoryList = document.getElementById('carrierEmailHistory');
+            emailHistoryList.innerHTML = '';
+
+            // Filter activities for this acquisition, this carrier, and only emails
+            const carrierEmails = activities.filter(a =>
+                a.acquisitionId === currentAcquisitionId &&
+                a.carrier === carrier.name &&
+                a.type === 'email'
+            );
+
+            if (carrierEmails.length === 0) {
+                emailHistoryList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No emails sent to this carrier yet</div></div>';
+                return;
+            }
+
+            carrierEmails.forEach(email => {
+                const emailItem = document.createElement('div');
+                emailItem.className = 'activity-item';
+                const date = new Date(email.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                let attachmentHTML = '';
+                if (email.attachments && email.attachments.length > 0) {
+                    const attachmentNames = email.attachments.map(a => `<span style="background: #e8eef3; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 5px;">📎 ${a.name}</span>`).join('');
+                    attachmentHTML = `<div style="margin-top: 8px;">${attachmentNames}</div>`;
+                }
+
+                emailItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div>
+                            <span style="font-weight: 600; color: #2c3e50;">✉ Email</span>
+                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 10px;">${formattedDate}</span>
+                        </div>
+                    </div>
+                    <div style="color: #555; margin-bottom: 4px;">
+                        <strong>To:</strong> ${email.contact}
+                    </div>
+                    <div style="color: #555; white-space: pre-wrap;">${email.notes}</div>
+                    ${attachmentHTML}
+                `;
+                emailHistoryList.appendChild(emailItem);
             });
         }
 
