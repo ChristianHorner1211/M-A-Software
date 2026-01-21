@@ -1046,6 +1046,18 @@
                 </div>
                 <div class="template-preview">
                     <div class="form-group">
+                        <label for="emailFrom">From:</label>
+                        <input type="text" id="emailFrom" class="full-width" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailTo">To:</label>
+                        <input type="text" id="emailTo" class="full-width" placeholder="Email addresses (comma or semicolon separated)">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailCC">CC:</label>
+                        <input type="text" id="emailCC" class="full-width" placeholder="Email addresses (comma or semicolon separated)">
+                    </div>
+                    <div class="form-group">
                         <label for="emailSubject">Subject:</label>
                         <input type="text" id="emailSubject" class="full-width">
                     </div>
@@ -1998,6 +2010,21 @@ Mergers & Acquisitions Team`
             icon.classList.toggle('collapsed');
         }
 
+        function updateEmailRecipients() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const selectedEmails = [];
+            document.querySelectorAll('#carrierCheckboxes input:checked').forEach(checkbox => {
+                const carrier = acquisition.carriers.find(c => c.code === checkbox.value);
+                if (carrier && carrier.repEmail) {
+                    selectedEmails.push(carrier.repEmail);
+                }
+            });
+
+            document.getElementById('emailTo').value = selectedEmails.join('; ');
+        }
+
         function showEmailTemplates() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
@@ -2009,6 +2036,23 @@ Mergers & Acquisitions Team`
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             checkboxContainer.innerHTML = '';
 
+            // Set From field - use Outlook email if connected, otherwise Firebase email
+            let fromEmail = '';
+            if (appSettings.outlook.connected && msalInstance) {
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    fromEmail = accounts[0].username;
+                }
+            }
+            if (!fromEmail && currentUser) {
+                fromEmail = currentUser.email;
+            }
+            document.getElementById('emailFrom').value = fromEmail || 'Not signed in';
+
+            // Clear To and CC fields
+            document.getElementById('emailTo').value = '';
+            document.getElementById('emailCC').value = '';
+
             // Reset collapsed states when opening
             checkboxContainer.classList.remove('collapsed');
             document.getElementById('carrierCollapseIcon').classList.remove('collapsed');
@@ -2019,7 +2063,7 @@ Mergers & Acquisitions Team`
                 const div = document.createElement('div');
                 div.className = 'carrier-checkbox';
                 div.innerHTML = `
-                    <input type="checkbox" id="carrier-${carrier.code}" value="${carrier.code}">
+                    <input type="checkbox" id="carrier-${carrier.code}" value="${carrier.code}" onchange="updateEmailRecipients()">
                     <label for="carrier-${carrier.code}">${carrier.name}</label>
                 `;
                 checkboxContainer.appendChild(div);
@@ -2056,14 +2100,24 @@ Mergers & Acquisitions Team`
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
 
-            const selectedCarriers = [];
-            document.querySelectorAll('#carrierCheckboxes input:checked').forEach(checkbox => {
-                const carrier = acquisition.carriers.find(c => c.code === checkbox.value);
-                if (carrier) selectedCarriers.push(carrier);
-            });
+            // Parse To and CC fields
+            const toField = document.getElementById('emailTo').value.trim();
+            const ccField = document.getElementById('emailCC').value.trim();
 
-            if (selectedCarriers.length === 0) {
-                alert('Please select at least one carrier');
+            // Split by comma or semicolon and trim
+            const parseEmails = (emailString) => {
+                if (!emailString) return [];
+                return emailString
+                    .split(/[,;]/)
+                    .map(email => email.trim())
+                    .filter(email => email.length > 0);
+            };
+
+            const toEmails = parseEmails(toField);
+            const ccEmails = parseEmails(ccField);
+
+            if (toEmails.length === 0) {
+                alert('Please enter at least one recipient in the To field');
                 return;
             }
 
@@ -2082,86 +2136,130 @@ Mergers & Acquisitions Team`
                 attachmentInfo = `\nAttachments (${emailAttachments.length}): ${attachmentNames}`;
             }
 
+            // Get selected carriers for activity logging
+            const selectedCarriers = [];
+            document.querySelectorAll('#carrierCheckboxes input:checked').forEach(checkbox => {
+                const carrier = acquisition.carriers.find(c => c.code === checkbox.value);
+                if (carrier) selectedCarriers.push(carrier);
+            });
+
             // Check if Outlook is connected
             if (appSettings.outlook.connected && msalInstance) {
-                // Send real emails via Microsoft Graph API
+                // Send real email via Microsoft Graph API
                 try {
                     const token = await getAccessToken();
-                    let sentCount = 0;
 
-                    for (const carrier of selectedCarriers) {
-                        const emailMessage = {
-                            message: {
-                                subject: subject,
-                                body: {
-                                    contentType: 'Text',
-                                    content: body
-                                },
-                                toRecipients: [{
-                                    emailAddress: {
-                                        address: carrier.repEmail
-                                    }
-                                }]
+                    // Build recipient arrays
+                    const toRecipients = toEmails.map(email => ({
+                        emailAddress: { address: email }
+                    }));
+
+                    const ccRecipients = ccEmails.map(email => ({
+                        emailAddress: { address: email }
+                    }));
+
+                    const emailMessage = {
+                        message: {
+                            subject: subject,
+                            body: {
+                                contentType: 'Text',
+                                content: body
                             },
-                            saveToSentItems: true
-                        };
+                            toRecipients: toRecipients,
+                            ccRecipients: ccRecipients
+                        },
+                        saveToSentItems: true
+                    };
 
-                        const response = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': 'Bearer ' + token,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(emailMessage)
-                        });
+                    const response = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(emailMessage)
+                    });
 
-                        if (response.ok || response.status === 202) {
-                            sentCount++;
+                    if (response.ok || response.status === 202) {
+                        alert(`Successfully sent email via Outlook!\n\nTo: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`);
+
+                        // Log activity for each selected carrier
+                        const recipientInfo = `To: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                        if (selectedCarriers.length > 0) {
+                            selectedCarriers.forEach(carrier => {
+                                addActivityLog({
+                                    type: 'email',
+                                    contact: carrier.repEmail,
+                                    carrier: carrier.name,
+                                    notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                    attachments: [...emailAttachments]
+                                });
+                            });
+                        } else {
+                            // No carriers selected, just log general activity
+                            addActivityLog({
+                                type: 'email',
+                                contact: toEmails[0],
+                                carrier: 'General',
+                                notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                attachments: [...emailAttachments]
+                            });
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        console.error('Failed to send email:', errorText);
+                        alert('Failed to send email. Please check the console for details.');
+                    }
+                } catch (error) {
+                    console.error('Email send error:', error);
+                    alert('Failed to send email: ' + error.message + '\n\nEmail logged to activity but not sent.');
+
+                    // Log to activity anyway
+                    const recipientInfo = `To: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                    if (selectedCarriers.length > 0) {
+                        selectedCarriers.forEach(carrier => {
                             addActivityLog({
                                 type: 'email',
                                 contact: carrier.repEmail,
                                 carrier: carrier.name,
-                                notes: `Sent: ${subject}${attachmentInfo}`,
+                                notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
                                 attachments: [...emailAttachments]
                             });
-                        } else {
-                            console.error('Failed to send email to', carrier.name);
-                        }
-                    }
-
-                    if (sentCount > 0) {
-                        alert(`Successfully sent ${sentCount} email(s) via Outlook!`);
+                        });
                     } else {
-                        alert('Failed to send emails. Please check your connection.');
+                        addActivityLog({
+                            type: 'email',
+                            contact: toEmails[0],
+                            carrier: 'General',
+                            notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                            attachments: [...emailAttachments]
+                        });
                     }
-                } catch (error) {
-                    console.error('Email send error:', error);
-                    alert('Failed to send emails: ' + error.message + '\n\nEmails logged to activity but not sent.');
-
-                    // Log to activity anyway
+                }
+            } else {
+                // Outlook not connected - just log to activity
+                const recipientInfo = `To: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                if (selectedCarriers.length > 0) {
                     selectedCarriers.forEach(carrier => {
                         addActivityLog({
                             type: 'email',
                             contact: carrier.repEmail,
                             carrier: carrier.name,
-                            notes: `Draft: ${subject}${attachmentInfo}`,
+                            notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
                             attachments: [...emailAttachments]
                         });
                     });
-                }
-            } else {
-                // Outlook not connected - just log to activity
-                selectedCarriers.forEach(carrier => {
+                } else {
                     addActivityLog({
                         type: 'email',
-                        contact: carrier.repEmail,
-                        carrier: carrier.name,
-                        notes: `Draft: ${subject}${attachmentInfo}`,
+                        contact: toEmails[0],
+                        carrier: 'General',
+                        notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
                         attachments: [...emailAttachments]
                     });
-                });
+                }
 
-                alert(`Email logged to activity for ${selectedCarriers.length} carrier(s).\n\nConnect Outlook in Settings to send real emails.`);
+                alert(`Email logged to activity.\n\nTo: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}\n\nConnect Outlook in Settings to send real emails.`);
             }
 
             closeModal('emailTemplateModal');
