@@ -944,7 +944,7 @@
                     <button class="signout-btn" onclick="signOut()">Sign Out</button>
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
-                <button class="btn btn-secondary" onclick="showEmailTemplates()">Email Templates</button>
+                <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
         </header>
@@ -1072,6 +1072,57 @@
                         <div id="attachmentList" class="attachment-list"></div>
                     </div>
                     <button class="btn btn-primary" onclick="sendEmail()">Send Email</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Manager Modal -->
+    <div id="templateManagerModal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeModal('templateManagerModal')">&times;</span>
+            <h2>Manage Email Templates</h2>
+            <div class="email-templates">
+                <div class="template-selector">
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn btn-success btn-small" onclick="showCreateTemplateForm()">+ New Template</button>
+                    </div>
+                    <div id="templateManagerList" class="template-list" style="max-height: 500px; overflow-y: auto;">
+                        <!-- Templates will be populated here -->
+                    </div>
+                </div>
+                <div class="template-preview">
+                    <div id="templateEditorEmpty" style="text-align: center; padding: 60px 20px; color: #7f8c8d;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+                        <div style="font-size: 18px;">Select a template to edit</div>
+                        <div style="font-size: 14px; margin-top: 8px;">or create a new one</div>
+                    </div>
+                    <div id="templateEditorForm" style="display: none;">
+                        <div class="form-group">
+                            <label for="templateName">Template Name:</label>
+                            <input type="text" id="templateName" class="full-width" placeholder="e.g., Initial Conversion Request">
+                        </div>
+                        <div class="form-group">
+                            <label for="templateSubject">Subject Line:</label>
+                            <input type="text" id="templateSubject" class="full-width" placeholder="Use {acquisitionName}, {newOwner}, {fein}, etc.">
+                        </div>
+                        <div class="form-group">
+                            <label for="templateBody">Message Body:</label>
+                            <textarea id="templateBody" rows="15" class="full-width" placeholder="Use {acquisitionName}, {dateAcquired}, {previousOwner}, {newOwner}, {fein} for dynamic values"></textarea>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px;">
+                            <strong>Available Placeholders:</strong><br>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 2px;">{acquisitionName}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 2px;">{dateAcquired}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 2px;">{previousOwner}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 2px;">{newOwner}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 2px;">{fein}</code>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+                            <button class="btn btn-danger" onclick="deleteTemplate()" id="deleteTemplateBtn" style="margin-left: auto;">Delete Template</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1377,8 +1428,10 @@
             { code: 'CIN-025', name: 'Cincinnati Financial' }
         ];
 
-        const emailTemplates = {
+        // Default email templates (can be customized by user)
+        let emailTemplates = {
             initial: {
+                name: 'Initial Conversion Request',
                 subject: 'Agency Conversion - {acquisitionName} - Action Required',
                 body: `Dear Carrier Representative,
 
@@ -1403,6 +1456,7 @@ Best regards,
 Mergers & Acquisitions Team`
             },
             followup: {
+                name: 'Follow-up Reminder',
                 subject: 'Follow-up: Agency Conversion - {acquisitionName}',
                 body: `Dear Carrier Representative,
 
@@ -1421,6 +1475,7 @@ Best regards,
 Mergers & Acquisitions Team`
             },
             urgent: {
+                name: 'Urgent Request',
                 subject: 'URGENT: Agency Conversion - {acquisitionName}',
                 body: `Dear Carrier Representative,
 
@@ -1438,6 +1493,7 @@ Best regards,
 Mergers & Acquisitions Team`
             },
             confirmation: {
+                name: 'Conversion Confirmation',
                 subject: 'Conversion Confirmation Request - {acquisitionName}',
                 body: `Dear Carrier Representative,
 
@@ -1455,6 +1511,7 @@ Best regards,
 Mergers & Acquisitions Team`
             },
             completion: {
+                name: 'Completion Notice',
                 subject: 'Conversion Completed - {acquisitionName} - Thank You',
                 body: `Dear Carrier Representative,
 
@@ -1588,6 +1645,9 @@ Mergers & Acquisitions Team`
             // Load settings from localStorage
             loadSettings();
 
+            // Load custom templates from localStorage
+            loadCustomTemplates();
+
             // Initialize Firebase if configured
             const firebaseInitialized = initializeFirebase();
 
@@ -1604,6 +1664,118 @@ Mergers & Acquisitions Team`
                 }
             }
             // If Firebase is configured, onAuthStateChanged will handle the rest
+        }
+
+        // ==================== TEMPLATE MANAGEMENT FUNCTIONS ====================
+
+        let currentEditingTemplateId = null;
+
+        function loadCustomTemplates() {
+            const saved = localStorage.getItem('emailTemplates');
+            if (saved) {
+                try {
+                    emailTemplates = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading templates:', e);
+                }
+            }
+        }
+
+        function saveTemplatesToLocalStorage() {
+            localStorage.setItem('emailTemplates', JSON.stringify(emailTemplates));
+        }
+
+        function showTemplateManager() {
+            document.getElementById('templateManagerModal').style.display = 'block';
+            renderTemplateManagerList();
+            showTemplateEditorEmpty();
+        }
+
+        function renderTemplateManagerList() {
+            const listContainer = document.getElementById('templateManagerList');
+            listContainer.innerHTML = '';
+
+            Object.keys(emailTemplates).forEach(templateId => {
+                const template = emailTemplates[templateId];
+                const templateBtn = document.createElement('button');
+                templateBtn.className = 'template-btn';
+                templateBtn.textContent = template.name;
+                templateBtn.onclick = () => loadTemplateForEditing(templateId);
+                if (currentEditingTemplateId === templateId) {
+                    templateBtn.classList.add('active');
+                }
+                listContainer.appendChild(templateBtn);
+            });
+        }
+
+        function showTemplateEditorEmpty() {
+            document.getElementById('templateEditorEmpty').style.display = 'block';
+            document.getElementById('templateEditorForm').style.display = 'none';
+            currentEditingTemplateId = null;
+        }
+
+        function showCreateTemplateForm() {
+            currentEditingTemplateId = null;
+            document.getElementById('templateEditorEmpty').style.display = 'none';
+            document.getElementById('templateEditorForm').style.display = 'block';
+            document.getElementById('templateName').value = '';
+            document.getElementById('templateSubject').value = '';
+            document.getElementById('templateBody').value = '';
+            document.getElementById('deleteTemplateBtn').style.display = 'none';
+            renderTemplateManagerList();
+        }
+
+        function loadTemplateForEditing(templateId) {
+            currentEditingTemplateId = templateId;
+            const template = emailTemplates[templateId];
+
+            document.getElementById('templateEditorEmpty').style.display = 'none';
+            document.getElementById('templateEditorForm').style.display = 'block';
+            document.getElementById('templateName').value = template.name;
+            document.getElementById('templateSubject').value = template.subject;
+            document.getElementById('templateBody').value = template.body;
+            document.getElementById('deleteTemplateBtn').style.display = 'inline-block';
+
+            renderTemplateManagerList();
+        }
+
+        function saveTemplate() {
+            const name = document.getElementById('templateName').value.trim();
+            const subject = document.getElementById('templateSubject').value.trim();
+            const body = document.getElementById('templateBody').value.trim();
+
+            if (!name || !subject || !body) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (currentEditingTemplateId) {
+                // Editing existing template
+                emailTemplates[currentEditingTemplateId] = { name, subject, body };
+                alert('Template updated successfully!');
+            } else {
+                // Creating new template
+                const templateId = 'custom_' + Date.now();
+                emailTemplates[templateId] = { name, subject, body };
+                currentEditingTemplateId = templateId;
+                alert('Template created successfully!');
+            }
+
+            saveTemplatesToLocalStorage();
+            renderTemplateManagerList();
+        }
+
+        function deleteTemplate() {
+            if (!currentEditingTemplateId) return;
+
+            const template = emailTemplates[currentEditingTemplateId];
+            if (confirm(`Are you sure you want to delete "${template.name}"?`)) {
+                delete emailTemplates[currentEditingTemplateId];
+                saveTemplatesToLocalStorage();
+                showTemplateEditorEmpty();
+                renderTemplateManagerList();
+                alert('Template deleted successfully!');
+            }
         }
 
         // ==================== FIREBASE DATA FUNCTIONS ====================
@@ -1963,7 +2135,7 @@ Mergers & Acquisitions Team`
             if (!acquisition) return;
             const carrier = acquisition.carriers.find(c => c.code === carrierCode);
             if (!carrier) return;
-            showEmailTemplates();
+            showEmailCompose();
             setTimeout(() => {
                 const checkbox = document.querySelector(`input[value="${carrierCode}"]`);
                 if (checkbox) checkbox.checked = true;
@@ -2044,7 +2216,7 @@ Mergers & Acquisitions Team`
             document.getElementById('emailTo').value = selectedEmails.join('; ');
         }
 
-        function showEmailTemplates() {
+        function showEmailCompose() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
                 alert('Please select an acquisition first');
@@ -2054,6 +2226,18 @@ Mergers & Acquisitions Team`
             modal.style.display = 'block';
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             checkboxContainer.innerHTML = '';
+
+            // Populate template list dynamically
+            const templateListContainer = document.getElementById('templateList');
+            templateListContainer.innerHTML = '';
+            Object.keys(emailTemplates).forEach(templateId => {
+                const template = emailTemplates[templateId];
+                const btn = document.createElement('button');
+                btn.className = 'template-btn';
+                btn.textContent = template.name;
+                btn.onclick = () => loadTemplate(templateId);
+                templateListContainer.appendChild(btn);
+            });
 
             // Set From field - use Outlook email if connected, otherwise Firebase email
             let fromEmail = '';
@@ -2087,7 +2271,12 @@ Mergers & Acquisitions Team`
                 `;
                 checkboxContainer.appendChild(div);
             });
-            loadTemplate('initial');
+
+            // Load the first template by default
+            const firstTemplateId = Object.keys(emailTemplates)[0];
+            if (firstTemplateId) {
+                loadTemplate(firstTemplateId);
+            }
         }
 
         function loadTemplate(templateName) {
