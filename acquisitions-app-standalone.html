@@ -2362,6 +2362,14 @@ Mergers & Acquisitions Team`
                         emailAddress: { address: email }
                     }));
 
+                    // Build attachments array for Microsoft Graph API
+                    const attachments = emailAttachments.map(attachment => ({
+                        "@odata.type": "#microsoft.graph.fileAttachment",
+                        "name": attachment.name,
+                        "contentType": attachment.type,
+                        "contentBytes": attachment.contentBytes
+                    }));
+
                     const emailMessage = {
                         message: {
                             subject: subject,
@@ -2370,7 +2378,8 @@ Mergers & Acquisitions Team`
                                 content: body
                             },
                             toRecipients: toRecipients,
-                            ccRecipients: ccRecipients
+                            ccRecipients: ccRecipients,
+                            attachments: attachments
                         },
                         saveToSentItems: true
                     };
@@ -2465,6 +2474,10 @@ Mergers & Acquisitions Team`
 
                 alert(`Email logged to activity.\n\nTo: ${toEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}\n\nConnect Outlook in Settings to send real emails.`);
             }
+
+            // Clear attachments after sending
+            emailAttachments = [];
+            renderAttachments();
 
             closeModal('emailTemplateModal');
         }
@@ -2828,20 +2841,32 @@ Mergers & Acquisitions Team`
             document.getElementById('addCarrierForm').reset();
         }
 
-        function handleFileSelect(event) {
+        async function handleFileSelect(event) {
             const files = event.target.files;
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                // Create attachment object with file metadata
-                const attachment = {
-                    id: 'attach-' + Date.now() + '-' + i,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type
+
+                // Read file content as base64
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Remove the data URL prefix to get just the base64 content
+                    const base64Content = e.target.result.split(',')[1];
+
+                    // Create attachment object with file metadata and content
+                    const attachment = {
+                        id: 'attach-' + Date.now() + '-' + i,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        contentBytes: base64Content
+                    };
+                    emailAttachments.push(attachment);
+                    renderAttachments();
                 };
-                emailAttachments.push(attachment);
+                reader.readAsDataURL(file);
             }
-            renderAttachments();
+
             // Reset file input so same file can be added again if removed
             event.target.value = '';
         }
