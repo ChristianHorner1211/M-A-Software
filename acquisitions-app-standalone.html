@@ -783,6 +783,7 @@
             <div class="header-actions">
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
                 <button class="btn btn-secondary" onclick="showEmailTemplates()">Email Templates</button>
+                <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
         </header>
 
@@ -1022,11 +1023,107 @@
         <div class="context-menu-item danger" onclick="deleteAcquisition()">Delete Acquisition</div>
     </div>
 
+    <div id="settingsModal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeModal('settingsModal')">&times;</span>
+            <h2>Settings</h2>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="font-size: 18px; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e8eef3; padding-bottom: 10px;">Email Integration</h3>
+
+                <div id="outlookConnectionStatus" style="padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span id="outlookStatusIcon" style="font-size: 20px;">⚫</span>
+                        <span id="outlookStatusText" style="font-weight: 600; color: #7f8c8d;">Not Connected</span>
+                    </div>
+                    <div id="outlookAccountInfo" style="font-size: 13px; color: #7f8c8d; display: none;">
+                        Connected as: <span id="outlookEmail" style="color: #3498db;"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Microsoft Outlook Integration</label>
+                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">
+                        Connect your Outlook account to send and receive emails directly from this application.
+                        This will allow you to:
+                    </p>
+                    <ul style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px; margin-left: 20px;">
+                        <li>Send emails directly through your Outlook account</li>
+                        <li>Receive replies from carriers</li>
+                        <li>Automatically sync email conversations</li>
+                        <li>Attach files from your computer</li>
+                    </ul>
+
+                    <div id="outlookDisconnectedView">
+                        <button class="btn btn-primary" onclick="connectOutlook()" style="background: #0078d4;">
+                            <span style="font-size: 16px; margin-right: 8px;">📧</span>
+                            Connect Outlook Account
+                        </button>
+                        <p style="font-size: 12px; color: #95a5a6; margin-top: 10px; font-style: italic;">
+                            Note: You'll be redirected to Microsoft to authorize this application.
+                        </p>
+                    </div>
+
+                    <div id="outlookConnectedView" style="display: none;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-success btn-small" onclick="testOutlookConnection()">
+                                Test Connection
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="syncOutlookEmails()">
+                                Sync Emails
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="disconnectOutlook()">
+                                Disconnect
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 25px;">
+                    <label>Email Signature (Optional)</label>
+                    <textarea id="emailSignature" rows="4" placeholder="Enter your email signature here...&#10;&#10;Best regards,&#10;Your Name&#10;Your Title&#10;Company Name"></textarea>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="font-size: 18px; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e8eef3; padding-bottom: 10px;">Data Management</h3>
+
+                <div class="form-group">
+                    <label>Export/Import Data</label>
+                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">
+                        Save your acquisitions and activities to a file, or import from a previous backup.
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-small" onclick="exportData()">
+                            📥 Export Data
+                        </button>
+                        <label for="importDataInput" class="btn btn-secondary btn-small" style="margin: 0; cursor: pointer;">
+                            📤 Import Data
+                        </label>
+                        <input type="file" id="importDataInput" accept=".json" style="display: none;" onchange="importData(event)">
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8eef3;">
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let acquisitions = [];
         let currentAcquisitionId = null;
         let activities = [];
         let emailAttachments = [];
+        let appSettings = {
+            outlook: {
+                connected: false,
+                email: null,
+                accessToken: null
+            },
+            emailSignature: ''
+        };
 
         const availableCarriers = [
             { code: 'ACE-001', name: 'ACE Insurance Company' },
@@ -1151,6 +1248,10 @@ Mergers & Acquisitions Team`
         };
 
         function initializeApp() {
+            // Load settings from localStorage
+            loadSettings();
+
+            // Load sample data
             loadSampleData();
             renderAcquisitionTabs();
             if (acquisitions.length > 0) {
@@ -1818,6 +1919,209 @@ Mergers & Acquisitions Team`
                 emailAttachments = [];
                 renderAttachments();
             }
+        }
+
+        // Settings Functions
+        function showSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+            loadSettings();
+            updateOutlookConnectionUI();
+        }
+
+        function loadSettings() {
+            // Load settings from localStorage
+            const savedSettings = localStorage.getItem('appSettings');
+            if (savedSettings) {
+                try {
+                    const parsed = JSON.parse(savedSettings);
+                    appSettings = { ...appSettings, ...parsed };
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
+            }
+
+            // Populate email signature
+            document.getElementById('emailSignature').value = appSettings.emailSignature || '';
+        }
+
+        function saveSettings() {
+            // Save email signature
+            appSettings.emailSignature = document.getElementById('emailSignature').value;
+
+            // Save to localStorage
+            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+
+            alert('Settings saved successfully!');
+        }
+
+        function updateOutlookConnectionUI() {
+            const statusIcon = document.getElementById('outlookStatusIcon');
+            const statusText = document.getElementById('outlookStatusText');
+            const accountInfo = document.getElementById('outlookAccountInfo');
+            const emailSpan = document.getElementById('outlookEmail');
+            const disconnectedView = document.getElementById('outlookDisconnectedView');
+            const connectedView = document.getElementById('outlookConnectedView');
+
+            if (appSettings.outlook.connected) {
+                statusIcon.textContent = '🟢';
+                statusText.textContent = 'Connected';
+                statusText.style.color = '#27ae60';
+                accountInfo.style.display = 'block';
+                emailSpan.textContent = appSettings.outlook.email;
+                disconnectedView.style.display = 'none';
+                connectedView.style.display = 'block';
+            } else {
+                statusIcon.textContent = '⚫';
+                statusText.textContent = 'Not Connected';
+                statusText.style.color = '#7f8c8d';
+                accountInfo.style.display = 'none';
+                disconnectedView.style.display = 'block';
+                connectedView.style.display = 'none';
+            }
+        }
+
+        function connectOutlook() {
+            alert('Outlook Integration Setup\n\n' +
+                'To enable Outlook integration, you need to:\n\n' +
+                '1. Register this app in Azure AD (portal.azure.com)\n' +
+                '2. Configure Microsoft Graph API permissions:\n' +
+                '   - Mail.Send\n' +
+                '   - Mail.Read\n' +
+                '   - Mail.ReadWrite\n' +
+                '3. Implement OAuth 2.0 authentication flow\n\n' +
+                'For now, this is a placeholder. Contact your IT administrator or developer to set up the Microsoft Graph API integration.\n\n' +
+                'Once configured, this will allow you to send and receive emails directly through Outlook.');
+
+            // Placeholder for OAuth flow
+            // In production, this would redirect to Microsoft OAuth endpoint
+            // Example: window.location.href = 'https://login.microsoftonline.com/...'
+
+            // For demonstration purposes, simulate a connection
+            const simulateConnection = confirm('Would you like to simulate a connection for testing purposes?');
+            if (simulateConnection) {
+                const userEmail = prompt('Enter your email address for testing:');
+                if (userEmail) {
+                    appSettings.outlook.connected = true;
+                    appSettings.outlook.email = userEmail;
+                    appSettings.outlook.accessToken = 'demo-token-' + Date.now();
+                    localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                    updateOutlookConnectionUI();
+                    alert('Outlook account connected (Demo Mode)\n\nNote: This is a simulated connection. Real email sending requires proper OAuth setup.');
+                }
+            }
+        }
+
+        function disconnectOutlook() {
+            if (confirm('Are you sure you want to disconnect your Outlook account?')) {
+                appSettings.outlook.connected = false;
+                appSettings.outlook.email = null;
+                appSettings.outlook.accessToken = null;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                updateOutlookConnectionUI();
+                alert('Outlook account disconnected');
+            }
+        }
+
+        function testOutlookConnection() {
+            if (!appSettings.outlook.connected) {
+                alert('Outlook is not connected');
+                return;
+            }
+
+            alert('Testing Outlook Connection...\n\n' +
+                'Connected as: ' + appSettings.outlook.email + '\n\n' +
+                'In production, this would verify:\n' +
+                '- Access token validity\n' +
+                '- Microsoft Graph API access\n' +
+                '- Mail send permissions\n\n' +
+                'Status: Demo Mode - Connection simulated');
+        }
+
+        function syncOutlookEmails() {
+            if (!appSettings.outlook.connected) {
+                alert('Please connect your Outlook account first');
+                return;
+            }
+
+            alert('Email Sync\n\n' +
+                'In production, this would:\n' +
+                '- Fetch recent emails from Outlook\n' +
+                '- Match emails with carrier contacts\n' +
+                '- Import email threads into activity log\n' +
+                '- Download attachments\n\n' +
+                'This feature requires Microsoft Graph API integration.');
+        }
+
+        function exportData() {
+            const dataToExport = {
+                acquisitions: acquisitions,
+                activities: activities,
+                settings: appSettings,
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(dataToExport, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'acquisitions-data-' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('Data exported successfully!');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+
+                    if (confirm('This will replace all current data. Are you sure you want to continue?')) {
+                        // Import acquisitions
+                        if (importedData.acquisitions) {
+                            acquisitions = importedData.acquisitions;
+                        }
+
+                        // Import activities
+                        if (importedData.activities) {
+                            activities = importedData.activities;
+                        }
+
+                        // Import settings
+                        if (importedData.settings) {
+                            appSettings = { ...appSettings, ...importedData.settings };
+                            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                        }
+
+                        // Refresh UI
+                        renderAcquisitionTabs();
+                        if (acquisitions.length > 0) {
+                            selectAcquisition(acquisitions[0].id);
+                        } else {
+                            renderCarriersList();
+                            renderActivityLog();
+                        }
+
+                        alert('Data imported successfully!');
+                        closeModal('settingsModal');
+                    }
+                } catch (error) {
+                    alert('Error importing data: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Reset file input
+            event.target.value = '';
         }
 
         window.onclick = function(event) {
