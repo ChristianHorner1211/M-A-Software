@@ -1958,6 +1958,16 @@ Mergers & Acquisitions Team`
             setTimeout(() => {
                 const checkbox = document.querySelector(`input[value="${carrierCode}"]`);
                 if (checkbox) checkbox.checked = true;
+
+                // Autofill To field with all contacts for this carrier
+                if (carrier.contacts && carrier.contacts.length > 0) {
+                    const contactEmails = carrier.contacts
+                        .map(contact => contact.email)
+                        .filter(email => email && email.trim().length > 0)
+                        .join('; ');
+
+                    document.getElementById('emailTo').value = contactEmails;
+                }
             }, 100);
         }
 
