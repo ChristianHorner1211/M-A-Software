@@ -2448,7 +2448,13 @@ Mergers & Acquisitions Team`
                 name: name,
                 status: status,
                 repEmail: repEmail,
-                contacts: []
+                contacts: [{
+                    id: 'contact-' + Date.now(),
+                    name: 'Primary Contact',
+                    email: repEmail,
+                    phone: '',
+                    role: 'Account Manager'
+                }]
             };
 
             acquisition.carriers.push(newCarrier);
