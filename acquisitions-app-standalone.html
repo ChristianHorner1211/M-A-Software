@@ -962,6 +962,7 @@
                             <div style="display: flex; gap: 8px; margin-top: 8px;">
                                 <button class="btn btn-success btn-small" onclick="showAddCarrierModal()">+ Add Carrier</button>
                                 <button class="btn btn-secondary btn-small" onclick="showRemoveCarrierModal()">- Remove Carrier</button>
+                                <button class="btn btn-primary btn-small" onclick="showBulkEmail()">✉ Bulk Email</button>
                             </div>
                         </div>
                         <div class="status-legend">
@@ -2210,6 +2211,20 @@ Mergers & Acquisitions Team`
             });
 
             document.getElementById('emailTo').value = selectedEmails.join('; ');
+        }
+
+        function showBulkEmail() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+            if (acquisition.carriers.length === 0) {
+                alert('No carriers available. Please add carriers first.');
+                return;
+            }
+            // Open email compose modal - user can select multiple carriers via checkboxes
+            showEmailCompose();
         }
 
         function showEmailCompose() {
