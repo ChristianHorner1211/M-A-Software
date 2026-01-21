@@ -2303,7 +2303,7 @@ Mergers & Acquisitions Team`
             document.getElementById('removeCarrierModal').style.display = 'block';
         }
 
-        function removeCarrier(carrierCode) {
+        async function removeCarrier(carrierCode) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
 
@@ -2313,6 +2313,9 @@ Mergers & Acquisitions Team`
             if (confirm(`Are you sure you want to remove "${carrier.name}"?`)) {
                 // Remove the carrier from the array
                 acquisition.carriers = acquisition.carriers.filter(c => c.code !== carrierCode);
+
+                // Save to Firebase
+                await saveAcquisitionToFirebase(acquisition);
 
                 renderCarriersList();
                 showRemoveCarrierModal(); // Refresh the modal
@@ -2377,7 +2380,7 @@ Mergers & Acquisitions Team`
             document.getElementById('contactForm').reset();
         }
 
-        function addContact(event) {
+        async function addContact(event) {
             event.preventDefault();
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
@@ -2394,12 +2397,16 @@ Mergers & Acquisitions Team`
             };
 
             carrier.contacts.push(newContact);
+
+            // Save to Firebase
+            await saveAcquisitionToFirebase(acquisition);
+
             renderCarrierContacts();
             renderCarriersList(); // Update contact count
             hideAddContactForm();
         }
 
-        function removeContact(contactId) {
+        async function removeContact(contactId) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
 
@@ -2411,12 +2418,16 @@ Mergers & Acquisitions Team`
 
             if (confirm(`Remove ${contact.name} from contacts?`)) {
                 carrier.contacts = carrier.contacts.filter(c => c.id !== contactId);
+
+                // Save to Firebase
+                await saveAcquisitionToFirebase(acquisition);
+
                 renderCarrierContacts();
                 renderCarriersList(); // Update contact count
             }
         }
 
-        function addCarrier(event) {
+        async function addCarrier(event) {
             event.preventDefault();
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
@@ -2441,6 +2452,10 @@ Mergers & Acquisitions Team`
             };
 
             acquisition.carriers.push(newCarrier);
+
+            // Save to Firebase
+            await saveAcquisitionToFirebase(acquisition);
+
             renderCarriersList();
 
             closeModal('addCarrierModal');
