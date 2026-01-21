@@ -1619,11 +1619,7 @@ Mergers & Acquisitions Team`
                     ...doc.data()
                 }));
 
-                // If no data, load sample data
-                if (acquisitions.length === 0) {
-                    loadSampleData();
-                    await saveAllDataToFirebase();
-                }
+                // Don't auto-load sample data - user creates their own acquisitions
 
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
@@ -1972,7 +1968,7 @@ Mergers & Acquisitions Team`
                 previousOwner,
                 newOwner,
                 fein,
-                carriers: generateCarriersForAcquisition(10)
+                carriers: [] // Start with empty carriers - user adds manually
             };
 
             acquisitions.push(newAcquisition);
