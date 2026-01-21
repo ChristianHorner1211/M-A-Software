@@ -945,6 +945,7 @@
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
                 <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
+                <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn" style="display: none;">🔄 Sync Emails</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
         </header>
@@ -1385,7 +1386,8 @@
             outlook: {
                 connected: false,
                 email: null,
-                accessToken: null
+                accessToken: null,
+                lastEmailSync: null
             },
             emailSignature: ''
         };
@@ -3017,6 +3019,7 @@ Mergers & Acquisitions Team`
             const emailSpan = document.getElementById('outlookEmail');
             const disconnectedView = document.getElementById('outlookDisconnectedView');
             const connectedView = document.getElementById('outlookConnectedView');
+            const syncBtn = document.getElementById('syncEmailsBtn');
 
             if (appSettings.outlook.connected) {
                 statusIcon.textContent = '🟢';
@@ -3026,6 +3029,7 @@ Mergers & Acquisitions Team`
                 emailSpan.textContent = appSettings.outlook.email;
                 disconnectedView.style.display = 'none';
                 connectedView.style.display = 'block';
+                if (syncBtn) syncBtn.style.display = 'inline-block';
             } else {
                 statusIcon.textContent = '⚫';
                 statusText.textContent = 'Not Connected';
@@ -3033,6 +3037,7 @@ Mergers & Acquisitions Team`
                 accountInfo.style.display = 'none';
                 disconnectedView.style.display = 'block';
                 connectedView.style.display = 'none';
+                if (syncBtn) syncBtn.style.display = 'none';
             }
         }
 
@@ -3182,6 +3187,116 @@ Mergers & Acquisitions Team`
                 // Silent token acquisition failed, try interactive
                 const response = await msalInstance.acquireTokenPopup(request);
                 return response.accessToken;
+            }
+        }
+
+        async function syncEmails() {
+            if (!appSettings.outlook.connected || !msalInstance) {
+                alert('Please connect Outlook in Settings first');
+                return;
+            }
+
+            const syncBtn = document.getElementById('syncEmailsBtn');
+            const originalText = syncBtn.textContent;
+            syncBtn.textContent = '🔄 Syncing...';
+            syncBtn.disabled = true;
+
+            try {
+                const token = await getAccessToken();
+
+                // Get emails from last 7 days or since last sync
+                const lastSync = appSettings.outlook.lastEmailSync;
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const filterDate = lastSync ? new Date(lastSync) : sevenDaysAgo;
+
+                // Format date for Microsoft Graph filter (ISO 8601)
+                const filterDateString = filterDate.toISOString();
+
+                // Fetch emails from inbox received after filter date
+                const response = await fetch(
+                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=100&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments`,
+                    {
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch emails from Outlook');
+                }
+
+                const data = await response.json();
+                const emails = data.value;
+
+                let newEmailsCount = 0;
+
+                // Process each email and try to match to carriers
+                for (const email of emails) {
+                    const senderEmail = email.from?.emailAddress?.address;
+                    if (!senderEmail) continue;
+
+                    // Try to find matching carrier across all acquisitions
+                    for (const acquisition of acquisitions) {
+                        for (const carrier of acquisition.carriers) {
+                            // Check if sender email matches any carrier contact
+                            const matchingContact = carrier.contacts?.find(contact =>
+                                contact.email && contact.email.toLowerCase() === senderEmail.toLowerCase()
+                            );
+
+                            if (matchingContact) {
+                                // Check if we already logged this email (avoid duplicates)
+                                const emailDate = new Date(email.receivedDateTime);
+                                const alreadyLogged = activities.some(activity =>
+                                    activity.carrier === carrier.name &&
+                                    activity.contact === senderEmail &&
+                                    activity.type === 'email' &&
+                                    Math.abs(new Date(activity.timestamp) - emailDate) < 5000 // Within 5 seconds
+                                );
+
+                                if (!alreadyLogged) {
+                                    // Add to activity log
+                                    const activityItem = {
+                                        type: 'email',
+                                        contact: senderEmail,
+                                        carrier: carrier.name,
+                                        notes: `Received: ${email.subject}\n\n${email.bodyPreview}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
+                                        acquisitionId: acquisition.id,
+                                        timestamp: email.receivedDateTime,
+                                        attachments: []
+                                    };
+                                    activities.unshift(activityItem);
+                                    await saveActivityToFirebase(activityItem);
+                                    newEmailsCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update last sync time
+                appSettings.outlook.lastEmailSync = new Date().toISOString();
+                saveSettings();
+
+                // Refresh activity log if on acquisition page
+                renderActivityLog();
+
+                // Refresh email history if carrier modal is open
+                const carrierModal = document.getElementById('carrierContactsModal');
+                if (carrierModal && carrierModal.style.display === 'block') {
+                    renderCarrierEmailHistory();
+                }
+
+                alert(`Sync complete! Found ${newEmailsCount} new email(s).`);
+
+            } catch (error) {
+                console.error('Email sync error:', error);
+                alert('Failed to sync emails: ' + error.message);
+            } finally {
+                syncBtn.textContent = originalText;
+                syncBtn.disabled = false;
             }
         }
 
