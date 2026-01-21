@@ -677,6 +677,77 @@
             margin-top: 2px;
         }
 
+        .attachment-area {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 2px dashed #dce4ec;
+        }
+
+        .attachment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .attachment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dce4ec;
+        }
+
+        .attachment-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .attachment-icon {
+            font-size: 20px;
+        }
+
+        .attachment-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .attachment-name {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+
+        .attachment-size {
+            font-size: 11px;
+            color: #95a5a6;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s ease;
+        }
+
+        .file-input-label:hover {
+            background: #2980b9;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
         @media (max-width: 1024px) {
             .content-area {
                 grid-template-columns: 1fr;
@@ -814,6 +885,12 @@
                         <label for="emailBody">Message:</label>
                         <textarea id="emailBody" rows="15" class="full-width"></textarea>
                     </div>
+                    <div class="attachment-area">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Attachments</label>
+                        <input type="file" id="fileInput" class="file-input-hidden" multiple onchange="handleFileSelect(event)">
+                        <label for="fileInput" class="file-input-label">📎 Add Files</label>
+                        <div id="attachmentList" class="attachment-list"></div>
+                    </div>
                     <button class="btn btn-primary" onclick="sendEmail()">Send Email</button>
                 </div>
             </div>
@@ -949,6 +1026,7 @@
         let acquisitions = [];
         let currentAcquisitionId = null;
         let activities = [];
+        let emailAttachments = [];
 
         const availableCarriers = [
             { code: 'ACE-001', name: 'ACE Insurance Company' },
@@ -1372,15 +1450,30 @@ Mergers & Acquisitions Team`
                 return;
             }
             const subject = document.getElementById('emailSubject').value;
+
+            // Create attachment info string
+            let attachmentInfo = '';
+            if (emailAttachments.length > 0) {
+                const attachmentNames = emailAttachments.map(a => a.name).join(', ');
+                attachmentInfo = `\nAttachments (${emailAttachments.length}): ${attachmentNames}`;
+            }
+
             selectedCarriers.forEach(carrier => {
                 addActivityLog({
                     type: 'email',
                     contact: carrier.repEmail,
                     carrier: carrier.name,
-                    notes: `Sent: ${subject}`
+                    notes: `Sent: ${subject}${attachmentInfo}`,
+                    attachments: [...emailAttachments] // Store copy of attachments
                 });
             });
-            alert(`Email sent to ${selectedCarriers.length} carrier(s):\n${selectedCarriers.map(c => c.name).join('\n')}`);
+
+            let message = `Email sent to ${selectedCarriers.length} carrier(s):\n${selectedCarriers.map(c => c.name).join('\n')}`;
+            if (emailAttachments.length > 0) {
+                message += `\n\nWith ${emailAttachments.length} attachment(s)`;
+            }
+            alert(message);
+
             closeModal('emailTemplateModal');
         }
 
@@ -1455,6 +1548,12 @@ Mergers & Acquisitions Team`
                     dueDateHTML = `<div class="${dueDateClass}">📅 Due: ${dueDateFormatted}${isOverdue ? ' (Overdue)' : ''}</div>`;
                 }
 
+                let attachmentHTML = '';
+                if (activity.attachments && activity.attachments.length > 0) {
+                    const attachmentNames = activity.attachments.map(a => a.name).join(', ');
+                    attachmentHTML = `<div style="font-size: 12px; color: #3498db; margin-top: 6px;">📎 ${activity.attachments.length} attachment(s): ${attachmentNames}</div>`;
+                }
+
                 activityItem.innerHTML = `
                     <div class="activity-header">
                         <span class="activity-type">${typeIcons[activity.type]} ${activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}</span>
@@ -1464,6 +1563,7 @@ Mergers & Acquisitions Team`
                     <span class="activity-carrier">${activity.carrier}</span>
                     ${dueDateHTML}
                     <div class="activity-notes">${activity.notes}</div>
+                    ${attachmentHTML}
                 `;
                 activityList.appendChild(activityItem);
             });
@@ -1653,8 +1753,71 @@ Mergers & Acquisitions Team`
             document.getElementById('addCarrierForm').reset();
         }
 
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                // Create attachment object with file metadata
+                const attachment = {
+                    id: 'attach-' + Date.now() + '-' + i,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                };
+                emailAttachments.push(attachment);
+            }
+            renderAttachments();
+            // Reset file input so same file can be added again if removed
+            event.target.value = '';
+        }
+
+        function removeAttachment(attachmentId) {
+            emailAttachments = emailAttachments.filter(a => a.id !== attachmentId);
+            renderAttachments();
+        }
+
+        function renderAttachments() {
+            const attachmentList = document.getElementById('attachmentList');
+            if (!attachmentList) return;
+
+            if (emailAttachments.length === 0) {
+                attachmentList.innerHTML = '';
+                return;
+            }
+
+            attachmentList.innerHTML = '';
+            emailAttachments.forEach(attachment => {
+                const attachmentItem = document.createElement('div');
+                attachmentItem.className = 'attachment-item';
+
+                // Format file size
+                const sizeKB = (attachment.size / 1024).toFixed(1);
+                const sizeDisplay = sizeKB > 1024
+                    ? (sizeKB / 1024).toFixed(1) + ' MB'
+                    : sizeKB + ' KB';
+
+                attachmentItem.innerHTML = `
+                    <div class="attachment-info">
+                        <span class="attachment-icon">📎</span>
+                        <div class="attachment-details">
+                            <div class="attachment-name">${attachment.name}</div>
+                            <div class="attachment-size">${sizeDisplay}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeAttachment('${attachment.id}')">Remove</button>
+                `;
+                attachmentList.appendChild(attachmentItem);
+            });
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
+
+            // Clear attachments when closing email template modal
+            if (modalId === 'emailTemplateModal') {
+                emailAttachments = [];
+                renderAttachments();
+            }
         }
 
         window.onclick = function(event) {
