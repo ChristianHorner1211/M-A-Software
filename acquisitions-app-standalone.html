@@ -3283,60 +3283,47 @@ Mergers & Acquisitions Team`
 
                 console.log('Carrier email addresses:', Array.from(carrierEmailMap.keys()));
 
-                // Step 1: Get sent emails to build a list of subjects we initiated
-                console.log('Fetching sent emails...');
-                const sentItemsResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=500&$select=subject,toRecipients,sentDateTime`,
-                    {
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                );
-
-                if (!sentItemsResponse.ok) {
-                    const errorText = await sentItemsResponse.text();
-                    console.error('Sent items error:', errorText);
-                    throw new Error('Failed to fetch sent emails from Outlook');
-                }
-
-                const sentData = await sentItemsResponse.json();
-                const sentEmails = sentData.value;
-                console.log('Total sent emails:', sentEmails.length);
-
-                // Build a set of subjects we sent to carriers (normalized)
+                // Step 1: Get subjects from emails sent through THIS APP (not all Outlook emails)
+                console.log('Checking emails sent through this app...');
                 const sentSubjects = new Set();
-                const sentToCarriers = [];
-                for (const sentEmail of sentEmails) {
-                    if (sentEmail.toRecipients && sentEmail.toRecipients.length > 0) {
-                        const hasCarrierRecipient = sentEmail.toRecipients.some(recipient =>
-                            carrierEmailMap.has(recipient.emailAddress.address.toLowerCase())
-                        );
-                        if (hasCarrierRecipient && sentEmail.subject) {
-                            sentToCarriers.push({
-                                subject: sentEmail.subject,
-                                to: sentEmail.toRecipients.map(r => r.emailAddress.address).join(', '),
-                                date: sentEmail.sentDateTime
-                            });
-                            // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes and trim
-                            const normalizedSubject = sentEmail.subject
-                                .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
-                                .trim()
-                                .toLowerCase();
-                            if (normalizedSubject) {
-                                sentSubjects.add(normalizedSubject);
+                const sentFromApp = [];
+
+                // Look through activities for emails we sent (notes start with "Sent:")
+                for (const activity of activities) {
+                    if (activity.type === 'email' &&
+                        activity.notes &&
+                        activity.notes.startsWith('Sent:')) {
+
+                        // Extract subject from notes (format: "Sent: SUBJECT\n...")
+                        const lines = activity.notes.split('\n');
+                        if (lines.length > 0) {
+                            const subjectLine = lines[0].replace(/^Sent:\s*/, '').trim();
+                            if (subjectLine) {
+                                sentFromApp.push({
+                                    subject: subjectLine,
+                                    carrier: activity.carrier,
+                                    date: activity.timestamp
+                                });
+
+                                // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes and trim
+                                const normalizedSubject = subjectLine
+                                    .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
+                                    .trim()
+                                    .toLowerCase();
+                                if (normalizedSubject) {
+                                    sentSubjects.add(normalizedSubject);
+                                }
                             }
                         }
                     }
                 }
 
-                console.log('Sent emails to carriers:', sentToCarriers);
-                console.log('Unique subjects sent:', Array.from(sentSubjects));
+                console.log('Emails sent through this app:', sentFromApp);
+                console.log('Unique subjects sent through app:', Array.from(sentSubjects));
 
                 if (sentSubjects.size === 0) {
-                    console.log('No sent emails to carriers found');
-                    alert('No sent emails found to carriers in the last 30 days.\n\nMake sure you:\n1. Have sent emails through this app\n2. Have added carrier email contacts\n\nCheck browser console (F12) for details.');
+                    console.log('No emails sent through this app found');
+                    alert('No sent emails found.\n\nYou must send emails through this app first before syncing replies.\n\nCheck browser console (F12) for details.');
                     appSettings.outlook.lastEmailSync = new Date().toISOString();
                     saveSettings();
                     syncBtn.textContent = originalText;
