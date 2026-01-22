@@ -3318,8 +3318,14 @@ Mergers & Acquisitions Team`
                     }
                 }
 
-                console.log('Emails sent through this app:', sentFromApp);
-                console.log('Unique subjects sent through app:', Array.from(sentSubjects));
+                console.log('=== Emails Sent Through This App ===');
+                sentFromApp.forEach((email, index) => {
+                    console.log(`${index + 1}. "${email.subject}" to ${email.carrier} (${email.date})`);
+                });
+                console.log('\n=== Normalized Subjects We\'re Looking For ===');
+                Array.from(sentSubjects).forEach((subject, index) => {
+                    console.log(`${index + 1}. "${subject}"`);
+                });
 
                 if (sentSubjects.size === 0) {
                     console.log('No emails sent through this app found');
@@ -3356,40 +3362,50 @@ Mergers & Acquisitions Team`
                 console.log('Total inbox emails:', allInboxEmails.length);
 
                 // Process each email
+                console.log('=== Processing inbox emails ===');
                 for (const email of allInboxEmails) {
                     const senderEmail = email.from?.emailAddress?.address;
-                    if (!senderEmail || !email.subject) continue;
+                    if (!senderEmail || !email.subject) {
+                        console.log('Skipping email with missing sender or subject');
+                        continue;
+                    }
 
                     const senderEmailLower = senderEmail.toLowerCase();
+                    console.log(`\nChecking email: "${email.subject}" from ${senderEmail} (${email.receivedDateTime})`);
 
                     // Check if sender is a carrier contact
                     if (!carrierEmailMap.has(senderEmailLower)) {
+                        console.log(`  ✗ Sender ${senderEmail} not in carrier contacts`);
                         continue; // Not from a carrier
                     }
+                    console.log(`  ✓ Sender is a carrier contact`);
 
                     // Normalize the subject
                     const normalizedSubject = email.subject
                         .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
                         .trim()
                         .toLowerCase();
+                    console.log(`  Normalized subject: "${normalizedSubject}"`);
 
                     // Check if this email is a reply to something we sent
                     // Only import if the normalized subject matches something we actually sent
                     const isReply = sentSubjects.has(normalizedSubject);
 
                     if (!isReply) {
-                        console.log('Skipping (not a reply to our emails):', email.subject, 'from', senderEmail);
+                        console.log(`  ✗ Subject not found in sent emails. Sent subjects are:`, Array.from(sentSubjects));
                         continue;
                     }
 
-                    console.log('Found reply:', email.subject, 'from', senderEmail);
+                    console.log(`  ✓ Found reply matching sent subject!`);
 
                     const matches = carrierEmailMap.get(senderEmailLower);
 
                     if (matches) {
                         // This is a reply from a carrier contact
+                        console.log(`  Found ${matches.length} carrier match(es)`);
                         for (const match of matches) {
                             const { acquisition, carrier } = match;
+                            console.log(`  Checking carrier: ${carrier.name} in acquisition: ${acquisition.id}`);
 
                             // Check if we already logged this email (avoid duplicates)
                             const emailDate = new Date(email.receivedDateTime);
@@ -3401,7 +3417,7 @@ Mergers & Acquisitions Team`
                             );
 
                             if (!alreadyLogged) {
-                                console.log('Adding to activities:', email.subject);
+                                console.log(`  ✓ Adding email to activities for carrier: ${carrier.name}`);
                                 // Add to activity log
                                 const activityItem = {
                                     type: 'email',
@@ -3416,10 +3432,12 @@ Mergers & Acquisitions Team`
                                 await saveActivityToFirebase(activityItem);
                                 newEmailsCount++;
                             } else {
-                                console.log('Already logged:', email.subject);
+                                console.log(`  ✗ Email already logged for carrier: ${carrier.name}`);
                             }
                             break; // Only log once per email
                         }
+                    } else {
+                        console.log(`  ✗ No carrier matches found (unexpected)`);
                     }
                 }
 
