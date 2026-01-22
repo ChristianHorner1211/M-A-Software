@@ -3384,10 +3384,11 @@ Mergers & Acquisitions Team`
                         .toLowerCase();
 
                     // Check if this email is a reply to something we sent
-                    const isReply = sentSubjects.has(normalizedSubject) || /^(Re:|RE:)\s+/i.test(email.subject);
+                    // Only import if the normalized subject matches something we actually sent
+                    const isReply = sentSubjects.has(normalizedSubject);
 
                     if (!isReply) {
-                        console.log('Skipping (not a reply):', email.subject, 'from', senderEmail);
+                        console.log('Skipping (not a reply to our emails):', email.subject, 'from', senderEmail);
                         continue;
                     }
 
