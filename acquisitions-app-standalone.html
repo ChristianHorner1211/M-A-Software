@@ -3385,64 +3385,93 @@ Mergers & Acquisitions Team`
             }
         }
 
-        // Backfill conversationId for existing received emails by matching with sent emails
-        function backfillConversationIds() {
+        // Backfill conversationId for emails by matching sent and received emails
+        async function backfillConversationIds() {
             console.log('=== Backfilling Conversation IDs ===');
             let backfillCount = 0;
 
-            // Find all received emails without conversationId
-            const receivedWithoutConvId = activities.filter(a =>
-                a.type === 'email' &&
-                a.notes &&
-                a.notes.startsWith('Received:') &&
-                !a.conversationId
-            );
+            // Normalize subject (remove Re:/RE:/Fwd:/FW: and [EXTERNAL] tags)
+            const normalizeSubject = (subject) => {
+                return subject
+                    .replace(/^(Re|RE|Fwd|FW):\s*/gi, '')
+                    .replace(/\[EXTERNAL\]/gi, '')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+            };
 
+            // Get all sent and received emails
+            const sentEmails = activities.filter(a => a.type === 'email' && a.notes && a.notes.startsWith('Sent:'));
+            const receivedEmails = activities.filter(a => a.type === 'email' && a.notes && a.notes.startsWith('Received:'));
+
+            // Find sent emails without conversationId
+            const sentWithoutConvId = sentEmails.filter(a => !a.conversationId);
+            console.log(`Found ${sentWithoutConvId.length} sent emails without conversationId`);
+
+            // Find received emails without conversationId
+            const receivedWithoutConvId = receivedEmails.filter(a => !a.conversationId);
             console.log(`Found ${receivedWithoutConvId.length} received emails without conversationId`);
 
+            // Match sent emails without conversationId with received emails that have it
+            sentWithoutConvId.forEach(sentEmail => {
+                const sentLines = sentEmail.notes.split('\n');
+                const sentSubject = sentLines[0].replace('Sent: ', '').trim();
+                const normalizedSentSubject = normalizeSubject(sentSubject);
+
+                // Find matching received email with conversationId
+                const matchingReceived = receivedEmails.find(recEmail => {
+                    if (!recEmail.conversationId || recEmail.carrier !== sentEmail.carrier) return false;
+
+                    const recLines = recEmail.notes.split('\n');
+                    const recSubject = recLines[0].replace('Received: ', '').trim();
+                    const normalizedRecSubject = normalizeSubject(recSubject);
+
+                    return normalizedSentSubject === normalizedRecSubject;
+                });
+
+                if (matchingReceived) {
+                    sentEmail.conversationId = matchingReceived.conversationId;
+                    backfillCount++;
+                    console.log(`✓ Sent email "${sentSubject}" matched with received -> conversationId: ${matchingReceived.conversationId.substring(0, 30)}...`);
+
+                    // Save to Firebase
+                    if (firestore && currentUser) {
+                        saveActivityToFirebase(sentEmail).catch(err => console.error('Save error:', err));
+                    }
+                }
+            });
+
+            // Match received emails without conversationId with sent emails that have it
             receivedWithoutConvId.forEach(receivedEmail => {
-                // Extract subject from received email (format: "Received: SUBJECT\n...")
-                const receivedLines = receivedEmail.notes.split('\n');
-                const receivedSubject = receivedLines[0].replace('Received: ', '').trim();
+                const recLines = receivedEmail.notes.split('\n');
+                const recSubject = recLines[0].replace('Received: ', '').trim();
+                const normalizedRecSubject = normalizeSubject(recSubject);
 
-                // Normalize subject (remove Re:/RE:/Fwd:/FW: and [EXTERNAL] tags)
-                const normalizeSubject = (subject) => {
-                    return subject
-                        .replace(/^(Re|RE|Fwd|FW):\s*/i, '')
-                        .replace(/\[EXTERNAL\]/gi, '')
-                        .trim()
-                        .toLowerCase();
-                };
+                // Find matching sent email with conversationId
+                const matchingSent = sentEmails.find(sentEmail => {
+                    if (!sentEmail.conversationId || sentEmail.carrier !== receivedEmail.carrier) return false;
 
-                const normalizedReceivedSubject = normalizeSubject(receivedSubject);
-
-                // Find corresponding sent email with matching subject and carrier
-                const sentEmail = activities.find(a =>
-                    a.type === 'email' &&
-                    a.notes &&
-                    a.notes.startsWith('Sent:') &&
-                    a.carrier === receivedEmail.carrier &&
-                    a.conversationId
-                );
-
-                if (sentEmail) {
-                    // Extract subject from sent email
                     const sentLines = sentEmail.notes.split('\n');
                     const sentSubject = sentLines[0].replace('Sent: ', '').trim();
                     const normalizedSentSubject = normalizeSubject(sentSubject);
 
-                    // Check if subjects match
-                    if (normalizedReceivedSubject === normalizedSentSubject) {
-                        receivedEmail.conversationId = sentEmail.conversationId;
-                        backfillCount++;
-                        console.log(`Matched: "${receivedSubject}" -> conversationId: ${sentEmail.conversationId}`);
+                    return normalizedRecSubject === normalizedSentSubject;
+                });
+
+                if (matchingSent) {
+                    receivedEmail.conversationId = matchingSent.conversationId;
+                    backfillCount++;
+                    console.log(`✓ Received email "${recSubject}" matched with sent -> conversationId: ${matchingSent.conversationId.substring(0, 30)}...`);
+
+                    // Save to Firebase
+                    if (firestore && currentUser) {
+                        saveActivityToFirebase(receivedEmail).catch(err => console.error('Save error:', err));
                     }
                 }
             });
 
             if (backfillCount > 0) {
-                console.log(`Backfilled ${backfillCount} conversation IDs`);
-                saveActivitiesToFirebase();
+                console.log(`=== Backfill Complete: ${backfillCount} conversation IDs added ===`);
             } else {
                 console.log('No conversation IDs to backfill');
             }
