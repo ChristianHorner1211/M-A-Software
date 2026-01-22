@@ -488,7 +488,7 @@ function renderActivityLog() {
         return;
     }
 
-    const acquisitionActivities = activities.filter(a => a.acquisitionId === currentAcquisitionId);
+    const acquisitionActivities = activities.filter(a => a.acquisitionId === currentAcquisitionId && a.type !== 'email');
 
     if (acquisitionActivities.length === 0) {
         activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No activities yet</div></div>';
