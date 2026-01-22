@@ -3295,8 +3295,9 @@ Mergers & Acquisitions Team`
                                     date: activity.timestamp
                                 });
 
-                                // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes and trim
+                                // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes, bracketed tags like [EXTERNAL], and trim
                                 const normalizedSubject = subjectLine
+                                    .replace(/^\[.*?\]\s*/g, '')  // Remove bracketed tags like [EXTERNAL]
                                     .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
                                     .trim()
                                     .toLowerCase();
@@ -3390,8 +3391,9 @@ Mergers & Acquisitions Team`
                     }
                     console.log(`  ✓ Sender is a carrier contact`);
 
-                    // Normalize the subject
+                    // Normalize the subject: remove bracketed tags like [EXTERNAL], Re:/Fwd: prefixes
                     const normalizedSubject = email.subject
+                        .replace(/^\[.*?\]\s*/g, '')  // Remove bracketed tags like [EXTERNAL]
                         .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
                         .trim()
                         .toLowerCase();
