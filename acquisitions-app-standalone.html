@@ -3171,7 +3171,7 @@ Mergers & Acquisitions Team`
                 }
 
                 // Delete from Firebase if connected (do this FIRST before removing from local array)
-                if (firebaseConnected && firestore) {
+                if (firestore && currentUser) {
                     console.log('Deleting from Firebase...');
                     let deletedCount = 0;
 
