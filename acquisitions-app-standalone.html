@@ -2368,13 +2368,6 @@ Mergers & Acquisitions Team`
                 body += '\n\n' + appSettings.emailSignature;
             }
 
-            // Create attachment info string for activity log
-            let attachmentInfo = '';
-            if (emailAttachments.length > 0) {
-                const attachmentNames = emailAttachments.map(a => a.name).join(', ');
-                attachmentInfo = `\nAttachments (${emailAttachments.length}): ${attachmentNames}`;
-            }
-
             // Get selected carriers
             const selectedCarriers = [];
             document.querySelectorAll('#carrierCheckboxes input:checked').forEach(checkbox => {
@@ -2488,7 +2481,7 @@ Mergers & Acquisitions Team`
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                    notes: `Sent: ${subject}\n${recipientInfo}`,
                                     attachments: [...emailAttachments],
                                     conversationId: conversationId  // Store for reply tracking
                                 });
@@ -2500,7 +2493,7 @@ Mergers & Acquisitions Team`
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                    notes: `Sent: ${subject}\n${recipientInfo}`,
                                     attachments: [...emailAttachments]
                                 });
                             }
@@ -2536,7 +2529,7 @@ Mergers & Acquisitions Team`
                             type: 'email',
                             contact: carrierEmails[0] || 'Unknown',
                             carrier: carrier.name,
-                            notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                            notes: `Draft: ${subject}\n${recipientInfo}`,
                             attachments: [...emailAttachments]
                         });
                     });
@@ -2557,7 +2550,7 @@ Mergers & Acquisitions Team`
                         type: 'email',
                         contact: carrierEmails[0] || 'Unknown',
                         carrier: carrier.name,
-                        notes: `Draft: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                        notes: `Draft: ${subject}\n${recipientInfo}`,
                         attachments: [...emailAttachments]
                     });
                 });
