@@ -1331,6 +1331,9 @@
                             <button class="btn btn-secondary btn-small" onclick="syncOutlookEmails()">
                                 Sync Emails
                             </button>
+                            <button class="btn btn-warning btn-small" onclick="clearSyncedEmails()">
+                                Clear Synced Emails
+                            </button>
                             <button class="btn btn-danger btn-small" onclick="disconnectOutlook()">
                                 Disconnect
                             </button>
@@ -3110,59 +3113,8 @@ Mergers & Acquisitions Team`
         }
 
         async function syncOutlookEmails() {
-            if (!appSettings.outlook.connected || !msalInstance) {
-                alert('Please connect your Outlook account first');
-                return;
-            }
-
-            try {
-                const token = await getAccessToken();
-                const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
-                if (!acquisition) {
-                    alert('Please select an acquisition first');
-                    return;
-                }
-
-                // Get email addresses for this acquisition's carriers
-                const carrierEmails = acquisition.carriers.map(c => c.repEmail);
-
-                // Fetch recent emails from these addresses
-                const filter = carrierEmails.map(email => `from/emailAddress/address eq '${email}'`).join(' or ');
-                const url = `https://graph.microsoft.com/v1.0/me/messages?$filter=${encodeURIComponent(filter)}&$top=50&$orderby=receivedDateTime desc`;
-
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    let importedCount = 0;
-
-                    for (const email of data.value) {
-                        const from = email.from.emailAddress.address;
-                        const carrier = acquisition.carriers.find(c => c.repEmail === from);
-
-                        if (carrier) {
-                            addActivityLog({
-                                type: 'email',
-                                contact: from,
-                                carrier: carrier.name,
-                                notes: `Received: ${email.subject}\n\n${email.bodyPreview}`
-                            });
-                            importedCount++;
-                        }
-                    }
-
-                    alert(`Email sync complete!\n\nImported ${importedCount} email(s) to activity log.`);
-                } else {
-                    alert('Failed to sync emails. Please try again.');
-                }
-            } catch (error) {
-                console.error('Email sync error:', error);
-                alert('Email sync failed: ' + error.message);
-            }
+            // Just call the main syncEmails function
+            await syncEmails();
         }
 
         async function getAccessToken() {
@@ -3190,6 +3142,60 @@ Mergers & Acquisitions Team`
             }
         }
 
+        async function clearSyncedEmails() {
+            if (!confirm('This will remove all synced emails from your activity log. Emails you manually sent will NOT be removed. Are you sure?')) {
+                return;
+            }
+
+            try {
+                // Find all synced email activities (those with "Received:" in notes)
+                const syncedEmails = activities.filter(activity =>
+                    activity.type === 'email' &&
+                    activity.notes &&
+                    activity.notes.startsWith('Received:')
+                );
+
+                if (syncedEmails.length === 0) {
+                    alert('No synced emails found to clear.');
+                    return;
+                }
+
+                // Remove from activities array
+                activities = activities.filter(activity =>
+                    !(activity.type === 'email' && activity.notes && activity.notes.startsWith('Received:'))
+                );
+
+                // Delete from Firebase if connected
+                if (firebaseConnected && firestore) {
+                    for (const email of syncedEmails) {
+                        try {
+                            const q = firestore.collection('activities')
+                                .where('acquisitionId', '==', email.acquisitionId)
+                                .where('timestamp', '==', email.timestamp)
+                                .where('type', '==', 'email')
+                                .where('carrier', '==', email.carrier);
+
+                            const snapshot = await q.get();
+                            snapshot.forEach(async (doc) => {
+                                await doc.ref.delete();
+                            });
+                        } catch (err) {
+                            console.error('Error deleting activity from Firebase:', err);
+                        }
+                    }
+                }
+
+                // Refresh the UI
+                renderActivityLog();
+
+                alert(`Cleared ${syncedEmails.length} synced email(s) from your activity log.`);
+
+            } catch (error) {
+                console.error('Error clearing synced emails:', error);
+                alert('Failed to clear synced emails: ' + error.message);
+            }
+        }
+
         async function syncEmails() {
             if (!appSettings.outlook.connected || !msalInstance) {
                 alert('Please connect Outlook in Settings first');
@@ -3209,11 +3215,9 @@ Mergers & Acquisitions Team`
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 const filterDate = lastSync ? new Date(lastSync) : thirtyDaysAgo;
-
-                // Format date for Microsoft Graph filter (ISO 8601)
                 const filterDateString = filterDate.toISOString();
 
-                // Build a list of all carrier email addresses
+                // Build a map of carrier email addresses
                 const carrierEmailMap = new Map(); // email -> [{acquisition, carrier}]
                 for (const acquisition of acquisitions) {
                     for (const carrier of acquisition.carriers) {
@@ -3231,9 +3235,9 @@ Mergers & Acquisitions Team`
                     }
                 }
 
-                // Step 1: Get conversation IDs from Sent Items to carrier contacts
+                // Step 1: Get sent emails to build a list of subjects we initiated
                 const sentItemsResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=200&$select=conversationId,toRecipients,sentDateTime`,
+                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=500&$select=subject,toRecipients,sentDateTime`,
                     {
                         headers: {
                             'Authorization': 'Bearer ' + token,
@@ -3249,40 +3253,49 @@ Mergers & Acquisitions Team`
                 const sentData = await sentItemsResponse.json();
                 const sentEmails = sentData.value;
 
-                // Collect conversation IDs where we sent emails to carrier contacts
-                const relevantConversationIds = new Set();
+                // Build a set of subjects we sent to carriers (normalized)
+                const sentSubjects = new Set();
                 for (const sentEmail of sentEmails) {
                     if (sentEmail.toRecipients && sentEmail.toRecipients.length > 0) {
                         const hasCarrierRecipient = sentEmail.toRecipients.some(recipient =>
                             carrierEmailMap.has(recipient.emailAddress.address.toLowerCase())
                         );
-                        if (hasCarrierRecipient && sentEmail.conversationId) {
-                            relevantConversationIds.add(sentEmail.conversationId);
+                        if (hasCarrierRecipient && sentEmail.subject) {
+                            // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes and trim
+                            const normalizedSubject = sentEmail.subject
+                                .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
+                                .trim()
+                                .toLowerCase();
+                            if (normalizedSubject) {
+                                sentSubjects.add(normalizedSubject);
+                            }
                         }
                     }
                 }
 
-                if (relevantConversationIds.size === 0) {
+                if (sentSubjects.size === 0) {
                     alert('No sent emails found to carriers. Nothing to sync.');
                     appSettings.outlook.lastEmailSync = new Date().toISOString();
                     saveSettings();
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
                     return;
                 }
 
-                // Step 2: Fetch inbox emails that are part of these conversations
+                // Step 2: Get inbox emails from carrier contacts
                 let newEmailsCount = 0;
 
-                // We need to fetch in batches since conversationId filter can get long
-                const conversationIdArray = Array.from(relevantConversationIds);
-                const batchSize = 20; // Process 20 conversations at a time
+                // Build filter for emails from any carrier
+                const carrierEmails = Array.from(carrierEmailMap.keys());
+                const batchSize = 25; // Process in batches to avoid URL length limits
 
-                for (let i = 0; i < conversationIdArray.length; i += batchSize) {
-                    const batch = conversationIdArray.slice(i, i + batchSize);
-                    const conversationFilter = batch.map(id => `conversationId eq '${id}'`).join(' or ');
-                    const fullFilter = `(${conversationFilter}) and receivedDateTime ge ${filterDateString}`;
+                for (let i = 0; i < carrierEmails.length; i += batchSize) {
+                    const batch = carrierEmails.slice(i, i + batchSize);
+                    const fromFilter = batch.map(email => `from/emailAddress/address eq '${email}'`).join(' or ');
+                    const fullFilter = `(${fromFilter}) and receivedDateTime ge ${filterDateString}`;
 
                     const inboxResponse = await fetch(
-                        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=${encodeURIComponent(fullFilter)}&$top=200&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments,conversationId`,
+                        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=${encodeURIComponent(fullFilter)}&$top=500&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments`,
                         {
                             headers: {
                                 'Authorization': 'Bearer ' + token,
@@ -3302,13 +3315,27 @@ Mergers & Acquisitions Team`
                     // Process each email
                     for (const email of emails) {
                         const senderEmail = email.from?.emailAddress?.address;
-                        if (!senderEmail) continue;
+                        if (!senderEmail || !email.subject) continue;
+
+                        // Normalize the subject
+                        const normalizedSubject = email.subject
+                            .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
+                            .trim()
+                            .toLowerCase();
+
+                        // Check if this email is a reply to something we sent
+                        // (subject matches one we sent, or email has Re: in the subject)
+                        const isReply = sentSubjects.has(normalizedSubject) || /^(Re:|RE:)\s+/i.test(email.subject);
+
+                        if (!isReply) {
+                            continue; // Skip emails that aren't replies to our sent emails
+                        }
 
                         const senderEmailLower = senderEmail.toLowerCase();
                         const matches = carrierEmailMap.get(senderEmailLower);
 
                         if (matches) {
-                            // This email is from a carrier contact in a conversation we initiated
+                            // This is a reply from a carrier contact
                             for (const match of matches) {
                                 const { acquisition, carrier } = match;
 
@@ -3355,7 +3382,7 @@ Mergers & Acquisitions Team`
                     renderCarrierEmailHistory();
                 }
 
-                alert(`Sync complete! Found ${newEmailsCount} new email(s) in ${relevantConversationIds.size} conversation(s).`);
+                alert(`Sync complete! Found ${newEmailsCount} new reply email(s) from carriers.`);
 
             } catch (error) {
                 console.error('Email sync error:', error);
