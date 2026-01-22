@@ -3251,17 +3251,7 @@ Mergers & Acquisitions Team`
             try {
                 const token = await getAccessToken();
 
-                // Get emails from last 30 days or since last sync
-                const lastSync = appSettings.outlook.lastEmailSync;
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                const filterDate = lastSync ? new Date(lastSync) : thirtyDaysAgo;
-                const filterDateString = filterDate.toISOString();
-
                 console.log('=== Email Sync Debug ===');
-                console.log('Last sync timestamp:', lastSync);
-                console.log('Filter date:', filterDateString);
-                console.log('Looking for emails sent after:', filterDate.toLocaleString());
 
                 // Build a map of carrier email addresses
                 const carrierEmailMap = new Map(); // email -> [{acquisition, carrier}]
@@ -3336,6 +3326,26 @@ Mergers & Acquisitions Team`
                     syncBtn.disabled = false;
                     return;
                 }
+
+                // Calculate filter date: look back to earliest sent email, with 30-day max
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                // Find the earliest sent email date
+                let earliestSentDate = new Date();
+                for (const email of sentFromApp) {
+                    const emailDate = new Date(email.date);
+                    if (emailDate < earliestSentDate) {
+                        earliestSentDate = emailDate;
+                    }
+                }
+
+                // Use the earlier of: earliest sent date or 30 days ago
+                const filterDate = earliestSentDate < thirtyDaysAgo ? thirtyDaysAgo : earliestSentDate;
+                const filterDateString = filterDate.toISOString();
+
+                console.log('Earliest sent email date:', earliestSentDate.toLocaleString());
+                console.log('Filter date (looking back to):', filterDate.toLocaleString());
 
                 // Step 2: Get ALL inbox emails and filter in code
                 let newEmailsCount = 0;
