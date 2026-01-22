@@ -3393,11 +3393,12 @@ Mergers & Acquisitions Team`
             // Normalize subject (remove Re:/RE:/Fwd:/FW: and [EXTERNAL] tags)
             const normalizeSubject = (subject) => {
                 return subject
-                    .replace(/^(Re|RE|Fwd|FW):\s*/gi, '')
-                    .replace(/\[EXTERNAL\]/gi, '')
-                    .replace(/\s+/g, ' ')
-                    .trim()
-                    .toLowerCase();
+                    .replace(/\[EXTERNAL\]/gi, '')  // Remove [EXTERNAL] first
+                    .trim()  // Trim so Re: is at the start
+                    .replace(/^(Re|RE|Fwd|FW):\s*/gi, '')  // Now remove Re:/Fwd: from start
+                    .replace(/\s+/g, ' ')  // Collapse multiple spaces
+                    .trim()  // Trim again
+                    .toLowerCase();  // Finally lowercase
             };
 
             // Get all sent and received emails
