@@ -3418,13 +3418,29 @@ Mergers & Acquisitions Team`
                 const sentSubject = sentLines[0].replace('Sent: ', '').trim();
                 const normalizedSentSubject = normalizeSubject(sentSubject);
 
+                console.log(`\nTrying to match SENT: "${sentSubject}"`);
+                console.log(`  Normalized: "${normalizedSentSubject}"`);
+                console.log(`  Carrier: ${sentEmail.carrier}`);
+
                 // Find matching received email with conversationId
+                let matchAttempts = 0;
                 const matchingReceived = receivedEmails.find(recEmail => {
-                    if (!recEmail.conversationId || recEmail.carrier !== sentEmail.carrier) return false;
+                    if (!recEmail.conversationId) {
+                        return false;
+                    }
+
+                    if (recEmail.carrier !== sentEmail.carrier) {
+                        return false;
+                    }
 
                     const recLines = recEmail.notes.split('\n');
                     const recSubject = recLines[0].replace('Received: ', '').trim();
                     const normalizedRecSubject = normalizeSubject(recSubject);
+
+                    matchAttempts++;
+                    console.log(`  Comparing with RECEIVED #${matchAttempts}: "${recSubject}"`);
+                    console.log(`    Normalized: "${normalizedRecSubject}"`);
+                    console.log(`    Match: ${normalizedSentSubject === normalizedRecSubject}`);
 
                     return normalizedSentSubject === normalizedRecSubject;
                 });
@@ -3432,12 +3448,14 @@ Mergers & Acquisitions Team`
                 if (matchingReceived) {
                     sentEmail.conversationId = matchingReceived.conversationId;
                     backfillCount++;
-                    console.log(`✓ Sent email "${sentSubject}" matched with received -> conversationId: ${matchingReceived.conversationId.substring(0, 30)}...`);
+                    console.log(`✓ MATCHED! Assigned conversationId: ${matchingReceived.conversationId.substring(0, 30)}...`);
 
                     // Save to Firebase
                     if (firestore && currentUser) {
                         saveActivityToFirebase(sentEmail).catch(err => console.error('Save error:', err));
                     }
+                } else {
+                    console.log(`✗ No match found after ${matchAttempts} attempts`);
                 }
             });
 
