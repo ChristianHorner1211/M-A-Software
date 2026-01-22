@@ -2444,15 +2444,53 @@ Mergers & Acquisitions Team`
 
                         if (response.ok || response.status === 202) {
                             sentCount++;
-                            // Log activity for this carrier
-                            const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                            addActivityLog({
-                                type: 'email',
-                                contact: carrierEmails[0],
-                                carrier: carrier.name,
-                                notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
-                                attachments: [...emailAttachments]
-                            });
+
+                            // Wait a moment for email to appear in sent items, then fetch conversationId
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+
+                            try {
+                                // Get the sent email to retrieve conversationId for tracking replies
+                                const sentEmailsResponse = await fetch(
+                                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=subject eq '${subject.replace(/'/g, "''")}'&$top=1&$select=conversationId&$orderby=sentDateTime desc`,
+                                    {
+                                        headers: {
+                                            'Authorization': 'Bearer ' + token,
+                                            'Content-Type': 'application/json'
+                                        }
+                                    }
+                                );
+
+                                let conversationId = null;
+                                if (sentEmailsResponse.ok) {
+                                    const sentData = await sentEmailsResponse.json();
+                                    if (sentData.value && sentData.value.length > 0) {
+                                        conversationId = sentData.value[0].conversationId;
+                                        console.log('Captured conversationId:', conversationId, 'for subject:', subject);
+                                    }
+                                }
+
+                                // Log activity for this carrier with conversationId
+                                const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                                addActivityLog({
+                                    type: 'email',
+                                    contact: carrierEmails[0],
+                                    carrier: carrier.name,
+                                    notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                    attachments: [...emailAttachments],
+                                    conversationId: conversationId  // Store for reply tracking
+                                });
+                            } catch (err) {
+                                console.error('Failed to get conversationId:', err);
+                                // Still log the activity even if we couldn't get conversationId
+                                const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                                addActivityLog({
+                                    type: 'email',
+                                    contact: carrierEmails[0],
+                                    carrier: carrier.name,
+                                    notes: `Sent: ${subject}\n${recipientInfo}${attachmentInfo}`,
+                                    attachments: [...emailAttachments]
+                                });
+                            }
                         } else {
                             failedCarriers.push(carrier.name);
                             console.error('Failed to send email to', carrier.name);
@@ -3273,8 +3311,9 @@ Mergers & Acquisitions Team`
 
                 console.log('Carrier email addresses:', Array.from(carrierEmailMap.keys()));
 
-                // Step 1: Get subjects from emails sent through THIS APP (not all Outlook emails)
+                // Step 1: Get conversation IDs and subjects from emails sent through THIS APP
                 console.log('Checking emails sent through this app...');
+                const sentConversationIds = new Set();
                 const sentSubjects = new Set();
                 const sentFromApp = [];
 
@@ -3284,6 +3323,11 @@ Mergers & Acquisitions Team`
                         activity.notes &&
                         activity.notes.startsWith('Sent:')) {
 
+                        // Store conversationId if available (more reliable than subject matching)
+                        if (activity.conversationId) {
+                            sentConversationIds.add(activity.conversationId);
+                        }
+
                         // Extract subject from notes (format: "Sent: SUBJECT\n...")
                         const lines = activity.notes.split('\n');
                         if (lines.length > 0) {
@@ -3292,7 +3336,8 @@ Mergers & Acquisitions Team`
                                 sentFromApp.push({
                                     subject: subjectLine,
                                     carrier: activity.carrier,
-                                    date: activity.timestamp
+                                    date: activity.timestamp,
+                                    conversationId: activity.conversationId || null
                                 });
 
                                 // Normalize subject: remove Re:/RE:/Fwd:/FW: prefixes, bracketed tags like [EXTERNAL], and trim
@@ -3311,14 +3356,16 @@ Mergers & Acquisitions Team`
 
                 console.log('=== Emails Sent Through This App ===');
                 sentFromApp.forEach((email, index) => {
-                    console.log(`${index + 1}. "${email.subject}" to ${email.carrier} (${email.date})`);
+                    console.log(`${index + 1}. "${email.subject}" to ${email.carrier} (${email.date})${email.conversationId ? ' [ConvID: ' + email.conversationId.substring(0, 20) + '...]' : ' [No ConvID]'}`);
                 });
+                console.log('\n=== Conversation IDs We\'re Tracking ===');
+                console.log('Count:', sentConversationIds.size);
                 console.log('\n=== Normalized Subjects We\'re Looking For ===');
                 Array.from(sentSubjects).forEach((subject, index) => {
                     console.log(`${index + 1}. "${subject}"`);
                 });
 
-                if (sentSubjects.size === 0) {
+                if (sentSubjects.size === 0 && sentConversationIds.size === 0) {
                     console.log('No emails sent through this app found');
                     alert('No sent emails found.\n\nYou must send emails through this app first before syncing replies.\n\nCheck browser console (F12) for details.');
                     appSettings.outlook.lastEmailSync = new Date().toISOString();
@@ -3353,7 +3400,7 @@ Mergers & Acquisitions Team`
                 console.log('Fetching all inbox emails...');
 
                 const inboxResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments&$orderby=receivedDateTime desc`,
+                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
                     {
                         headers: {
                             'Authorization': 'Bearer ' + token,
@@ -3383,6 +3430,7 @@ Mergers & Acquisitions Team`
 
                     const senderEmailLower = senderEmail.toLowerCase();
                     console.log(`\nChecking email: "${email.subject}" from ${senderEmail} (${email.receivedDateTime})`);
+                    console.log(`  ConversationId: ${email.conversationId || 'N/A'}`);
 
                     // Check if sender is a carrier contact
                     if (!carrierEmailMap.has(senderEmailLower)) {
@@ -3391,7 +3439,16 @@ Mergers & Acquisitions Team`
                     }
                     console.log(`  ✓ Sender is a carrier contact`);
 
-                    // Normalize the subject: remove bracketed tags like [EXTERNAL], Re:/Fwd: prefixes
+                    // Check if this email is a reply to something we sent
+                    // Method 1 (preferred): Check conversationId - more reliable, works even if subject changed
+                    let isReplyByConversation = false;
+                    if (email.conversationId && sentConversationIds.has(email.conversationId)) {
+                        isReplyByConversation = true;
+                        console.log(`  ✓ ConversationId matches a sent email! (Most reliable match)`);
+                    }
+
+                    // Method 2 (fallback): Check subject - for backwards compatibility with old emails
+                    let isReplyBySubject = false;
                     const normalizedSubject = email.subject
                         .replace(/^\[.*?\]\s*/g, '')  // Remove bracketed tags like [EXTERNAL]
                         .replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '')
@@ -3399,16 +3456,17 @@ Mergers & Acquisitions Team`
                         .toLowerCase();
                     console.log(`  Normalized subject: "${normalizedSubject}"`);
 
-                    // Check if this email is a reply to something we sent
-                    // Only import if the normalized subject matches something we actually sent
-                    const isReply = sentSubjects.has(normalizedSubject);
-
-                    if (!isReply) {
-                        console.log(`  ✗ Subject not found in sent emails. Sent subjects are:`, Array.from(sentSubjects));
-                        continue;
+                    if (sentSubjects.has(normalizedSubject)) {
+                        isReplyBySubject = true;
+                        console.log(`  ✓ Subject matches a sent email`);
                     }
 
-                    console.log(`  ✓ Found reply matching sent subject!`);
+                    const isReply = isReplyByConversation || isReplyBySubject;
+
+                    if (!isReply) {
+                        console.log(`  ✗ No match found (checked conversationId and subject)`);
+                        continue;
+                    }
 
                     const matches = carrierEmailMap.get(senderEmailLower);
 
