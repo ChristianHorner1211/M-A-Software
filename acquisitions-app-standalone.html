@@ -2780,6 +2780,9 @@ Mergers & Acquisitions Team`
             const emailHistoryList = document.getElementById('carrierEmailHistory');
             emailHistoryList.innerHTML = '';
 
+            // Backfill conversation IDs for any received emails that are missing them
+            backfillConversationIds();
+
             // Filter activities for this acquisition, this carrier, and only emails
             const carrierEmails = activities.filter(a =>
                 a.acquisitionId === currentAcquisitionId &&
@@ -3380,6 +3383,71 @@ Mergers & Acquisitions Team`
                 saveSettings();
                 alert('Last sync date has been reset. The next sync will look back 30 days.');
             }
+        }
+
+        // Backfill conversationId for existing received emails by matching with sent emails
+        function backfillConversationIds() {
+            console.log('=== Backfilling Conversation IDs ===');
+            let backfillCount = 0;
+
+            // Find all received emails without conversationId
+            const receivedWithoutConvId = activities.filter(a =>
+                a.type === 'email' &&
+                a.notes &&
+                a.notes.startsWith('Received:') &&
+                !a.conversationId
+            );
+
+            console.log(`Found ${receivedWithoutConvId.length} received emails without conversationId`);
+
+            receivedWithoutConvId.forEach(receivedEmail => {
+                // Extract subject from received email (format: "Received: SUBJECT\n...")
+                const receivedLines = receivedEmail.notes.split('\n');
+                const receivedSubject = receivedLines[0].replace('Received: ', '').trim();
+
+                // Normalize subject (remove Re:/RE:/Fwd:/FW: and [EXTERNAL] tags)
+                const normalizeSubject = (subject) => {
+                    return subject
+                        .replace(/^(Re|RE|Fwd|FW):\s*/i, '')
+                        .replace(/\[EXTERNAL\]/gi, '')
+                        .trim()
+                        .toLowerCase();
+                };
+
+                const normalizedReceivedSubject = normalizeSubject(receivedSubject);
+
+                // Find corresponding sent email with matching subject and carrier
+                const sentEmail = activities.find(a =>
+                    a.type === 'email' &&
+                    a.notes &&
+                    a.notes.startsWith('Sent:') &&
+                    a.carrier === receivedEmail.carrier &&
+                    a.conversationId
+                );
+
+                if (sentEmail) {
+                    // Extract subject from sent email
+                    const sentLines = sentEmail.notes.split('\n');
+                    const sentSubject = sentLines[0].replace('Sent: ', '').trim();
+                    const normalizedSentSubject = normalizeSubject(sentSubject);
+
+                    // Check if subjects match
+                    if (normalizedReceivedSubject === normalizedSentSubject) {
+                        receivedEmail.conversationId = sentEmail.conversationId;
+                        backfillCount++;
+                        console.log(`Matched: "${receivedSubject}" -> conversationId: ${sentEmail.conversationId}`);
+                    }
+                }
+            });
+
+            if (backfillCount > 0) {
+                console.log(`Backfilled ${backfillCount} conversation IDs`);
+                saveActivitiesToFirebase();
+            } else {
+                console.log('No conversation IDs to backfill');
+            }
+
+            return backfillCount;
         }
 
         async function syncEmails() {
