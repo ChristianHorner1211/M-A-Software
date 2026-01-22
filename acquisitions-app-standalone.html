@@ -2827,94 +2827,91 @@ Mergers & Acquisitions Team`
                 const hasReplies = threadEmails.length > 1;
                 const replyCount = threadEmails.length - 1;
 
-                // Create collapsed view (initial sent email)
+                // Extract subject from sent email notes (format: "Sent: SUBJECT\n...")
+                const sentEmailLines = sentEmail.notes.split('\n');
+                const subjectLine = sentEmailLines[0].replace('Sent: ', '');
+
+                // Create collapsed view (just subject line)
                 const date = new Date(sentEmail.timestamp);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 
-                let attachmentHTML = '';
-                if (sentEmail.attachments && sentEmail.attachments.length > 0) {
-                    const attachmentNames = sentEmail.attachments.map(a => `<span style="background: #e8eef3; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 5px;">📎 ${a.name}</span>`).join('');
-                    attachmentHTML = `<div style="margin-top: 8px;">${attachmentNames}</div>`;
-                }
-
                 const collapsedView = document.createElement('div');
                 collapsedView.className = 'email-thread-collapsed';
+                collapsedView.style.cursor = 'pointer';
                 collapsedView.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            ${hasReplies ? `<span class="thread-arrow" style="cursor: pointer; user-select: none; transition: transform 0.2s; display: inline-block;">▶</span>` : ''}
-                            <span style="font-weight: 600; color: #2c3e50;">✉ Email</span>
-                            <span style="color: #7f8c8d; font-size: 12px;">${formattedDate}</span>
-                            ${hasReplies ? `<span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                            <span class="thread-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 14px; color: #7f8c8d;">▶</span>
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span style="font-weight: 600; color: #2c3e50; font-size: 14px;">${subjectLine}</span>
+                                    ${hasReplies ? `<span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
+                                </div>
+                                <div style="color: #7f8c8d; font-size: 12px;">
+                                    ${formattedDate} • To: ${sentEmail.contact}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div style="color: #555; margin-bottom: 4px;">
-                        <strong>To:</strong> ${sentEmail.contact}
-                    </div>
-                    <div style="color: #555; white-space: pre-wrap;">${sentEmail.notes}</div>
-                    ${attachmentHTML}
                 `;
 
                 threadContainer.appendChild(collapsedView);
 
-                // Create expanded view (all emails in thread)
-                if (hasReplies) {
-                    const expandedView = document.createElement('div');
-                    expandedView.className = 'email-thread-expanded';
-                    expandedView.style.display = 'none';
-                    expandedView.style.marginTop = '15px';
-                    expandedView.style.paddingLeft = '25px';
-                    expandedView.style.borderLeft = '3px solid #3498db';
+                // Create expanded view (all emails in thread with full details)
+                const expandedView = document.createElement('div');
+                expandedView.className = 'email-thread-expanded';
+                expandedView.style.display = 'none';
+                expandedView.style.marginTop = '15px';
+                expandedView.style.paddingLeft = '25px';
+                expandedView.style.borderLeft = '3px solid #3498db';
 
-                    threadEmails.forEach(email => {
-                        const emailDate = new Date(email.timestamp);
-                        const emailFormattedDate = emailDate.toLocaleDateString() + ' ' + emailDate.toLocaleTimeString();
+                threadEmails.forEach(email => {
+                    const emailDate = new Date(email.timestamp);
+                    const emailFormattedDate = emailDate.toLocaleDateString() + ' ' + emailDate.toLocaleTimeString();
 
-                        const isSent = email.notes && email.notes.startsWith('Sent:');
-                        const isReceived = email.notes && email.notes.startsWith('Received:');
+                    const isSent = email.notes && email.notes.startsWith('Sent:');
+                    const isReceived = email.notes && email.notes.startsWith('Received:');
 
-                        let emailAttachmentHTML = '';
-                        if (email.attachments && email.attachments.length > 0) {
-                            const attachmentNames = email.attachments.map(a => `<span style="background: #e8eef3; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 5px;">📎 ${a.name}</span>`).join('');
-                            emailAttachmentHTML = `<div style="margin-top: 8px;">${attachmentNames}</div>`;
-                        }
-
-                        const emailDiv = document.createElement('div');
-                        emailDiv.style.marginBottom = '15px';
-                        emailDiv.style.padding = '12px';
-                        emailDiv.style.background = isSent ? '#f8f9fa' : '#e8f4f8';
-                        emailDiv.style.borderRadius = '6px';
-                        emailDiv.style.border = isSent ? '1px solid #dee2e6' : '1px solid #3498db';
-
-                        emailDiv.innerHTML = `
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                                <div>
-                                    <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : '#2980b9'};">${isSent ? '📤 Sent' : '📥 Received'}</span>
-                                    <span style="color: #7f8c8d; font-size: 12px; margin-left: 10px;">${emailFormattedDate}</span>
-                                </div>
-                            </div>
-                            <div style="color: #555; margin-bottom: 4px;">
-                                <strong>${isSent ? 'To' : 'From'}:</strong> ${email.contact}
-                            </div>
-                            <div style="color: #555; white-space: pre-wrap;">${email.notes}</div>
-                            ${emailAttachmentHTML}
-                        `;
-
-                        expandedView.appendChild(emailDiv);
-                    });
-
-                    threadContainer.appendChild(expandedView);
-
-                    // Add click handler to toggle expansion
-                    const arrow = collapsedView.querySelector('.thread-arrow');
-                    if (arrow) {
-                        collapsedView.style.cursor = 'pointer';
-                        collapsedView.addEventListener('click', () => {
-                            const isExpanded = expandedView.style.display !== 'none';
-                            expandedView.style.display = isExpanded ? 'none' : 'block';
-                            arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
-                        });
+                    let emailAttachmentHTML = '';
+                    if (email.attachments && email.attachments.length > 0) {
+                        const attachmentNames = email.attachments.map(a => `<span style="background: #e8eef3; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 5px;">📎 ${a.name}</span>`).join('');
+                        emailAttachmentHTML = `<div style="margin-top: 8px;">${attachmentNames}</div>`;
                     }
+
+                    const emailDiv = document.createElement('div');
+                    emailDiv.style.marginBottom = '15px';
+                    emailDiv.style.padding = '12px';
+                    emailDiv.style.background = isSent ? '#f8f9fa' : '#e8f4f8';
+                    emailDiv.style.borderRadius = '6px';
+                    emailDiv.style.border = isSent ? '1px solid #dee2e6' : '1px solid #3498db';
+
+                    emailDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : '#2980b9'};">${isSent ? '📤 Sent' : '📥 Received'}</span>
+                                <span style="color: #7f8c8d; font-size: 12px; margin-left: 10px;">${emailFormattedDate}</span>
+                            </div>
+                        </div>
+                        <div style="color: #555; margin-bottom: 4px;">
+                            <strong>${isSent ? 'To' : 'From'}:</strong> ${email.contact}
+                        </div>
+                        <div style="color: #555; white-space: pre-wrap;">${email.notes}</div>
+                        ${emailAttachmentHTML}
+                    `;
+
+                    expandedView.appendChild(emailDiv);
+                });
+
+                threadContainer.appendChild(expandedView);
+
+                // Add click handler to toggle expansion
+                const arrow = collapsedView.querySelector('.thread-arrow');
+                if (arrow) {
+                    collapsedView.addEventListener('click', () => {
+                        const isExpanded = expandedView.style.display !== 'none';
+                        expandedView.style.display = isExpanded ? 'none' : 'block';
+                        arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+                    });
                 }
 
                 emailHistoryList.appendChild(threadContainer);
