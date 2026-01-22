@@ -1334,10 +1334,16 @@
                             <button class="btn btn-warning btn-small" onclick="clearSyncedEmails()">
                                 Clear Synced Emails
                             </button>
+                            <button class="btn btn-secondary btn-small" onclick="resetLastSyncDate()" style="background: #95a5a6;">
+                                Reset Sync Date
+                            </button>
                             <button class="btn btn-danger btn-small" onclick="disconnectOutlook()">
                                 Disconnect
                             </button>
                         </div>
+                        <p style="font-size: 12px; color: #7f8c8d; margin-top: 15px;">
+                            <strong>Tip:</strong> If sync isn't finding your emails, try clicking "Reset Sync Date" then "Sync Emails" again.
+                        </p>
                     </div>
                 </div>
 
@@ -3148,6 +3154,8 @@ Mergers & Acquisitions Team`
             }
 
             try {
+                console.log('Starting to clear synced emails...');
+
                 // Find all synced email activities (those with "Received:" in notes)
                 const syncedEmails = activities.filter(activity =>
                     activity.type === 'email' &&
@@ -3155,35 +3163,57 @@ Mergers & Acquisitions Team`
                     activity.notes.startsWith('Received:')
                 );
 
+                console.log('Found', syncedEmails.length, 'synced emails to clear');
+
                 if (syncedEmails.length === 0) {
                     alert('No synced emails found to clear.');
                     return;
                 }
 
-                // Remove from activities array
-                activities = activities.filter(activity =>
-                    !(activity.type === 'email' && activity.notes && activity.notes.startsWith('Received:'))
-                );
-
-                // Delete from Firebase if connected
+                // Delete from Firebase if connected (do this FIRST before removing from local array)
                 if (firebaseConnected && firestore) {
+                    console.log('Deleting from Firebase...');
+                    let deletedCount = 0;
+
                     for (const email of syncedEmails) {
                         try {
+                            // Query for matching documents
                             const q = firestore.collection('activities')
+                                .where('type', '==', 'email')
                                 .where('acquisitionId', '==', email.acquisitionId)
                                 .where('timestamp', '==', email.timestamp)
-                                .where('type', '==', 'email')
-                                .where('carrier', '==', email.carrier);
+                                .where('carrier', '==', email.carrier)
+                                .where('contact', '==', email.contact);
 
                             const snapshot = await q.get();
-                            snapshot.forEach(async (doc) => {
-                                await doc.ref.delete();
+
+                            // Delete all matching documents
+                            const deletePromises = [];
+                            snapshot.forEach((doc) => {
+                                // Check if notes start with "Received:" to be extra safe
+                                const docData = doc.data();
+                                if (docData.notes && docData.notes.startsWith('Received:')) {
+                                    deletePromises.push(doc.ref.delete());
+                                }
                             });
+
+                            await Promise.all(deletePromises);
+                            deletedCount += deletePromises.length;
+
                         } catch (err) {
                             console.error('Error deleting activity from Firebase:', err);
                         }
                     }
+
+                    console.log('Deleted', deletedCount, 'documents from Firebase');
                 }
+
+                // Remove from local activities array
+                const originalCount = activities.length;
+                activities = activities.filter(activity =>
+                    !(activity.type === 'email' && activity.notes && activity.notes.startsWith('Received:'))
+                );
+                console.log('Removed', originalCount - activities.length, 'from local activities array');
 
                 // Refresh the UI
                 renderActivityLog();
@@ -3193,6 +3223,14 @@ Mergers & Acquisitions Team`
             } catch (error) {
                 console.error('Error clearing synced emails:', error);
                 alert('Failed to clear synced emails: ' + error.message);
+            }
+        }
+
+        function resetLastSyncDate() {
+            if (confirm('This will reset the last sync date, allowing the next sync to look back 30 days instead of only since the last sync. Continue?')) {
+                appSettings.outlook.lastEmailSync = null;
+                saveSettings();
+                alert('Last sync date has been reset. The next sync will look back 30 days.');
             }
         }
 
@@ -3218,7 +3256,9 @@ Mergers & Acquisitions Team`
                 const filterDateString = filterDate.toISOString();
 
                 console.log('=== Email Sync Debug ===');
+                console.log('Last sync timestamp:', lastSync);
                 console.log('Filter date:', filterDateString);
+                console.log('Looking for emails sent after:', filterDate.toLocaleString());
 
                 // Build a map of carrier email addresses
                 const carrierEmailMap = new Map(); // email -> [{acquisition, carrier}]
