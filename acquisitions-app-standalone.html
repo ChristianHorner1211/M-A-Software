@@ -3173,12 +3173,15 @@ Mergers & Acquisitions Team`
                 // Delete from Firebase if connected (do this FIRST before removing from local array)
                 if (firestore && currentUser) {
                     console.log('Deleting from Firebase...');
+                    const userId = currentUser.uid;
                     let deletedCount = 0;
 
                     for (const email of syncedEmails) {
                         try {
-                            // Query for matching documents
-                            const q = firestore.collection('activities')
+                            // Query for matching documents in the user's activities subcollection
+                            const q = firestore.collection('users')
+                                .doc(userId)
+                                .collection('activities')
                                 .where('type', '==', 'email')
                                 .where('acquisitionId', '==', email.acquisitionId)
                                 .where('timestamp', '==', email.timestamp)
