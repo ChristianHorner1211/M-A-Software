@@ -392,6 +392,10 @@
             max-width: 900px;
         }
 
+        .modal-content.medium {
+            max-width: 750px;
+        }
+
         .close {
             color: #95a5a6;
             float: right;
@@ -2974,18 +2978,33 @@ Mergers & Acquisitions Team`
             const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
             const bodyLines = emailLines.slice(1).join('\n').trim();
 
-            // Build attachments HTML
+            // Build attachments HTML with download links
             let attachmentsHTML = '';
             if (email.attachments && email.attachments.length > 0) {
+                const attachmentItems = email.attachments.map((a, index) => {
+                    const attachmentId = `email-attachment-${index}`;
+                    return `
+                        <div id="${attachmentId}"
+                             style="background: #e8eef3; padding: 10px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; display: flex; align-items: center; gap: 8px;"
+                             onmouseenter="this.style.background='#d5dde3'; this.style.borderColor='#3498db';"
+                             onmouseleave="this.style.background='#e8eef3'; this.style.borderColor='transparent';">
+                            <span style="font-size: 18px;">📎</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #2c3e50;">${a.name}</div>
+                                ${a.size ? `<div style="font-size: 11px; color: #7f8c8d; margin-top: 2px;">${formatFileSize(a.size)}</div>` : ''}
+                            </div>
+                            <span style="color: #3498db; font-size: 11px; font-weight: 600;">DOWNLOAD</span>
+                        </div>
+                    `;
+                }).join('');
+
                 attachmentsHTML = `
-                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e8eef3;">
-                        <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 14px;">📎 Attachments (${email.attachments.length})</h4>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            ${email.attachments.map(a => `
-                                <span style="background: #e8eef3; padding: 6px 12px; border-radius: 4px; font-size: 13px;">
-                                    ${a.name}
-                                </span>
-                            `).join('')}
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8eef3;">
+                        <h4 style="margin-bottom: 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">
+                            📎 Attachments (${email.attachments.length})
+                        </h4>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            ${attachmentItems}
                         </div>
                     </div>
                 `;
@@ -3020,7 +3039,7 @@ Mergers & Acquisitions Team`
                         ` : ''}
                     </div>
 
-                    <div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #e8eef3;">
+                    <div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #e8eef3; max-height: 500px; overflow-y: auto;">
                         <div style="color: #2c3e50; white-space: pre-wrap; line-height: 1.6; font-size: 14px;">
                             ${bodyLines || '<em style="color: #95a5a6;">No message body</em>'}
                         </div>
@@ -3030,7 +3049,58 @@ Mergers & Acquisitions Team`
                 </div>
             `;
 
+            // Add click handlers for attachments
+            if (email.attachments && email.attachments.length > 0) {
+                email.attachments.forEach((attachment, index) => {
+                    const attachmentElement = document.getElementById(`email-attachment-${index}`);
+                    if (attachmentElement) {
+                        attachmentElement.addEventListener('click', () => {
+                            downloadAttachment(attachment);
+                        });
+                    }
+                });
+            }
+
             document.getElementById('emailDetailModal').style.display = 'block';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function downloadAttachment(attachment) {
+            if (!attachment.contentBytes) {
+                alert('Attachment content not available');
+                return;
+            }
+
+            try {
+                // Convert base64 to blob
+                const byteCharacters = atob(attachment.contentBytes);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: attachment.type || 'application/octet-stream' });
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = attachment.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading attachment:', error);
+                alert('Failed to download attachment: ' + error.message);
+            }
         }
 
         async function addContact(event) {
