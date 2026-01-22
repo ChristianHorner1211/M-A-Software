@@ -2794,12 +2794,21 @@ Mergers & Acquisitions Team`
 
             // Group emails by conversationId (thread)
             const threads = new Map();
+            console.log('=== Email Threading Debug ===');
+            console.log('Total carrier emails:', carrierEmails.length);
             carrierEmails.forEach(email => {
                 const threadId = email.conversationId || `standalone-${email.timestamp}`;
+                const emailType = email.notes && email.notes.startsWith('Sent:') ? 'Sent' : 'Received';
+                console.log(`Email: ${emailType}, ConversationId: ${email.conversationId || 'NONE'}, Timestamp: ${email.timestamp}`);
                 if (!threads.has(threadId)) {
                     threads.set(threadId, []);
                 }
                 threads.get(threadId).push(email);
+            });
+
+            console.log('Threads created:', threads.size);
+            threads.forEach((emails, threadId) => {
+                console.log(`Thread ${threadId}: ${emails.length} email(s)`);
             });
 
             // Sort each thread by timestamp (oldest first)
@@ -2816,6 +2825,7 @@ Mergers & Acquisitions Team`
 
             // Render each thread
             threadArray.forEach(([threadId, threadEmails]) => {
+                console.log(`Rendering thread ${threadId} with ${threadEmails.length} email(s)`);
                 // Find the first sent email to show as the collapsed view
                 const sentEmail = threadEmails.find(e => e.notes && e.notes.startsWith('Sent:'));
                 if (!sentEmail) return; // Skip threads without a sent email
@@ -3593,7 +3603,8 @@ Mergers & Acquisitions Team`
                                     notes: `Received: ${email.subject}\n\n${email.bodyPreview}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
                                     acquisitionId: acquisition.id,
                                     timestamp: email.receivedDateTime,
-                                    attachments: []
+                                    attachments: [],
+                                    conversationId: email.conversationId  // Store conversationId for threading
                                 };
                                 activities.unshift(activityItem);
                                 await saveActivityToFirebase(activityItem);
