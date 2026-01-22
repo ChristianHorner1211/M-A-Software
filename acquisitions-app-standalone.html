@@ -2481,7 +2481,7 @@ Mergers & Acquisitions Team`
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}`,
+                                    notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
                                     attachments: [...emailAttachments],
                                     conversationId: conversationId  // Store for reply tracking
                                 });
@@ -2493,7 +2493,7 @@ Mergers & Acquisitions Team`
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}`,
+                                    notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
                                     attachments: [...emailAttachments]
                                 });
                             }
@@ -3779,7 +3779,7 @@ Mergers & Acquisitions Team`
                 console.log('Fetching all inbox emails...');
 
                 const inboxResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,receivedDateTime,bodyPreview,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
+                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,receivedDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
                     {
                         headers: {
                             'Authorization': 'Bearer ' + token,
@@ -3868,11 +3868,12 @@ Mergers & Acquisitions Team`
                             if (!alreadyLogged) {
                                 console.log(`  ✓ Adding email to activities for carrier: ${carrier.name}`);
                                 // Add to activity log
+                                const emailBody = email.body?.content || email.bodyPreview || '';
                                 const activityItem = {
                                     type: 'email',
                                     contact: senderEmail,
                                     carrier: carrier.name,
-                                    notes: `Received: ${email.subject}\n\n${email.bodyPreview}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
+                                    notes: `Received: ${email.subject}\n\n${emailBody}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
                                     acquisitionId: acquisition.id,
                                     timestamp: email.receivedDateTime,
                                     attachments: [],
