@@ -2995,10 +2995,26 @@ Mergers & Acquisitions Team`
 
             const modalContent = document.getElementById('emailDetailContent');
 
-            // Extract subject from notes
+            // Extract subject and body from notes
             const emailLines = email.notes.split('\n');
             const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
-            const bodyLines = emailLines.slice(1).join('\n').trim();
+
+            // For sent emails, skip the "To:" and "CC:" lines before getting to the body
+            let bodyStartIndex = 1;
+            if (isSent) {
+                // Skip lines that start with "To:" or "CC:"
+                for (let i = 1; i < emailLines.length; i++) {
+                    const line = emailLines[i].trim();
+                    if (line.startsWith('To:') || line.startsWith('CC:')) {
+                        continue;
+                    }
+                    // Found first line that's not To/CC, this is where body starts (after empty line)
+                    bodyStartIndex = i;
+                    break;
+                }
+            }
+
+            const bodyLines = emailLines.slice(bodyStartIndex).join('\n').trim();
 
             // Build attachments HTML with download links
             let attachmentsHTML = '';
