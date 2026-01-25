@@ -949,7 +949,7 @@
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
                 <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
-                <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn" style="display: none;">🔄 Sync Emails</button>
+                <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn">🔄 Sync Emails</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
         </header>
@@ -3421,7 +3421,7 @@ Mergers & Acquisitions Team`
                 emailSpan.textContent = appSettings.outlook.email;
                 disconnectedView.style.display = 'none';
                 connectedView.style.display = 'block';
-                if (syncBtn) syncBtn.style.display = 'inline-block';
+                if (syncBtn) syncBtn.disabled = false;
             } else {
                 statusIcon.textContent = '⚫';
                 statusText.textContent = 'Not Connected';
@@ -3429,7 +3429,7 @@ Mergers & Acquisitions Team`
                 accountInfo.style.display = 'none';
                 disconnectedView.style.display = 'block';
                 connectedView.style.display = 'none';
-                if (syncBtn) syncBtn.style.display = 'none';
+                if (syncBtn) syncBtn.disabled = true;
             }
         }
 
