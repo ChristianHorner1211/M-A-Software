@@ -2934,7 +2934,8 @@ Mergers & Acquisitions Team`
                     });
 
                     // Add click handler to show email detail
-                    emailDiv.addEventListener('click', () => {
+                    emailDiv.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Prevent event from bubbling to parent handlers
                         showEmailDetail(email, isSent, emailFormattedDate, emailDiv);
                     });
 
@@ -2943,13 +2944,23 @@ Mergers & Acquisitions Team`
 
                 threadContainer.appendChild(expandedView);
 
-                // Add click handler to toggle expansion
+                // Add click handler to toggle expansion or open email directly for single-email threads
                 const arrow = collapsedView.querySelector('.thread-arrow');
                 if (arrow) {
                     collapsedView.addEventListener('click', () => {
-                        const isExpanded = expandedView.style.display !== 'none';
-                        expandedView.style.display = isExpanded ? 'none' : 'block';
-                        arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+                        // If thread has only one email (no replies), open it directly in modal
+                        if (threadEmails.length === 1) {
+                            const email = threadEmails[0];
+                            const emailDate = new Date(email.timestamp);
+                            const emailFormattedDate = emailDate.toLocaleDateString() + ' ' + emailDate.toLocaleTimeString();
+                            const isSent = email.notes && email.notes.startsWith('Sent:');
+                            showEmailDetail(email, isSent, emailFormattedDate);
+                        } else {
+                            // Otherwise, toggle expansion to show all emails in thread
+                            const isExpanded = expandedView.style.display !== 'none';
+                            expandedView.style.display = isExpanded ? 'none' : 'block';
+                            arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+                        }
                     });
                 }
 
@@ -3008,6 +3019,7 @@ Mergers & Acquisitions Team`
             let bodyStartIndex = 1;
             if (isSent) {
                 // Skip lines that start with "To:" or "CC:", and skip empty separator lines
+                let foundBodyStart = false;
                 for (let i = 1; i < emailLines.length; i++) {
                     const line = emailLines[i].trim();
                     console.log(`Line ${i}: "${line}"`);
@@ -3023,7 +3035,14 @@ Mergers & Acquisitions Team`
                     // Found first line of actual body content
                     console.log(`  -> Found body start at index ${i}`);
                     bodyStartIndex = i;
+                    foundBodyStart = true;
                     break;
+                }
+
+                // If we didn't find body content, set index to end of array to get empty string
+                if (!foundBodyStart) {
+                    console.log('  -> No body content found after headers');
+                    bodyStartIndex = emailLines.length;
                 }
             }
 
