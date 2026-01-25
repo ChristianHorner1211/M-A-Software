@@ -13,6 +13,9 @@
     <!-- Microsoft Authentication Library (MSAL) -->
     <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
 
+    <!-- SheetJS Library for Excel Import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -917,6 +920,94 @@
                 width: 100%;
             }
         }
+
+        /* Import Carriers Styles */
+        .import-instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .import-instructions h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .import-instructions p {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .import-instructions ul {
+            margin-left: 20px;
+            margin-bottom: 8px;
+        }
+
+        .import-instructions li {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .import-instructions em {
+            font-size: 13px;
+            color: #95a5a6;
+        }
+
+        .import-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .import-preview h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .preview-table thead {
+            background: #3498db;
+            color: white;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #dce4ec;
+        }
+
+        .preview-table tbody tr:nth-child(even) {
+            background: white;
+        }
+
+        .preview-table tbody tr:hover {
+            background: #e8eef3;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .form-actions button {
+            min-width: 120px;
+        }
     </style>
 </head>
 <body>
@@ -948,6 +1039,7 @@
                     <button class="signout-btn" onclick="signOut()">Sign Out</button>
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
+                <button class="btn btn-secondary" onclick="showImportCarriersModal()">📥 Import Carriers</button>
                 <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
                 <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn">🔄 Sync Emails</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
@@ -1205,6 +1297,44 @@
                     <!-- Carrier list will be populated here -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Import Carriers Modal -->
+    <div id="importCarriersModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importCarriersModal')">&times;</span>
+            <h2>Import Carriers from Excel</h2>
+            <div class="import-instructions">
+                <h3>Instructions:</h3>
+                <p>Upload an Excel file (.xlsx or .xls) with the following columns:</p>
+                <ul>
+                    <li><strong>Code</strong> - Carrier code (e.g., "ACE-001")</li>
+                    <li><strong>Name</strong> - Carrier name (e.g., "ACE Insurance Company")</li>
+                    <li><strong>RepEmail</strong> - Representative email (e.g., "john.doe@carrier.com")</li>
+                </ul>
+                <p><em>Note: The first row should contain column headers.</em></p>
+            </div>
+            <form id="importCarriersForm" onsubmit="importCarriersFromExcel(event)">
+                <div class="form-group">
+                    <label for="carrierFile">Select Excel File:</label>
+                    <input type="file" id="carrierFile" accept=".xlsx,.xls" required>
+                </div>
+                <div class="form-group">
+                    <label for="importMode">Import Mode:</label>
+                    <select id="importMode" required>
+                        <option value="current">Add to Current Acquisition</option>
+                    </select>
+                </div>
+                <div id="importPreview" class="import-preview" style="display: none;">
+                    <h3>Preview:</h3>
+                    <div id="previewContent"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="previewExcelFile()">Preview</button>
+                    <button type="submit" class="btn btn-primary">Import Carriers</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2723,6 +2853,173 @@ Mergers & Acquisitions Team`
 
                 renderCarriersList();
                 showRemoveCarrierModal(); // Refresh the modal
+            }
+        }
+
+        // Import Carriers Functions
+        function showImportCarriersModal() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+            document.getElementById('importCarriersModal').style.display = 'block';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('previewContent').innerHTML = '';
+        }
+
+        function parseExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        // Get first sheet
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+
+                        // Convert to JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                        resolve(jsonData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                reader.onerror = function() {
+                    reject(new Error('Failed to read file'));
+                };
+
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function previewExcelFile() {
+            const fileInput = document.getElementById('carrierFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+
+            try {
+                const data = await parseExcelFile(file);
+
+                if (data.length === 0) {
+                    alert('The Excel file is empty');
+                    return;
+                }
+
+                // Validate columns
+                const firstRow = data[0];
+                const hasRequiredColumns =
+                    (firstRow.hasOwnProperty('Code') || firstRow.hasOwnProperty('code')) &&
+                    (firstRow.hasOwnProperty('Name') || firstRow.hasOwnProperty('name'));
+
+                if (!hasRequiredColumns) {
+                    alert('Excel file must have "Code" and "Name" columns');
+                    return;
+                }
+
+                // Show preview
+                const previewDiv = document.getElementById('importPreview');
+                const previewContent = document.getElementById('previewContent');
+
+                let html = `<p><strong>Found ${data.length} carriers:</strong></p><table class="preview-table"><thead><tr><th>Code</th><th>Name</th><th>Rep Email</th></tr></thead><tbody>`;
+
+                data.slice(0, 10).forEach(row => {
+                    const code = row.Code || row.code || '';
+                    const name = row.Name || row.name || '';
+                    const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${code.toLowerCase()}@carrier.com`;
+
+                    html += `<tr><td>${code}</td><td>${name}</td><td>${repEmail}</td></tr>`;
+                });
+
+                html += '</tbody></table>';
+
+                if (data.length > 10) {
+                    html += `<p><em>... and ${data.length - 10} more</em></p>`;
+                }
+
+                previewContent.innerHTML = html;
+                previewDiv.style.display = 'block';
+
+            } catch (error) {
+                alert('Error reading Excel file: ' + error.message);
+            }
+        }
+
+        async function importCarriersFromExcel(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('carrierFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            try {
+                const data = await parseExcelFile(file);
+
+                if (data.length === 0) {
+                    alert('The Excel file is empty');
+                    return;
+                }
+
+                // Parse carriers from Excel data
+                const importedCarriers = data.map(row => {
+                    const code = row.Code || row.code || '';
+                    const name = row.Name || row.name || '';
+                    const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${code.toLowerCase()}@carrier.com`;
+
+                    return {
+                        code: code,
+                        name: name,
+                        repEmail: repEmail,
+                        status: 'outstanding',
+                        contacts: []
+                    };
+                }).filter(carrier => carrier.code && carrier.name); // Filter out invalid entries
+
+                if (importedCarriers.length === 0) {
+                    alert('No valid carriers found in the Excel file. Make sure it has "Code" and "Name" columns.');
+                    return;
+                }
+
+                // Add to current acquisition (avoid duplicates)
+                let addedCount = 0;
+                importedCarriers.forEach(carrier => {
+                    const exists = acquisition.carriers.some(c => c.code === carrier.code);
+                    if (!exists) {
+                        acquisition.carriers.push(carrier);
+                        addedCount++;
+                    }
+                });
+
+                // Save to Firebase
+                await saveAcquisitionToFirebase(acquisition);
+
+                renderCarriersList();
+                alert(`Successfully imported ${addedCount} carriers to ${acquisition.name}!\n(${importedCarriers.length - addedCount} duplicates skipped)`);
+
+                closeModal('importCarriersModal');
+                document.getElementById('importCarriersForm').reset();
+
+            } catch (error) {
+                alert('Error importing carriers: ' + error.message);
             }
         }
 
