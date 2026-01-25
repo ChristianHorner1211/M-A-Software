@@ -537,5 +537,184 @@ window.onclick = function(event) {
     }
 }
 
+// Show import carriers modal
+function showImportCarriersModal() {
+    document.getElementById('importCarriersModal').style.display = 'block';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('previewContent').innerHTML = '';
+}
+
+// Parse Excel file
+function parseExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Get first sheet
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert to JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                resolve(jsonData);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        reader.onerror = function() {
+            reject(new Error('Failed to read file'));
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// Preview Excel file
+async function previewExcelFile() {
+    const fileInput = document.getElementById('carrierFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please select a file first');
+        return;
+    }
+
+    try {
+        const data = await parseExcelFile(file);
+
+        if (data.length === 0) {
+            alert('The Excel file is empty');
+            return;
+        }
+
+        // Validate columns
+        const firstRow = data[0];
+        const hasRequiredColumns =
+            (firstRow.hasOwnProperty('Code') || firstRow.hasOwnProperty('code')) &&
+            (firstRow.hasOwnProperty('Name') || firstRow.hasOwnProperty('name'));
+
+        if (!hasRequiredColumns) {
+            alert('Excel file must have "Code" and "Name" columns');
+            return;
+        }
+
+        // Show preview
+        const previewDiv = document.getElementById('importPreview');
+        const previewContent = document.getElementById('previewContent');
+
+        let html = `<p><strong>Found ${data.length} carriers:</strong></p><table class="preview-table"><thead><tr><th>Code</th><th>Name</th><th>Rep Email</th></tr></thead><tbody>`;
+
+        data.slice(0, 10).forEach(row => {
+            const code = row.Code || row.code || '';
+            const name = row.Name || row.name || '';
+            const repEmail = row.RepEmail || row.repEmail || row.RepEmail || `rep.${code.toLowerCase()}@carrier.com`;
+
+            html += `<tr><td>${code}</td><td>${name}</td><td>${repEmail}</td></tr>`;
+        });
+
+        html += '</tbody></table>';
+
+        if (data.length > 10) {
+            html += `<p><em>... and ${data.length - 10} more</em></p>`;
+        }
+
+        previewContent.innerHTML = html;
+        previewDiv.style.display = 'block';
+
+    } catch (error) {
+        alert('Error reading Excel file: ' + error.message);
+    }
+}
+
+// Import carriers from Excel
+async function importCarriersFromExcel(event) {
+    event.preventDefault();
+
+    const fileInput = document.getElementById('carrierFile');
+    const file = fileInput.files[0];
+    const importMode = document.getElementById('importMode').value;
+
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+
+    try {
+        const data = await parseExcelFile(file);
+
+        if (data.length === 0) {
+            alert('The Excel file is empty');
+            return;
+        }
+
+        // Parse carriers from Excel data
+        const importedCarriers = data.map(row => {
+            const code = row.Code || row.code || '';
+            const name = row.Name || row.name || '';
+            const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${code.toLowerCase()}@carrier.com`;
+
+            return {
+                code: code,
+                name: name,
+                repEmail: repEmail,
+                status: 'outstanding'
+            };
+        }).filter(carrier => carrier.code && carrier.name); // Filter out invalid entries
+
+        if (importedCarriers.length === 0) {
+            alert('No valid carriers found in the Excel file. Make sure it has "Code" and "Name" columns.');
+            return;
+        }
+
+        if (importMode === 'global') {
+            // Add to global availableCarriers list (avoid duplicates)
+            let addedCount = 0;
+            importedCarriers.forEach(carrier => {
+                const exists = availableCarriers.some(c => c.code === carrier.code);
+                if (!exists) {
+                    availableCarriers.push({
+                        code: carrier.code,
+                        name: carrier.name
+                    });
+                    addedCount++;
+                }
+            });
+
+            alert(`Successfully imported ${addedCount} carriers to global list!\n(${importedCarriers.length - addedCount} duplicates skipped)`);
+        } else if (importMode === 'current') {
+            // Add to current acquisition
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            let addedCount = 0;
+            importedCarriers.forEach(carrier => {
+                const exists = acquisition.carriers.some(c => c.code === carrier.code);
+                if (!exists) {
+                    acquisition.carriers.push(carrier);
+                    addedCount++;
+                }
+            });
+
+            renderCarriersList();
+            alert(`Successfully imported ${addedCount} carriers to ${acquisition.name}!\n(${importedCarriers.length - addedCount} duplicates skipped)`);
+        }
+
+        closeModal('importCarriersModal');
+        document.getElementById('importCarriersForm').reset();
+
+    } catch (error) {
+        alert('Error importing carriers: ' + error.message);
+    }
+}
+
 // Initialize app when page loads
 document.addEventListener('DOMContentLoaded', initializeApp);

@@ -12,6 +12,7 @@
             <h1>Acquisitions Management Platform</h1>
             <div class="header-actions">
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
+                <button class="btn btn-secondary" onclick="showImportCarriersModal()">📥 Import Carriers</button>
                 <button class="btn btn-secondary" onclick="showEmailTemplates()">Email Templates</button>
             </div>
         </header>
@@ -154,6 +155,46 @@
         </div>
     </div>
 
+    <!-- Import Carriers Modal -->
+    <div id="importCarriersModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importCarriersModal')">&times;</span>
+            <h2>Import Carriers from Excel</h2>
+            <div class="import-instructions">
+                <h3>Instructions:</h3>
+                <p>Upload an Excel file (.xlsx or .xls) with the following columns:</p>
+                <ul>
+                    <li><strong>Code</strong> - Carrier code (e.g., "ACE-001")</li>
+                    <li><strong>Name</strong> - Carrier name (e.g., "ACE Insurance Company")</li>
+                    <li><strong>RepEmail</strong> - Representative email (e.g., "john.doe@carrier.com")</li>
+                </ul>
+                <p><em>Note: The first row should contain column headers.</em></p>
+            </div>
+            <form id="importCarriersForm" onsubmit="importCarriersFromExcel(event)">
+                <div class="form-group">
+                    <label for="carrierFile">Select Excel File:</label>
+                    <input type="file" id="carrierFile" accept=".xlsx,.xls" required>
+                </div>
+                <div class="form-group">
+                    <label for="importMode">Import Mode:</label>
+                    <select id="importMode" required>
+                        <option value="global">Add to Global Carrier List (available for all acquisitions)</option>
+                        <option value="current">Add to Current Acquisition Only</option>
+                    </select>
+                </div>
+                <div id="importPreview" class="import-preview" style="display: none;">
+                    <h3>Preview:</h3>
+                    <div id="previewContent"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="previewExcelFile()">Preview</button>
+                    <button type="submit" class="btn btn-primary">Import Carriers</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
