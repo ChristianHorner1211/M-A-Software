@@ -2995,8 +2995,13 @@ Mergers & Acquisitions Team`
 
             const modalContent = document.getElementById('emailDetailContent');
 
+            // Debug logging
+            console.log('Email notes:', email.notes);
+            console.log('Is sent:', isSent);
+
             // Extract subject and body from notes
             const emailLines = email.notes.split('\n');
+            console.log('Email lines:', emailLines);
             const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
 
             // For sent emails, skip the "To:" and "CC:" lines before getting to the body
@@ -3005,20 +3010,26 @@ Mergers & Acquisitions Team`
                 // Skip lines that start with "To:" or "CC:", and skip empty separator lines
                 for (let i = 1; i < emailLines.length; i++) {
                     const line = emailLines[i].trim();
+                    console.log(`Line ${i}: "${line}"`);
                     if (line.startsWith('To:') || line.startsWith('CC:')) {
+                        console.log(`  -> Skipping (To/CC header)`);
                         continue;
                     }
                     // Skip empty separator lines
                     if (line === '') {
+                        console.log(`  -> Skipping (empty line)`);
                         continue;
                     }
                     // Found first line of actual body content
+                    console.log(`  -> Found body start at index ${i}`);
                     bodyStartIndex = i;
                     break;
                 }
             }
 
             const bodyLines = emailLines.slice(bodyStartIndex).join('\n').trim();
+            console.log('Body start index:', bodyStartIndex);
+            console.log('Body lines:', bodyLines);
 
             // Build attachments HTML with download links
             let attachmentsHTML = '';
