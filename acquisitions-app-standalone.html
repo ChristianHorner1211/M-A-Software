@@ -2900,16 +2900,19 @@ Mergers & Acquisitions Team`
                     const emailDiv = document.createElement('div');
                     emailDiv.style.marginBottom = '15px';
                     emailDiv.style.padding = '12px';
-                    emailDiv.style.background = isSent ? '#f8f9fa' : '#e8f4f8';
+
+                    // Show blue highlight only for unread received emails
+                    const isUnread = isReceived && !email.isRead;
+                    emailDiv.style.background = isUnread ? '#e8f4f8' : '#f8f9fa';
                     emailDiv.style.borderRadius = '6px';
-                    emailDiv.style.border = isSent ? '1px solid #dee2e6' : '1px solid #3498db';
+                    emailDiv.style.border = isUnread ? '1px solid #3498db' : '1px solid #dee2e6';
                     emailDiv.style.cursor = 'pointer';
                     emailDiv.style.transition = 'transform 0.2s, box-shadow 0.2s';
 
                     emailDiv.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                             <div>
-                                <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : '#2980b9'};">${isSent ? '📤 Sent' : '📥 Received'}</span>
+                                <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : (isUnread ? '#2980b9' : '#5a6c7d')};">${isSent ? '📤 Sent' : '📥 Received'}</span>
                                 <span style="color: #7f8c8d; font-size: 12px; margin-left: 10px;">${emailFormattedDate}</span>
                             </div>
                         </div>
@@ -2964,6 +2967,23 @@ Mergers & Acquisitions Team`
         }
 
         function showEmailDetail(email, isSent, formattedDate) {
+            // Mark received email as read when clicked for the first time
+            if (!isSent && !email.isRead) {
+                email.isRead = true;
+
+                // Update the activity in the activities array
+                const activityIndex = activities.findIndex(a => a.timestamp === email.timestamp);
+                if (activityIndex !== -1) {
+                    activities[activityIndex].isRead = true;
+
+                    // Save to Firestore
+                    saveActivityToFirebase(activities[activityIndex]);
+                }
+
+                // Re-render the email history to update the UI
+                renderCarrierEmailHistory();
+            }
+
             const modalContent = document.getElementById('emailDetailContent');
 
             // Extract subject from notes
