@@ -3002,13 +3002,17 @@ Mergers & Acquisitions Team`
             // For sent emails, skip the "To:" and "CC:" lines before getting to the body
             let bodyStartIndex = 1;
             if (isSent) {
-                // Skip lines that start with "To:" or "CC:"
+                // Skip lines that start with "To:" or "CC:", and skip empty separator lines
                 for (let i = 1; i < emailLines.length; i++) {
                     const line = emailLines[i].trim();
                     if (line.startsWith('To:') || line.startsWith('CC:')) {
                         continue;
                     }
-                    // Found first line that's not To/CC, this is where body starts (after empty line)
+                    // Skip empty separator lines
+                    if (line === '') {
+                        continue;
+                    }
+                    // Found first line of actual body content
                     bodyStartIndex = i;
                     break;
                 }
