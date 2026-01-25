@@ -613,7 +613,7 @@ async function previewExcelFile() {
         data.slice(0, 10).forEach(row => {
             const code = row.Code || row.code || '';
             const name = row.Name || row.name || '';
-            const repEmail = row.RepEmail || row.repEmail || row.RepEmail || `rep.${code.toLowerCase()}@carrier.com`;
+            const repEmail = row.RepEmail || row.repEmail || row.RepEmail || `rep.${String(code).toLowerCase()}@carrier.com`;
 
             html += `<tr><td>${code}</td><td>${name}</td><td>${repEmail}</td></tr>`;
         });
@@ -657,7 +657,7 @@ async function importCarriersFromExcel(event) {
         const importedCarriers = data.map(row => {
             const code = row.Code || row.code || '';
             const name = row.Name || row.name || '';
-            const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${code.toLowerCase()}@carrier.com`;
+            const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${String(code).toLowerCase()}@carrier.com`;
 
             return {
                 code: code,
