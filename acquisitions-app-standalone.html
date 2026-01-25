@@ -2529,7 +2529,7 @@ Mergers & Acquisitions Team`
                             type: 'email',
                             contact: carrierEmails[0] || 'Unknown',
                             carrier: carrier.name,
-                            notes: `Draft: ${subject}\n${recipientInfo}`,
+                            notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
                             attachments: [...emailAttachments]
                         });
                     });
@@ -2550,7 +2550,7 @@ Mergers & Acquisitions Team`
                         type: 'email',
                         contact: carrierEmails[0] || 'Unknown',
                         carrier: carrier.name,
-                        notes: `Draft: ${subject}\n${recipientInfo}`,
+                        notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
                         attachments: [...emailAttachments]
                     });
                 });
