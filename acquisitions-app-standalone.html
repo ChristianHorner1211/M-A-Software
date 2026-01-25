@@ -2968,6 +2968,7 @@ Mergers & Acquisitions Team`
 
         function showEmailDetail(email, isSent, formattedDate) {
             // Mark received email as read when clicked for the first time
+            let shouldRerender = false;
             if (!isSent && !email.isRead) {
                 email.isRead = true;
 
@@ -2980,8 +2981,7 @@ Mergers & Acquisitions Team`
                     saveActivityToFirebase(activities[activityIndex]);
                 }
 
-                // Re-render the email history to update the UI
-                renderCarrierEmailHistory();
+                shouldRerender = true;
             }
 
             const modalContent = document.getElementById('emailDetailContent');
@@ -3075,6 +3075,13 @@ Mergers & Acquisitions Team`
             }
 
             document.getElementById('emailDetailModal').style.display = 'block';
+
+            // Re-render the email history after modal is shown to update read/unread styling
+            if (shouldRerender) {
+                setTimeout(() => {
+                    renderCarrierEmailHistory();
+                }, 100);
+            }
         }
 
         function formatFileSize(bytes) {
