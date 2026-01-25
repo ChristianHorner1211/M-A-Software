@@ -2935,7 +2935,7 @@ Mergers & Acquisitions Team`
 
                     // Add click handler to show email detail
                     emailDiv.addEventListener('click', () => {
-                        showEmailDetail(email, isSent, emailFormattedDate);
+                        showEmailDetail(email, isSent, emailFormattedDate, emailDiv);
                     });
 
                     expandedView.appendChild(emailDiv);
@@ -2966,9 +2966,8 @@ Mergers & Acquisitions Team`
             document.getElementById('contactForm').reset();
         }
 
-        function showEmailDetail(email, isSent, formattedDate) {
+        function showEmailDetail(email, isSent, formattedDate, emailDiv = null) {
             // Mark received email as read when clicked for the first time
-            let shouldRerender = false;
             if (!isSent && !email.isRead) {
                 email.isRead = true;
 
@@ -2981,7 +2980,17 @@ Mergers & Acquisitions Team`
                     saveActivityToFirebase(activities[activityIndex]);
                 }
 
-                shouldRerender = true;
+                // Update the email div styling directly instead of re-rendering entire list
+                if (emailDiv) {
+                    emailDiv.style.background = '#f8f9fa';
+                    emailDiv.style.border = '1px solid #dee2e6';
+
+                    // Update the badge color in the innerHTML
+                    const badge = emailDiv.querySelector('span[style*="font-weight: 600"]');
+                    if (badge) {
+                        badge.style.color = '#5a6c7d';
+                    }
+                }
             }
 
             const modalContent = document.getElementById('emailDetailContent');
@@ -3075,13 +3084,6 @@ Mergers & Acquisitions Team`
             }
 
             document.getElementById('emailDetailModal').style.display = 'block';
-
-            // Re-render the email history after modal is shown to update read/unread styling
-            if (shouldRerender) {
-                setTimeout(() => {
-                    renderCarrierEmailHistory();
-                }, 100);
-            }
         }
 
         function formatFileSize(bytes) {
