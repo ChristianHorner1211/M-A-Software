@@ -2842,6 +2842,9 @@ Mergers & Acquisitions Team`
             const acquisitionActivities = activities.filter(a => {
                 if (a.acquisitionId !== currentAcquisitionId) return false;
 
+                // Exclude email activities (auto-synced from inbox)
+                if (a.type === 'email') return false;
+
                 // If no due date, always show the activity
                 if (!a.dueDate) return true;
 
