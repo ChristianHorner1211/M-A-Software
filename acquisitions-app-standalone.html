@@ -2835,7 +2835,21 @@ Mergers & Acquisitions Team`
                 activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No acquisition selected</div></div>';
                 return;
             }
-            const acquisitionActivities = activities.filter(a => a.acquisitionId === currentAcquisitionId && a.type !== 'email');
+            // Get today's date at midnight for comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const acquisitionActivities = activities.filter(a => {
+                if (a.acquisitionId !== currentAcquisitionId) return false;
+
+                // If no due date, always show the activity
+                if (!a.dueDate) return true;
+
+                // Check if due date is today
+                const dueDate = new Date(a.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                return dueDate.getTime() === today.getTime();
+            });
             if (acquisitionActivities.length === 0) {
                 activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No activities yet</div></div>';
                 return;
