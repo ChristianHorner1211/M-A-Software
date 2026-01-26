@@ -457,7 +457,7 @@ function addActivity(event) {
     const carrier = document.getElementById('activityCarrier').value;
     const notes = document.getElementById('activityNotes').value;
 
-    addActivityLog({ type, contact, carrier, notes });
+    addActivityLog({ type, contact, carrier, notes, isManual: true });
 
     closeModal('activityModal');
     document.getElementById('activityForm').reset();
@@ -488,7 +488,7 @@ function renderActivityLog() {
         return;
     }
 
-    const acquisitionActivities = activities.filter(a => a.acquisitionId === currentAcquisitionId && a.type !== 'email');
+    const acquisitionActivities = activities.filter(a => a.acquisitionId === currentAcquisitionId && !(a.type === 'email' && !a.isManual));
 
     if (acquisitionActivities.length === 0) {
         activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No activities yet</div></div>';
