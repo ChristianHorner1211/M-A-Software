@@ -2981,7 +2981,7 @@ Mergers & Acquisitions Team`
                 }
 
                 // Parse carriers from Excel data
-                const importedCarriers = data.map(row => {
+                const importedCarriers = data.map((row, index) => {
                     const code = row.Code || row.code || '';
                     const name = row.Name || row.name || '';
                     const repEmail = row.RepEmail || row.repEmail || row['Rep Email'] || `rep.${String(code).toLowerCase()}@carrier.com`;
@@ -2991,7 +2991,13 @@ Mergers & Acquisitions Team`
                         name: name,
                         repEmail: repEmail,
                         status: 'outstanding',
-                        contacts: []
+                        contacts: repEmail ? [{
+                            id: 'contact-' + Date.now() + '-' + index + '-' + Math.random().toString(36).substr(2, 9),
+                            name: 'Primary Contact',
+                            email: repEmail,
+                            phone: '',
+                            role: 'Account Manager'
+                        }] : []
                     };
                 }).filter(carrier => carrier.code && carrier.name); // Filter out invalid entries
 
