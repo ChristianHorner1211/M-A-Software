@@ -3268,6 +3268,15 @@ Mergers & Acquisitions Team`
 
         function showAddContactForm() {
             document.getElementById('addContactForm').style.display = 'block';
+
+            // Pre-populate email field with carrier's RepEmail
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (acquisition) {
+                const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+                if (carrier && carrier.repEmail) {
+                    document.getElementById('contactEmail').value = carrier.repEmail;
+                }
+            }
         }
 
         function hideAddContactForm() {
