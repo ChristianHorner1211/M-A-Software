@@ -1298,6 +1298,11 @@
                     <!-- Carrier list will be populated here -->
                 </div>
             </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8eef3;">
+                <button class="btn btn-danger" onclick="removeAllCarriers()" style="width: 100%;">
+                    🗑️ Remove All Carriers
+                </button>
+            </div>
         </div>
     </div>
 
@@ -2840,8 +2845,13 @@ Mergers & Acquisitions Team`
                         <div class="remove-carrier-name">${carrier.name}</div>
                         <div class="remove-carrier-code">Code: ${carrier.code}</div>
                     </div>
-                    <button class="btn btn-danger btn-small" onclick="removeCarrier('${carrier.code}')">Remove</button>
+                    <button class="btn btn-danger btn-small">Remove</button>
                 `;
+
+                // Add event listener properly to avoid issues with special characters in carrier codes
+                const removeBtn = carrierItem.querySelector('.btn-danger');
+                removeBtn.addEventListener('click', () => removeCarrier(carrier.code));
+
                 removeCarrierList.appendChild(carrierItem);
             });
 
@@ -2864,6 +2874,30 @@ Mergers & Acquisitions Team`
 
                 renderCarriersList();
                 showRemoveCarrierModal(); // Refresh the modal
+            }
+        }
+
+        async function removeAllCarriers() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            if (acquisition.carriers.length === 0) {
+                alert('No carriers to remove');
+                return;
+            }
+
+            const carrierCount = acquisition.carriers.length;
+            if (confirm(`Are you sure you want to remove ALL ${carrierCount} carriers from "${acquisition.name}"?\n\nThis action cannot be undone.`)) {
+                // Clear all carriers
+                acquisition.carriers = [];
+
+                // Save to Firebase
+                await saveAcquisitionToFirebase(acquisition);
+
+                renderCarriersList();
+                closeModal('removeCarrierModal');
+
+                alert(`Successfully removed all ${carrierCount} carriers`);
             }
         }
 
