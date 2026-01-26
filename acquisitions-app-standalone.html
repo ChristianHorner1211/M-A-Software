@@ -1499,6 +1499,19 @@
                 <div class="form-group" style="margin-top: 25px;">
                     <label>Email Signature (Optional)</label>
                     <textarea id="emailSignature" rows="4" placeholder="Enter your email signature here...&#10;&#10;Best regards,&#10;Your Name&#10;Your Title&#10;Company Name"></textarea>
+                    <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
+                        <input type="file" id="signatureImageUpload" accept="image/*" style="display: none;">
+                        <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('signatureImageUpload').click()">
+                            📷 Add Company Logo
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="removeSignatureImage()" id="removeSignatureImageBtn" style="display: none;">
+                            ✖ Remove Logo
+                        </button>
+                        <span id="signatureImageStatus" style="font-size: 12px; color: #7f8c8d;"></span>
+                    </div>
+                    <div id="signatureImagePreview" style="margin-top: 10px; display: none;">
+                        <img id="signatureImagePreviewImg" style="max-width: 200px; max-height: 100px; border: 1px solid #dce4ec; border-radius: 4px; padding: 5px;">
+                    </div>
                 </div>
             </div>
 
@@ -1547,7 +1560,8 @@
                 accessToken: null,
                 lastEmailSync: null
             },
-            emailSignature: ''
+            emailSignature: '',
+            signatureImage: null
         };
 
         // Firebase and MSAL instances
@@ -1821,6 +1835,42 @@ Mergers & Acquisitions Team`
                 }
             }
             // If Firebase is configured, onAuthStateChanged will handle the rest
+
+            // Setup signature image upload handler
+            const signatureImageUpload = document.getElementById('signatureImageUpload');
+            if (signatureImageUpload) {
+                signatureImageUpload.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select an image file');
+                        return;
+                    }
+
+                    // Validate file size (max 500KB to keep localStorage happy)
+                    if (file.size > 500000) {
+                        alert('Image file is too large. Please choose an image smaller than 500KB.');
+                        return;
+                    }
+
+                    // Read and convert to base64
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const base64Image = e.target.result;
+                        appSettings.signatureImage = base64Image;
+
+                        // Show preview
+                        document.getElementById('signatureImagePreviewImg').src = base64Image;
+                        document.getElementById('signatureImagePreview').style.display = 'block';
+                        document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                        document.getElementById('signatureImageStatus').textContent = '✓ Logo added';
+                        document.getElementById('signatureImageStatus').style.color = '#27ae60';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
         }
 
         // ==================== TEMPLATE MANAGEMENT FUNCTIONS ====================
@@ -2509,10 +2559,26 @@ Mergers & Acquisitions Team`
             const subject = document.getElementById('emailSubject').value;
             let body = document.getElementById('emailBody').value;
 
-            // Add signature if configured
-            if (appSettings.emailSignature) {
-                body += '\n\n' + appSettings.emailSignature;
+            // Build HTML signature
+            let signatureHTML = '';
+            if (appSettings.emailSignature || appSettings.signatureImage) {
+                signatureHTML = '<br><br><div style="font-family: Arial, sans-serif;">';
+
+                if (appSettings.emailSignature) {
+                    // Convert plain text signature to HTML (preserve line breaks)
+                    const signatureText = appSettings.emailSignature.replace(/\n/g, '<br>');
+                    signatureHTML += signatureText;
+                }
+
+                if (appSettings.signatureImage) {
+                    signatureHTML += '<br><img src="' + appSettings.signatureImage + '" alt="Company Logo" style="max-width: 200px; max-height: 100px; margin-top: 10px;">';
+                }
+
+                signatureHTML += '</div>';
             }
+
+            // Convert body to HTML and add signature
+            const bodyHTML = body.replace(/\n/g, '<br>') + signatureHTML;
 
             // Get selected carriers
             const selectedCarriers = [];
@@ -2575,8 +2641,8 @@ Mergers & Acquisitions Team`
                             message: {
                                 subject: subject,
                                 body: {
-                                    contentType: 'Text',
-                                    content: body
+                                    contentType: 'HTML',
+                                    content: bodyHTML
                                 },
                                 toRecipients: toRecipients,
                                 ccRecipients: ccRecipients,
@@ -3730,6 +3796,15 @@ Mergers & Acquisitions Team`
             if (msalClientIdEl && appSettings.msal.clientId) {
                 msalClientIdEl.value = appSettings.msal.clientId;
             }
+
+            // Show signature image if exists
+            if (appSettings.signatureImage) {
+                document.getElementById('signatureImagePreviewImg').src = appSettings.signatureImage;
+                document.getElementById('signatureImagePreview').style.display = 'block';
+                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                document.getElementById('signatureImageStatus').textContent = '✓ Logo added';
+                document.getElementById('signatureImageStatus').style.color = '#27ae60';
+            }
         }
 
         function saveSettings() {
@@ -3759,6 +3834,15 @@ Mergers & Acquisitions Team`
             localStorage.setItem('appSettings', JSON.stringify(appSettings));
 
             alert('Settings saved successfully!\n\nPlease reload the page for configuration changes to take effect.');
+        }
+
+        // Handle signature image upload
+        function removeSignatureImage() {
+            appSettings.signatureImage = null;
+            document.getElementById('signatureImagePreview').style.display = 'none';
+            document.getElementById('removeSignatureImageBtn').style.display = 'none';
+            document.getElementById('signatureImageStatus').textContent = '';
+            document.getElementById('signatureImageUpload').value = '';
         }
 
         function updateOutlookConnectionUI() {
