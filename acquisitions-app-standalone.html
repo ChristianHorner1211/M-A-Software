@@ -2252,19 +2252,29 @@ Mergers & Acquisitions Team`
                 const contactCount = carrier.contacts ? carrier.contacts.length : 0;
                 carrierItem.innerHTML = `
                     <div class="carrier-info">
-                        <div class="carrier-name" onclick="showCarrierContacts('${carrier.code}')" style="cursor: pointer;">${carrier.name}</div>
+                        <div class="carrier-name" style="cursor: pointer;">${carrier.name}</div>
                         <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
                     </div>
                     <div class="carrier-actions">
-                        <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}"
-                                onclick="toggleCarrierStatus('${carrier.code}')">
+                        <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}">
                             ${carrier.status === 'done' ? '✓ Done' : 'Mark Done'}
                         </button>
-                        <button class="email-btn" onclick="emailCarrier('${carrier.code}')">
+                        <button class="email-btn">
                             ✉ Email
                         </button>
                     </div>
                 `;
+
+                // Add event listeners properly to avoid issues with special characters in carrier codes
+                const carrierNameEl = carrierItem.querySelector('.carrier-name');
+                carrierNameEl.addEventListener('click', () => showCarrierContacts(carrier.code));
+
+                const checkBtn = carrierItem.querySelector('.check-btn');
+                checkBtn.addEventListener('click', () => toggleCarrierStatus(carrier.code));
+
+                const emailBtn = carrierItem.querySelector('.email-btn');
+                emailBtn.addEventListener('click', () => emailCarrier(carrier.code));
+
                 carriersList.appendChild(carrierItem);
             });
         }
