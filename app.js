@@ -680,7 +680,8 @@ async function importCarriersFromExcel(event) {
                 if (!exists) {
                     availableCarriers.push({
                         code: carrier.code,
-                        name: carrier.name
+                        name: carrier.name,
+                        repEmail: carrier.repEmail
                     });
                     addedCount++;
                 }
