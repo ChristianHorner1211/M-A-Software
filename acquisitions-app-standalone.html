@@ -2766,7 +2766,56 @@ Mergers & Acquisitions Team`
                     showStatus('Files uploaded successfully to cloud storage');
                 } catch (error) {
                     console.error('Error uploading to Firebase Storage:', error);
-                    showStatus('Error uploading files. Please try again.');
+
+                    // Check for common Firebase Storage errors
+                    let errorMessage = 'Error uploading to cloud storage: ';
+                    if (error.code === 'storage/unauthorized') {
+                        errorMessage += 'Unauthorized. Firebase Storage security rules may need to be updated.\n\n';
+                        errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
+                        errorMessage += 'Go to Storage > Rules and use:\n\n';
+                        errorMessage += 'rules_version = \'2\';\n';
+                        errorMessage += 'service firebase.storage {\n';
+                        errorMessage += '  match /b/{bucket}/o {\n';
+                        errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
+                        errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
+                        errorMessage += '    }\n';
+                        errorMessage += '  }\n';
+                        errorMessage += '}\n\n';
+                        errorMessage += 'Falling back to local storage mode for now.';
+                    } else if (error.code === 'storage/bucket-not-found') {
+                        errorMessage += 'Storage bucket not configured. Please add "storageBucket" to your Firebase config in Settings.\n\n';
+                        errorMessage += 'Falling back to local storage mode.';
+                    } else if (error.code === 'storage/quota-exceeded') {
+                        errorMessage += 'Storage quota exceeded. Please upgrade your Firebase plan.\n\n';
+                        errorMessage += 'Falling back to local storage mode.';
+                    } else {
+                        errorMessage += error.message || 'Unknown error';
+                        errorMessage += '\n\nFalling back to local storage mode.';
+                    }
+
+                    alert(errorMessage);
+                    console.log('Attempting to upload to localStorage as fallback...');
+
+                    // Fall back to localStorage mode
+                    Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const fileData = {
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                data: e.target.result,
+                                uploadedAt: new Date().toISOString()
+                            };
+                            acquisition.files.push(fileData);
+                            displayFiles();
+                            saveAcquisitionToFirebase(acquisition);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+
+                    showStatus('Files uploaded to local storage (fallback mode)');
+                    fileInput.value = '';
                     return;
                 }
             } else {
