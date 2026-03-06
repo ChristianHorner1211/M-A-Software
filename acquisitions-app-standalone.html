@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
     <!-- Microsoft Authentication Library (MSAL) -->
     <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
@@ -1612,6 +1613,7 @@
         let firebaseApp = null;
         let firebaseAuth = null;
         let firestore = null;
+        let firebaseStorage = null;
         let currentUser = null;
         let msalInstance = null;
 
@@ -1765,6 +1767,7 @@ Mergers & Acquisitions Team`
                 firebaseApp = firebase.initializeApp(config);
                 firebaseAuth = firebase.auth();
                 firestore = firebase.firestore();
+                firebaseStorage = firebase.storage();
 
                 // Listen for auth state changes
                 firebaseAuth.onAuthStateChanged((user) => {
@@ -2709,7 +2712,7 @@ Mergers & Acquisitions Team`
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        function uploadFiles() {
+        async function uploadFiles() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) return;
 
@@ -2725,51 +2728,124 @@ Mergers & Acquisitions Team`
                 acquisition.files = [];
             }
 
-            // Process each file
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const fileData = {
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        data: e.target.result,
-                        uploadedAt: new Date().toISOString()
-                    };
-                    acquisition.files.push(fileData);
+            showStatus('Uploading files...');
+
+            // Check if Firebase Storage is available
+            const useFirebaseStorage = firebaseStorage && currentUser;
+
+            if (useFirebaseStorage) {
+                // Upload to Firebase Storage
+                try {
+                    const uploadPromises = Array.from(files).map(async (file) => {
+                        // Create a unique path for the file
+                        const timestamp = Date.now();
+                        const randomId = Math.random().toString(36).substr(2, 9);
+                        const filePath = `users/${currentUser.uid}/acquisitions/${acquisition.id}/${timestamp}-${randomId}-${file.name}`;
+
+                        // Upload file to Firebase Storage
+                        const storageRef = firebaseStorage.ref(filePath);
+                        const snapshot = await storageRef.put(file);
+                        const downloadURL = await snapshot.ref.getDownloadURL();
+
+                        // Create file metadata with download URL
+                        const fileData = {
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            url: downloadURL,
+                            storagePath: filePath,
+                            uploadedAt: new Date().toISOString()
+                        };
+
+                        acquisition.files.push(fileData);
+                    });
+
+                    await Promise.all(uploadPromises);
                     displayFiles();
-                    saveAcquisitionToFirebase(acquisition);
-                };
-                reader.readAsDataURL(file);
-            });
+                    await saveAcquisitionToFirebase(acquisition);
+                    showStatus('Files uploaded successfully to cloud storage');
+                } catch (error) {
+                    console.error('Error uploading to Firebase Storage:', error);
+                    showStatus('Error uploading files. Please try again.');
+                    return;
+                }
+            } else {
+                // Fall back to base64 localStorage mode
+                console.log('Using localStorage mode for file storage');
+
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileData = {
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            data: e.target.result,
+                            uploadedAt: new Date().toISOString()
+                        };
+                        acquisition.files.push(fileData);
+                        displayFiles();
+                        saveAcquisitionToFirebase(acquisition);
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                showStatus('Files uploaded to local storage');
+            }
 
             // Clear the input
             fileInput.value = '';
-            showStatus('Files uploaded successfully');
         }
 
-        function downloadFile(index) {
+        async function downloadFile(index) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition || !acquisition.files || !acquisition.files[index]) return;
 
             const file = acquisition.files[index];
             const link = document.createElement('a');
-            link.href = file.data;
+
+            // Check if file has URL (Firebase Storage) or data (base64)
+            if (file.url) {
+                // Firebase Storage - use the download URL
+                link.href = file.url;
+            } else if (file.data) {
+                // Base64 data - use directly
+                link.href = file.data;
+            } else {
+                console.error('File has no URL or data:', file);
+                alert('Error: File data not found');
+                return;
+            }
+
             link.download = file.name;
+            link.target = '_blank';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        function deleteFile(index) {
+        async function deleteFile(index) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition || !acquisition.files || !acquisition.files[index]) return;
 
             const file = acquisition.files[index];
             if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+                // If file is stored in Firebase Storage, delete it from there too
+                if (file.storagePath && firebaseStorage && currentUser) {
+                    try {
+                        const storageRef = firebaseStorage.ref(file.storagePath);
+                        await storageRef.delete();
+                        console.log('File deleted from Firebase Storage:', file.storagePath);
+                    } catch (error) {
+                        console.error('Error deleting file from Firebase Storage:', error);
+                        // Continue anyway - the file reference will be removed from Firestore
+                    }
+                }
+
+                // Remove file from acquisition
                 acquisition.files.splice(index, 1);
                 displayFiles();
-                saveAcquisitionToFirebase(acquisition);
+                await saveAcquisitionToFirebase(acquisition);
                 showStatus('File deleted successfully');
             }
         }
@@ -2788,16 +2864,46 @@ Mergers & Acquisitions Team`
             // Load acquisition files into email attachments
             emailAttachments = [];
             if (acquisition.files && acquisition.files.length > 0) {
-                acquisition.files.forEach(file => {
-                    emailAttachments.push({
-                        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        contentBytes: file.data
-                    });
+                // Handle files with both URL (Firebase Storage) and data (base64)
+                const attachmentPromises = acquisition.files.map(async (file) => {
+                    if (file.data) {
+                        // File has base64 data
+                        return {
+                            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            contentBytes: file.data
+                        };
+                    } else if (file.url) {
+                        // File is in Firebase Storage - fetch and convert to base64
+                        try {
+                            const response = await fetch(file.url);
+                            const blob = await response.blob();
+                            const base64 = await new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.readAsDataURL(blob);
+                            });
+                            return {
+                                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                contentBytes: base64
+                            };
+                        } catch (error) {
+                            console.error('Error loading file for email attachment:', error);
+                            return null;
+                        }
+                    }
+                    return null;
                 });
-                renderAttachments();
+
+                Promise.all(attachmentPromises).then(attachments => {
+                    emailAttachments = attachments.filter(a => a !== null);
+                    renderAttachments();
+                });
             }
 
             // Populate template list dynamically
