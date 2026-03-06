@@ -1031,6 +1031,11 @@
                 </svg>
                 Sign in with Google
             </button>
+            <p style="margin-top: 20px; font-size: 14px; color: #7f8c8d;">
+                <a href="#" onclick="skipSignIn(); return false;" style="color: #3498db; text-decoration: none;">
+                    Continue without signing in (data saved locally only)
+                </a>
+            </p>
         </div>
     </div>
 
@@ -1769,7 +1774,22 @@ Mergers & Acquisitions Team`
                         loadDataFromFirebase();
                     } else {
                         currentUser = null;
-                        showAuthScreen();
+
+                        // Load from localStorage as fallback when not signed in
+                        console.log('Not signed in - loading from localStorage');
+                        const hasLocalData = loadDataFromLocalStorage();
+
+                        if (hasLocalData) {
+                            // User has local data, show main app
+                            showMainApp();
+                            renderAcquisitionTabs();
+                            if (acquisitions.length > 0) {
+                                selectAcquisition(acquisitions[0].id);
+                            }
+                        } else {
+                            // No local data, show auth screen
+                            showAuthScreen();
+                        }
                     }
                 });
 
@@ -1836,13 +1856,11 @@ Mergers & Acquisitions Team`
         }
 
         async function signOut() {
-            if (confirm('Are you sure you want to sign out?')) {
+            if (confirm('Are you sure you want to sign out?\n\nYour data will remain saved in localStorage.')) {
                 try {
                     await firebaseAuth.signOut();
-                    // Clear local data
-                    acquisitions = [];
-                    activities = [];
-                    currentAcquisitionId = null;
+                    // Don't clear local data - let it persist in localStorage
+                    // The onAuthStateChanged handler will reload from localStorage
                     // UI will be updated by onAuthStateChanged
                 } catch (error) {
                     console.error('Sign-out error:', error);
@@ -5015,6 +5033,25 @@ Mergers & Acquisitions Team`
             const contextMenu = document.getElementById('contextMenu');
             if (contextMenu && !event.target.closest('.context-menu')) {
                 contextMenu.style.display = 'none';
+            }
+        }
+
+        function skipSignIn() {
+            // Load from localStorage and show main app without authentication
+            console.log('Skipping sign in - using localStorage mode');
+            const hasLocalData = loadDataFromLocalStorage();
+
+            showMainApp();
+            renderAcquisitionTabs();
+            if (acquisitions.length > 0) {
+                selectAcquisition(acquisitions[0].id);
+            } else if (!hasLocalData) {
+                // No local data, load sample data
+                loadSampleData();
+                renderAcquisitionTabs();
+                if (acquisitions.length > 0) {
+                    selectAcquisition(acquisitions[0].id);
+                }
             }
         }
 
