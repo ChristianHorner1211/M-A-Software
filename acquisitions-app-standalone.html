@@ -2986,13 +2986,17 @@ Mergers & Acquisitions Team`
                 // Handle files with both URL (Firebase Storage) and data (base64)
                 const attachmentPromises = acquisition.files.map(async (file) => {
                     if (file.data) {
-                        // File has base64 data
+                        // File has base64 data - strip data URL prefix if present
+                        let contentBytes = file.data;
+                        if (contentBytes.includes(',')) {
+                            contentBytes = contentBytes.split(',')[1];
+                        }
                         return {
                             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             name: file.name,
                             size: file.size,
                             type: file.type,
-                            contentBytes: file.data
+                            contentBytes: contentBytes
                         };
                     } else if (file.url) {
                         // File is in Firebase Storage - fetch and convert to base64
@@ -3001,7 +3005,11 @@ Mergers & Acquisitions Team`
                             const blob = await response.blob();
                             const base64 = await new Promise((resolve) => {
                                 const reader = new FileReader();
-                                reader.onloadend = () => resolve(reader.result);
+                                reader.onloadend = () => {
+                                    // Strip data URL prefix to get just base64 content
+                                    const result = reader.result;
+                                    resolve(result.includes(',') ? result.split(',')[1] : result);
+                                };
                                 reader.readAsDataURL(blob);
                             });
                             return {
@@ -3170,12 +3178,21 @@ Mergers & Acquisitions Team`
                     if (acquisition.documents && acquisition.documents.length > 0) {
                         allAttachments.push(...acquisition.documents);
                     }
-                    const attachments = allAttachments.map(attachment => ({
-                        "@odata.type": "#microsoft.graph.fileAttachment",
-                        "name": attachment.name,
-                        "contentType": attachment.type,
-                        "contentBytes": attachment.contentBytes
-                    }));
+                    const attachments = allAttachments.map(attachment => {
+                        // Strip data URL prefix if present (e.g., "data:application/pdf;base64,")
+                        // Microsoft Graph API expects just the base64 content
+                        let contentBytes = attachment.contentBytes;
+                        if (contentBytes && contentBytes.includes(',')) {
+                            contentBytes = contentBytes.split(',')[1];
+                        }
+
+                        return {
+                            "@odata.type": "#microsoft.graph.fileAttachment",
+                            "name": attachment.name,
+                            "contentType": attachment.type,
+                            "contentBytes": contentBytes
+                        };
+                    });
 
                     let sentCount = 0;
                     let failedCarriers = [];
@@ -4294,7 +4311,8 @@ Mergers & Acquisitions Team`
                 // Read file content as base64
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const base64Content = e.target.result;
+                    // Remove the data URL prefix to get just the base64 content
+                    const base64Content = e.target.result.split(',')[1];
 
                     // Create attachment object for email
                     const attachment = {
