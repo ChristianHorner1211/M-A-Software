@@ -3276,8 +3276,16 @@ Mergers & Acquisitions Team`
                                 });
                             }
                         } else {
-                            failedCarriers.push(carrier.name);
-                            console.error('Failed to send email to', carrier.name);
+                            // Get more detailed error information
+                            let errorDetail = `Status: ${response.status}`;
+                            try {
+                                const errorBody = await response.text();
+                                console.error('Email send failed for', carrier.name, '- Status:', response.status, 'Error:', errorBody);
+                                errorDetail += ` - ${errorBody}`;
+                            } catch (e) {
+                                console.error('Failed to send email to', carrier.name, '- Status:', response.status);
+                            }
+                            failedCarriers.push(`${carrier.name} (${errorDetail})`);
                         }
                     }
 
