@@ -1111,6 +1111,15 @@
                     <label for="fein">FEIN:</label>
                     <input type="text" id="fein" required>
                 </div>
+                <div class="form-group">
+                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">Initial Email Documents (PDFs)</label>
+                    <input type="file" id="acquisitionDocuments" class="file-input-hidden" multiple accept=".pdf" onchange="handleAcquisitionDocumentSelect(event)">
+                    <label for="acquisitionDocuments" class="file-input-label">📎 Add PDF Documents</label>
+                    <div id="acquisitionDocumentList" class="attachment-list"></div>
+                    <div style="font-size: 12px; color: #7f8c8d; margin-top: 8px;">
+                        These PDFs will automatically attach to the initial email sent to carriers.
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary">Create Acquisition</button>
             </form>
         </div>
@@ -1546,6 +1555,7 @@
         let currentAcquisitionId = null;
         let activities = [];
         let emailAttachments = [];
+        let acquisitionDocuments = [];  // PDFs to attach to new acquisitions
         let appSettings = {
             firebase: {
                 config: null
@@ -2387,7 +2397,8 @@ Mergers & Acquisitions Team`
                 previousOwner,
                 newOwner,
                 fein,
-                carriers: [] // Start with empty carriers - user adds manually
+                carriers: [], // Start with empty carriers - user adds manually
+                documents: [...acquisitionDocuments] // Store PDFs for initial email
             };
 
             acquisitions.push(newAcquisition);
@@ -2399,6 +2410,10 @@ Mergers & Acquisitions Team`
             selectAcquisition(newAcquisition.id);
             closeModal('newAcquisitionModal');
             document.getElementById('newAcquisitionForm').reset();
+
+            // Clear acquisition documents after creating
+            acquisitionDocuments = [];
+            renderAcquisitionDocuments();
         }
 
         function toggleTemplateList() {
@@ -2603,7 +2618,12 @@ Mergers & Acquisitions Team`
                     }));
 
                     // Build attachments array for Microsoft Graph API
-                    const attachments = emailAttachments.map(attachment => ({
+                    // Include both manually added email attachments and acquisition documents
+                    const allAttachments = [...emailAttachments];
+                    if (acquisition.documents && acquisition.documents.length > 0) {
+                        allAttachments.push(...acquisition.documents);
+                    }
+                    const attachments = allAttachments.map(attachment => ({
                         "@odata.type": "#microsoft.graph.fileAttachment",
                         "name": attachment.name,
                         "contentType": attachment.type,
@@ -2693,7 +2713,7 @@ Mergers & Acquisitions Team`
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
                                     notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
-                                    attachments: [...emailAttachments],
+                                    attachments: [...allAttachments],
                                     conversationId: conversationId  // Store for reply tracking
                                 });
                             } catch (err) {
@@ -2705,7 +2725,7 @@ Mergers & Acquisitions Team`
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
                                     notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
-                                    attachments: [...emailAttachments]
+                                    attachments: [...allAttachments]
                                 });
                             }
                         } else {
@@ -2741,7 +2761,7 @@ Mergers & Acquisitions Team`
                             contact: carrierEmails[0] || 'Unknown',
                             carrier: carrier.name,
                             notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
-                            attachments: [...emailAttachments]
+                            attachments: [...allAttachments]
                         });
                     });
                 }
@@ -2762,7 +2782,7 @@ Mergers & Acquisitions Team`
                         contact: carrierEmails[0] || 'Unknown',
                         carrier: carrier.name,
                         notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
-                        attachments: [...emailAttachments]
+                        attachments: [...allAttachments]
                     });
                 });
 
@@ -3732,6 +3752,81 @@ Mergers & Acquisitions Team`
             event.target.value = '';
         }
 
+        async function handleAcquisitionDocumentSelect(event) {
+            const files = event.target.files;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+
+                // Validate PDF files only
+                if (file.type !== 'application/pdf') {
+                    alert(`${file.name} is not a PDF file. Only PDF files are allowed.`);
+                    continue;
+                }
+
+                // Read file content as base64
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Remove the data URL prefix to get just the base64 content
+                    const base64Content = e.target.result.split(',')[1];
+
+                    // Create document object with file metadata and content
+                    const document = {
+                        id: 'doc-' + Date.now() + '-' + i,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        contentBytes: base64Content
+                    };
+                    acquisitionDocuments.push(document);
+                    renderAcquisitionDocuments();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Reset file input so same file can be added again if removed
+            event.target.value = '';
+        }
+
+        function removeAcquisitionDocument(documentId) {
+            acquisitionDocuments = acquisitionDocuments.filter(d => d.id !== documentId);
+            renderAcquisitionDocuments();
+        }
+
+        function renderAcquisitionDocuments() {
+            const documentList = document.getElementById('acquisitionDocumentList');
+            if (!documentList) return;
+
+            if (acquisitionDocuments.length === 0) {
+                documentList.innerHTML = '';
+                return;
+            }
+
+            documentList.innerHTML = '';
+            acquisitionDocuments.forEach(document => {
+                const documentItem = document.createElement('div');
+                documentItem.className = 'attachment-item';
+
+                // Format file size
+                const sizeKB = (document.size / 1024).toFixed(1);
+                const sizeDisplay = sizeKB > 1024
+                    ? (sizeKB / 1024).toFixed(1) + ' MB'
+                    : sizeKB + ' KB';
+
+                documentItem.innerHTML = `
+                    <div class="attachment-info">
+                        <span class="attachment-icon">📄</span>
+                        <div class="attachment-details">
+                            <div class="attachment-name">${document.name}</div>
+                            <div class="attachment-size">${sizeDisplay}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeAcquisitionDocument('${document.id}')">Remove</button>
+                `;
+                documentList.appendChild(documentItem);
+            });
+        }
+
         function removeAttachment(attachmentId) {
             emailAttachments = emailAttachments.filter(a => a.id !== attachmentId);
             renderAttachments();
@@ -3778,6 +3873,12 @@ Mergers & Acquisitions Team`
             if (modalId === 'emailTemplateModal') {
                 emailAttachments = [];
                 renderAttachments();
+            }
+
+            // Clear acquisition documents when closing new acquisition modal
+            if (modalId === 'newAcquisitionModal') {
+                acquisitionDocuments = [];
+                renderAcquisitionDocuments();
             }
         }
 
