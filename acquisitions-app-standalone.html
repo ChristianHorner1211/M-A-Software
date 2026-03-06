@@ -1434,9 +1434,12 @@
 
                 <div class="form-group">
                     <label>Firebase Configuration</label>
-                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">
+                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 10px;">
                         Enter your Firebase configuration to enable cloud data storage and sync.
                         <a href="https://console.firebase.google.com" target="_blank" style="color: #3498db;">Get your config from Firebase Console</a>
+                    </p>
+                    <p style="font-size: 12px; color: #e74c3c; margin-bottom: 15px;">
+                        ⚠️ <strong>Important:</strong> All keys must be quoted with double quotes. Without Firebase, data is saved only to your browser's localStorage.
                     </p>
                     <textarea id="firebaseConfig" rows="8" placeholder='Paste your Firebase config JSON here:&#10;{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
                 </div>
@@ -1740,12 +1743,20 @@ Mergers & Acquisitions Team`
         function initializeFirebase() {
             // Load Firebase config from settings
             if (!appSettings.firebase.config) {
-                console.log('Firebase config not found');
+                console.log('Firebase config not found - using localStorage mode');
                 return false;
             }
 
             try {
                 const config = JSON.parse(appSettings.firebase.config);
+
+                // Validate required Firebase fields
+                const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                const missingFields = requiredFields.filter(field => !config[field]);
+                if (missingFields.length > 0) {
+                    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+                }
+
                 firebaseApp = firebase.initializeApp(config);
                 firebaseAuth = firebase.auth();
                 firestore = firebase.firestore();
@@ -1762,10 +1773,19 @@ Mergers & Acquisitions Team`
                     }
                 });
 
+                console.log('Firebase initialized successfully');
                 return true;
             } catch (error) {
                 console.error('Firebase initialization error:', error);
-                alert('Firebase configuration error. Please check your settings.');
+
+                // Clear invalid Firebase config
+                console.log('Clearing invalid Firebase config and using localStorage mode');
+                appSettings.firebase.config = '';
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+
+                // Don't show alert on every page load - just log it
+                console.warn('Firebase not configured properly. Using localStorage mode. Go to Settings to configure Firebase.');
+
                 return false;
             }
         }
@@ -2032,7 +2052,21 @@ Mergers & Acquisitions Team`
         // ==================== FIREBASE DATA FUNCTIONS ====================
 
         async function loadDataFromFirebase() {
-            if (!firestore || !currentUser) return;
+            if (!firestore || !currentUser) {
+                // If Firebase not available, load from localStorage
+                console.log('Firebase not available, loading from localStorage');
+                const hasLocalData = loadDataFromLocalStorage();
+
+                if (!hasLocalData) {
+                    console.log('No localStorage data found');
+                }
+
+                renderAcquisitionTabs();
+                if (acquisitions.length > 0) {
+                    selectAcquisition(acquisitions[0].id);
+                }
+                return;
+            }
 
             try {
                 showSyncStatus('syncing', 'Loading data...');
@@ -2077,7 +2111,21 @@ Mergers & Acquisitions Team`
                 setTimeout(() => hideSyncStatus(), 3000);
             } catch (error) {
                 console.error('Error loading data from Firebase:', error);
-                showSyncStatus('error', 'Sync error');
+
+                // Fallback to localStorage if Firebase fails
+                console.log('Falling back to localStorage due to Firebase error');
+                const hasLocalData = loadDataFromLocalStorage();
+
+                if (!hasLocalData) {
+                    console.log('No localStorage data found');
+                }
+
+                renderAcquisitionTabs();
+                if (acquisitions.length > 0) {
+                    selectAcquisition(acquisitions[0].id);
+                }
+
+                showSyncStatus('error', 'Using local data');
                 setTimeout(() => hideSyncStatus(), 5000);
             }
         }
@@ -4255,11 +4303,21 @@ Mergers & Acquisitions Team`
             const firebaseConfig = document.getElementById('firebaseConfig').value.trim();
             if (firebaseConfig) {
                 try {
-                    // Validate JSON
-                    JSON.parse(firebaseConfig);
+                    // Validate JSON format
+                    const config = JSON.parse(firebaseConfig);
+
+                    // Validate required fields
+                    const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                    const missingFields = requiredFields.filter(field => !config[field]);
+
+                    if (missingFields.length > 0) {
+                        alert(`Invalid Firebase configuration. Missing required fields: ${missingFields.join(', ')}\n\nMake sure all keys are quoted with double quotes, like:\n{\n  "apiKey": "your-key",\n  "authDomain": "your-domain",\n  "projectId": "your-project"\n}`);
+                        return;
+                    }
+
                     appSettings.firebase.config = firebaseConfig;
                 } catch (e) {
-                    alert('Invalid Firebase configuration JSON. Please check and try again.');
+                    alert('Invalid Firebase configuration JSON. Please check and try again.\n\nCommon issue: Make sure all keys are quoted with double quotes.\n\nCorrect format:\n{\n  "apiKey": "AIza...",\n  "authDomain": "project.firebaseapp.com",\n  "projectId": "project-id"\n}\n\nIncorrect format (missing quotes):\n{\n  apiKey: "AIza...",\n  authDomain: "project.firebaseapp.com"\n}');
                     return;
                 }
             }
