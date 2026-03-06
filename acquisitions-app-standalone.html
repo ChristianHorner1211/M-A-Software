@@ -2713,137 +2713,152 @@ Mergers & Acquisitions Team`
         }
 
         async function uploadFiles() {
-            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
-            if (!acquisition) return;
+            try {
+                const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+                if (!acquisition) {
+                    alert('Please select an acquisition first');
+                    return;
+                }
 
-            const fileInput = document.getElementById('fileUploadInput');
-            const files = fileInput.files;
+                const fileInput = document.getElementById('fileUploadInput');
+                const files = fileInput.files;
 
-            if (files.length === 0) {
-                alert('Please select at least one file to upload');
-                return;
-            }
+                if (files.length === 0) {
+                    alert('Please select at least one file to upload');
+                    return;
+                }
 
-            if (!acquisition.files) {
-                acquisition.files = [];
-            }
+                if (!acquisition.files) {
+                    acquisition.files = [];
+                }
 
-            showStatus('Uploading files...');
+                showStatus('Uploading files...');
 
-            // Check if Firebase Storage is available
-            const useFirebaseStorage = firebaseStorage && currentUser;
+                // Check if Firebase Storage is available
+                const useFirebaseStorage = firebaseStorage && currentUser;
 
-            if (useFirebaseStorage) {
-                // Upload to Firebase Storage
-                try {
-                    const uploadPromises = Array.from(files).map(async (file) => {
-                        // Create a unique path for the file
-                        const timestamp = Date.now();
-                        const randomId = Math.random().toString(36).substr(2, 9);
-                        const filePath = `users/${currentUser.uid}/acquisitions/${acquisition.id}/${timestamp}-${randomId}-${file.name}`;
+                if (useFirebaseStorage) {
+                    // Upload to Firebase Storage
+                    try {
+                        const uploadPromises = Array.from(files).map(async (file) => {
+                            // Create a unique path for the file
+                            const timestamp = Date.now();
+                            const randomId = Math.random().toString(36).substr(2, 9);
+                            const filePath = `users/${currentUser.uid}/acquisitions/${acquisition.id}/${timestamp}-${randomId}-${file.name}`;
 
-                        // Upload file to Firebase Storage
-                        const storageRef = firebaseStorage.ref(filePath);
-                        const snapshot = await storageRef.put(file);
-                        const downloadURL = await snapshot.ref.getDownloadURL();
+                            // Upload file to Firebase Storage
+                            const storageRef = firebaseStorage.ref(filePath);
+                            const snapshot = await storageRef.put(file);
+                            const downloadURL = await snapshot.ref.getDownloadURL();
 
-                        // Create file metadata with download URL
-                        const fileData = {
-                            name: file.name,
-                            size: file.size,
-                            type: file.type,
-                            url: downloadURL,
-                            storagePath: filePath,
-                            uploadedAt: new Date().toISOString()
-                        };
-
-                        acquisition.files.push(fileData);
-                    });
-
-                    await Promise.all(uploadPromises);
-                    displayFiles();
-                    await saveAcquisitionToFirebase(acquisition);
-                    showStatus('Files uploaded successfully to cloud storage');
-                } catch (error) {
-                    console.error('Error uploading to Firebase Storage:', error);
-
-                    // Check for common Firebase Storage errors
-                    let errorMessage = 'Error uploading to cloud storage: ';
-                    if (error.code === 'storage/unauthorized') {
-                        errorMessage += 'Unauthorized. Firebase Storage security rules may need to be updated.\n\n';
-                        errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
-                        errorMessage += 'Go to Storage > Rules and use:\n\n';
-                        errorMessage += 'rules_version = \'2\';\n';
-                        errorMessage += 'service firebase.storage {\n';
-                        errorMessage += '  match /b/{bucket}/o {\n';
-                        errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
-                        errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
-                        errorMessage += '    }\n';
-                        errorMessage += '  }\n';
-                        errorMessage += '}\n\n';
-                        errorMessage += 'Falling back to local storage mode for now.';
-                    } else if (error.code === 'storage/bucket-not-found') {
-                        errorMessage += 'Storage bucket not configured. Please add "storageBucket" to your Firebase config in Settings.\n\n';
-                        errorMessage += 'Falling back to local storage mode.';
-                    } else if (error.code === 'storage/quota-exceeded') {
-                        errorMessage += 'Storage quota exceeded. Please upgrade your Firebase plan.\n\n';
-                        errorMessage += 'Falling back to local storage mode.';
-                    } else {
-                        errorMessage += error.message || 'Unknown error';
-                        errorMessage += '\n\nFalling back to local storage mode.';
-                    }
-
-                    alert(errorMessage);
-                    console.log('Attempting to upload to localStorage as fallback...');
-
-                    // Fall back to localStorage mode
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
+                            // Create file metadata with download URL
                             const fileData = {
                                 name: file.name,
                                 size: file.size,
                                 type: file.type,
-                                data: e.target.result,
+                                url: downloadURL,
+                                storagePath: filePath,
                                 uploadedAt: new Date().toISOString()
                             };
+
                             acquisition.files.push(fileData);
-                            displayFiles();
-                            saveAcquisitionToFirebase(acquisition);
+                        });
+
+                        await Promise.all(uploadPromises);
+                        displayFiles();
+                        await saveAcquisitionToFirebase(acquisition);
+                        showStatus('Files uploaded successfully to cloud storage');
+                        fileInput.value = '';
+                    } catch (error) {
+                        console.error('Error uploading to Firebase Storage:', error);
+
+                        // Check for common Firebase Storage errors
+                        let errorMessage = 'Error uploading to cloud storage: ';
+                        if (error.code === 'storage/unauthorized') {
+                            errorMessage += 'Unauthorized. Firebase Storage security rules may need to be updated.\n\n';
+                            errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
+                            errorMessage += 'Go to Storage > Rules and use:\n\n';
+                            errorMessage += 'rules_version = \'2\';\n';
+                            errorMessage += 'service firebase.storage {\n';
+                            errorMessage += '  match /b/{bucket}/o {\n';
+                            errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
+                            errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
+                            errorMessage += '    }\n';
+                            errorMessage += '  }\n';
+                            errorMessage += '}\n\n';
+                            errorMessage += 'Falling back to local storage mode for now.';
+                        } else if (error.code === 'storage/bucket-not-found') {
+                            errorMessage += 'Storage bucket not configured. Please add "storageBucket" to your Firebase config in Settings.\n\n';
+                            errorMessage += 'Falling back to local storage mode.';
+                        } else if (error.code === 'storage/quota-exceeded') {
+                            errorMessage += 'Storage quota exceeded. Please upgrade your Firebase plan.\n\n';
+                            errorMessage += 'Falling back to local storage mode.';
+                        } else {
+                            errorMessage += error.message || 'Unknown error';
+                            errorMessage += '\n\nFalling back to local storage mode.';
+                        }
+
+                        alert(errorMessage);
+                        console.log('Attempting to upload to localStorage as fallback...');
+
+                        // Fall back to localStorage mode with proper async handling
+                        await uploadToLocalStorage(files, acquisition);
+                        fileInput.value = '';
+                        return;
+                    }
+                } else {
+                    // Fall back to base64 localStorage mode
+                    console.log('Using localStorage mode for file storage');
+                    await uploadToLocalStorage(files, acquisition);
+                    fileInput.value = '';
+                }
+            } catch (error) {
+                console.error('Unexpected error in uploadFiles:', error);
+                alert('Error uploading files: ' + (error.message || 'Unknown error. Please check the browser console for details.'));
+                showStatus('Error uploading files');
+            }
+        }
+
+        // Helper function to handle localStorage uploads with proper async handling
+        async function uploadToLocalStorage(files, acquisition) {
+            try {
+                const filePromises = Array.from(files).map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+
+                        reader.onload = function(e) {
+                            try {
+                                const fileData = {
+                                    name: file.name,
+                                    size: file.size,
+                                    type: file.type,
+                                    data: e.target.result,
+                                    uploadedAt: new Date().toISOString()
+                                };
+                                acquisition.files.push(fileData);
+                                resolve();
+                            } catch (error) {
+                                reject(error);
+                            }
                         };
+
+                        reader.onerror = function(error) {
+                            console.error('FileReader error:', error);
+                            reject(new Error('Failed to read file: ' + file.name));
+                        };
+
                         reader.readAsDataURL(file);
                     });
-
-                    showStatus('Files uploaded to local storage (fallback mode)');
-                    fileInput.value = '';
-                    return;
-                }
-            } else {
-                // Fall back to base64 localStorage mode
-                console.log('Using localStorage mode for file storage');
-
-                Array.from(files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const fileData = {
-                            name: file.name,
-                            size: file.size,
-                            type: file.type,
-                            data: e.target.result,
-                            uploadedAt: new Date().toISOString()
-                        };
-                        acquisition.files.push(fileData);
-                        displayFiles();
-                        saveAcquisitionToFirebase(acquisition);
-                    };
-                    reader.readAsDataURL(file);
                 });
 
+                await Promise.all(filePromises);
+                displayFiles();
+                await saveAcquisitionToFirebase(acquisition);
                 showStatus('Files uploaded to local storage');
+            } catch (error) {
+                console.error('Error uploading to localStorage:', error);
+                throw new Error('Failed to upload files to local storage: ' + error.message);
             }
-
-            // Clear the input
-            fileInput.value = '';
         }
 
         async function downloadFile(index) {
