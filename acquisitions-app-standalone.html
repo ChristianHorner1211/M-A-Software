@@ -3317,7 +3317,7 @@ Mergers & Acquisitions Team`
 
                                 // Log activity for this carrier with conversationId
                                 const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                                addActivityLog({
+                                await addActivityLog({
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
@@ -3329,7 +3329,7 @@ Mergers & Acquisitions Team`
                                 console.error('Failed to get conversationId:', err);
                                 // Still log the activity even if we couldn't get conversationId
                                 const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                                addActivityLog({
+                                await addActivityLog({
                                     type: 'email',
                                     contact: carrierEmails[0],
                                     carrier: carrier.name,
@@ -3363,7 +3363,7 @@ Mergers & Acquisitions Team`
                     alert('Failed to send emails: ' + error.message + '\n\nEmails logged to activity but not sent.');
 
                     // Log to activity anyway
-                    selectedCarriers.forEach(carrier => {
+                    for (const carrier of selectedCarriers) {
                         const carrierEmails = [];
                         if (carrier.contacts && carrier.contacts.length > 0) {
                             carrier.contacts.forEach(contact => {
@@ -3373,18 +3373,18 @@ Mergers & Acquisitions Team`
                             });
                         }
                         const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                        addActivityLog({
+                        await addActivityLog({
                             type: 'email',
                             contact: carrierEmails[0] || 'Unknown',
                             carrier: carrier.name,
                             notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
                             attachments: [...allAttachments]
                         });
-                    });
+                    }
                 }
             } else {
                 // Outlook not connected - just log to activity
-                selectedCarriers.forEach(carrier => {
+                for (const carrier of selectedCarriers) {
                     const carrierEmails = [];
                     if (carrier.contacts && carrier.contacts.length > 0) {
                         carrier.contacts.forEach(contact => {
@@ -3394,14 +3394,14 @@ Mergers & Acquisitions Team`
                         });
                     }
                     const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                    addActivityLog({
+                    await addActivityLog({
                         type: 'email',
                         contact: carrierEmails[0] || 'Unknown',
                         carrier: carrier.name,
                         notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
                         attachments: [...allAttachments]
                     });
-                });
+                }
 
                 alert(`Email logged to activity for ${selectedCarriers.length} carrier(s).\n\nConnect Outlook in Settings to send real emails.`);
             }
@@ -3431,14 +3431,14 @@ Mergers & Acquisitions Team`
             });
         }
 
-        function addActivity(event) {
+        async function addActivity(event) {
             event.preventDefault();
             const type = document.getElementById('activityType').value;
             const contact = document.getElementById('activityContact').value;
             const carrier = document.getElementById('activityCarrier').value;
             const notes = document.getElementById('activityNotes').value;
             const dueDate = document.getElementById('activityDueDate').value;
-            addActivityLog({ type, contact, carrier, notes, dueDate: dueDate || null });
+            await addActivityLog({ type, contact, carrier, notes, dueDate: dueDate || null });
             closeModal('activityModal');
             document.getElementById('activityForm').reset();
         }
