@@ -725,6 +725,12 @@
             align-items: center;
             gap: 10px;
             flex: 1;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .attachment-info:hover {
+            opacity: 0.7;
         }
 
         .attachment-icon {
@@ -3978,6 +3984,36 @@ Mergers & Acquisitions Team`
             });
         }
 
+        function downloadAttachment(attachmentId) {
+            const attachment = emailAttachments.find(a => a.id === attachmentId);
+            if (!attachment) return;
+
+            try {
+                // Convert base64 to blob
+                const base64Data = attachment.contentBytes.split(',')[1] || attachment.contentBytes;
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: attachment.type });
+
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = attachment.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading attachment:', error);
+                alert('Failed to download attachment');
+            }
+        }
+
         function removeAttachment(attachmentId) {
             emailAttachments = emailAttachments.filter(a => a.id !== attachmentId);
             renderAttachments();
@@ -4004,7 +4040,7 @@ Mergers & Acquisitions Team`
                     : sizeKB + ' KB';
 
                 attachmentItem.innerHTML = `
-                    <div class="attachment-info">
+                    <div class="attachment-info" onclick="downloadAttachment('${attachment.id}')" title="Click to download">
                         <span class="attachment-icon">📎</span>
                         <div class="attachment-details">
                             <div class="attachment-name">${attachment.name}</div>
