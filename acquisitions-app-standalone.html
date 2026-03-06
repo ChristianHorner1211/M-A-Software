@@ -2635,6 +2635,21 @@ Mergers & Acquisitions Team`
             const checkboxContainer = document.getElementById('carrierCheckboxes');
             checkboxContainer.innerHTML = '';
 
+            // Load acquisition files into email attachments
+            emailAttachments = [];
+            if (acquisition.files && acquisition.files.length > 0) {
+                acquisition.files.forEach(file => {
+                    emailAttachments.push({
+                        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        contentBytes: file.data
+                    });
+                });
+                renderAttachments();
+            }
+
             // Populate template list dynamically
             const templateListContainer = document.getElementById('templateList');
             templateListContainer.innerHTML = '';
@@ -3880,6 +3895,14 @@ Mergers & Acquisitions Team`
         }
 
         async function handleFileSelect(event) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            // Initialize files array if it doesn't exist
+            if (!acquisition.files) {
+                acquisition.files = [];
+            }
+
             const files = event.target.files;
 
             for (let i = 0; i < files.length; i++) {
@@ -3888,10 +3911,9 @@ Mergers & Acquisitions Team`
                 // Read file content as base64
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // Remove the data URL prefix to get just the base64 content
-                    const base64Content = e.target.result.split(',')[1];
+                    const base64Content = e.target.result;
 
-                    // Create attachment object with file metadata and content
+                    // Create attachment object for email
                     const attachment = {
                         id: 'attach-' + Date.now() + '-' + i,
                         name: file.name,
@@ -3901,6 +3923,22 @@ Mergers & Acquisitions Team`
                     };
                     emailAttachments.push(attachment);
                     renderAttachments();
+
+                    // Also save to acquisition files permanently
+                    const fileData = {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        data: base64Content,
+                        uploadedAt: new Date().toISOString()
+                    };
+
+                    // Check if file already exists to avoid duplicates
+                    const existingFile = acquisition.files.find(f => f.name === file.name && f.size === file.size);
+                    if (!existingFile) {
+                        acquisition.files.push(fileData);
+                        saveData();
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -4015,8 +4053,22 @@ Mergers & Acquisitions Team`
         }
 
         function removeAttachment(attachmentId) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+
+            // Find the attachment being removed
+            const attachment = emailAttachments.find(a => a.id === attachmentId);
+
+            // Remove from email attachments
             emailAttachments = emailAttachments.filter(a => a.id !== attachmentId);
             renderAttachments();
+
+            // Also remove from acquisition files permanently
+            if (attachment && acquisition && acquisition.files) {
+                acquisition.files = acquisition.files.filter(f =>
+                    !(f.name === attachment.name && f.size === attachment.size)
+                );
+                saveData();
+            }
         }
 
         function renderAttachments() {
