@@ -2094,7 +2094,12 @@ Mergers & Acquisitions Team`
 
                 const userId = currentUser.uid;
 
-                // Load acquisitions
+                // First, load from localStorage to preserve any recent changes
+                const savedActivitiesLocal = localStorage.getItem('activities');
+                const localActivities = savedActivitiesLocal ? JSON.parse(savedActivitiesLocal) : [];
+                console.log('Loaded activities from localStorage:', localActivities.length);
+
+                // Load acquisitions from Firebase
                 const acquisitionsSnapshot = await firestore
                     .collection('users')
                     .doc(userId)
@@ -2106,22 +2111,62 @@ Mergers & Acquisitions Team`
                     ...doc.data()
                 }));
 
-                // Load activities
+                // Load activities from Firebase
                 const activitiesSnapshot = await firestore
                     .collection('users')
                     .doc(userId)
                     .collection('activities')
                     .get();
 
-                activities = activitiesSnapshot.docs.map(doc => ({
+                const firebaseActivities = activitiesSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
+                console.log('Loaded activities from Firebase:', firebaseActivities.length);
+
+                // Merge activities from Firebase and localStorage, keeping unique items by timestamp
+                const activitiesMap = new Map();
+
+                // Add Firebase activities first
+                firebaseActivities.forEach(activity => {
+                    if (activity.timestamp) {
+                        activitiesMap.set(activity.timestamp, activity);
+                    }
+                });
+
+                // Add/override with localStorage activities (these might be newer)
+                localActivities.forEach(activity => {
+                    if (activity.timestamp) {
+                        activitiesMap.set(activity.timestamp, activity);
+                    }
+                });
+
+                // Convert map back to array
+                activities = Array.from(activitiesMap.values());
+                console.log('Merged activities total:', activities.length);
 
                 // Don't auto-load sample data - user creates their own acquisitions
 
-                // Backup to localStorage after loading from Firebase
+                // Save merged data back to localStorage and Firebase
                 saveDataToLocalStorage();
+
+                // Save any localStorage-only activities to Firebase
+                for (const activity of localActivities) {
+                    const existsInFirebase = firebaseActivities.some(fa => fa.timestamp === activity.timestamp);
+                    if (!existsInFirebase && activity.timestamp) {
+                        try {
+                            await firestore
+                                .collection('users')
+                                .doc(userId)
+                                .collection('activities')
+                                .doc(activity.timestamp)
+                                .set(activity);
+                            console.log('Synced local activity to Firebase:', activity.timestamp);
+                        } catch (err) {
+                            console.error('Error syncing activity to Firebase:', err);
+                        }
+                    }
+                }
 
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
