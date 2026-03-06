@@ -50,10 +50,57 @@ Five pre-configured email templates with auto-fill functionality:
 
 ## Getting Started
 
+### Important: Running the Application
+
+> **Do NOT open the HTML file directly** (double-clicking it creates a `file://` URL which breaks Firebase Authentication). You must serve it over HTTP.
+
+#### Option 1: Local Development Server (Quickest)
+
+Run the included Python server script:
+
+```bash
+python3 server.py
+```
+
+This opens `http://localhost:8000/acquisitions-app-standalone.html` automatically in your browser. Google Sign-In will work correctly.
+
+#### Option 2: Firebase Hosting (Recommended for Sharing)
+
+Deploy to Firebase Hosting so the app is accessible from any device:
+
+```bash
+# Install Firebase CLI if you haven't already
+npm install -g firebase-tools
+
+# Log in to Firebase
+firebase login
+
+# Update .firebaserc with your Firebase project ID, then deploy
+firebase deploy --only hosting
+```
+
+After deploying, Firebase gives you a public URL (e.g. `https://your-project.web.app`).
+
+#### Option 3: Any Other Local HTTP Server
+
+```bash
+# Using Node.js (npx)
+npx serve .
+
+# Using Python (alternative)
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000/acquisitions-app-standalone.html`
+
+---
+
 ### Opening the Application
 
-1. Open `index.html` in any modern web browser
-2. The application will load with sample data showing three acquisitions
+1. Start the server using one of the options above
+2. Open the URL in your browser (e.g. `http://localhost:8000/acquisitions-app-standalone.html`)
+3. Sign in with your Google account
+4. The application will load with your saved data
 
 ### Creating a New Acquisition
 
