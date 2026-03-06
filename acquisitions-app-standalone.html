@@ -1060,6 +1060,7 @@
                                 <button class="btn btn-secondary btn-small" onclick="showRemoveCarrierModal()">- Remove Carrier</button>
                                 <button class="btn btn-secondary btn-small" onclick="showImportCarriersModal()">📥 Import Carriers</button>
                                 <button class="btn btn-primary btn-small" onclick="showBulkEmail()">✉ Bulk Email</button>
+                                <button class="btn btn-secondary btn-small" onclick="showFilesModal()">📁 Files</button>
                             </div>
                         </div>
                         <div class="status-legend">
@@ -1545,6 +1546,26 @@
 
             <div style="text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8eef3;">
                 <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files Modal -->
+    <div id="filesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('filesModal')">&times;</span>
+            <h2>Files for <span id="filesAcquisitionName"></span></h2>
+
+            <!-- Upload Section -->
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                <h3 style="margin-top: 0;">Upload New File</h3>
+                <input type="file" id="fileUploadInput" multiple style="margin-bottom: 10px;">
+                <button class="btn btn-primary btn-small" onclick="uploadFiles()">Upload</button>
+            </div>
+
+            <!-- Files List -->
+            <div id="filesList" style="max-height: 400px; overflow-y: auto;">
+                <p style="text-align: center; color: #6c757d;">No files uploaded yet</p>
             </div>
         </div>
     </div>
@@ -2465,6 +2486,136 @@ Mergers & Acquisitions Team`
             }
             // Open email compose modal - user can select multiple carriers via checkboxes
             showEmailCompose();
+        }
+
+        // Files Management Functions
+        function showFilesModal() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            // Initialize files array if it doesn't exist
+            if (!acquisition.files) {
+                acquisition.files = [];
+            }
+
+            // Update modal title
+            document.getElementById('filesAcquisitionName').textContent = acquisition.name;
+
+            // Display files
+            displayFiles();
+
+            // Show modal
+            document.getElementById('filesModal').style.display = 'block';
+        }
+
+        function displayFiles() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const filesList = document.getElementById('filesList');
+
+            if (!acquisition.files || acquisition.files.length === 0) {
+                filesList.innerHTML = '<p style="text-align: center; color: #6c757d;">No files uploaded yet</p>';
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            acquisition.files.forEach((file, index) => {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px; background: white;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; margin-bottom: 4px;">
+                                📄 ${file.name}
+                            </div>
+                            <div style="font-size: 0.85em; color: #6c757d;">
+                                ${formatFileSize(file.size)} • Uploaded ${new Date(file.uploadedAt).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-small btn-secondary" onclick="downloadFile(${index})">📥 Download</button>
+                            <button class="btn btn-small" onclick="deleteFile(${index})" style="background: #dc3545; color: white;">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            filesList.innerHTML = html;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function uploadFiles() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const fileInput = document.getElementById('fileUploadInput');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert('Please select at least one file to upload');
+                return;
+            }
+
+            if (!acquisition.files) {
+                acquisition.files = [];
+            }
+
+            // Process each file
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const fileData = {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        data: e.target.result,
+                        uploadedAt: new Date().toISOString()
+                    };
+                    acquisition.files.push(fileData);
+                    displayFiles();
+                    saveData();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Clear the input
+            fileInput.value = '';
+            showStatus('Files uploaded successfully');
+        }
+
+        function downloadFile(index) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition || !acquisition.files || !acquisition.files[index]) return;
+
+            const file = acquisition.files[index];
+            const link = document.createElement('a');
+            link.href = file.data;
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function deleteFile(index) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition || !acquisition.files || !acquisition.files[index]) return;
+
+            const file = acquisition.files[index];
+            if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+                acquisition.files.splice(index, 1);
+                displayFiles();
+                saveData();
+                showStatus('File deleted successfully');
+            }
         }
 
         function showEmailCompose() {
