@@ -2284,6 +2284,26 @@ Mergers & Acquisitions Team`
             document.getElementById('syncStatus').style.display = 'none';
         }
 
+        // Helper function for showing status messages with auto-hide
+        function showStatus(message, type = 'info') {
+            // Map message types to sync status classes
+            let statusClass = 'synced'; // default green
+
+            if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+                statusClass = 'error';
+            } else if (message.toLowerCase().includes('uploading') || message.toLowerCase().includes('saving')) {
+                statusClass = 'syncing';
+            }
+
+            showSyncStatus(statusClass, message);
+
+            // Auto-hide after 3 seconds for success messages, 5 seconds for errors
+            const hideDelay = statusClass === 'error' ? 5000 : 3000;
+            setTimeout(() => {
+                hideSyncStatus();
+            }, hideDelay);
+        }
+
         // ========================================
         // LOCAL STORAGE PERSISTENCE (FALLBACK)
         // ========================================
@@ -2822,6 +2842,21 @@ Mergers & Acquisitions Team`
         // Helper function to handle localStorage uploads with proper async handling
         async function uploadToLocalStorage(files, acquisition) {
             try {
+                // Check file sizes before uploading
+                const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit for localStorage
+                const largeFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
+
+                if (largeFiles.length > 0) {
+                    const fileNames = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join('\n');
+                    throw new Error(
+                        `The following files are too large for local storage (max 5MB):\n\n${fileNames}\n\n` +
+                        `To upload large files, you need to configure Firebase Storage:\n` +
+                        `1. Go to Settings (⚙️ icon)\n` +
+                        `2. Add your Firebase configuration with storageBucket\n` +
+                        `3. Configure Storage security rules in Firebase Console`
+                    );
+                }
+
                 const filePromises = Array.from(files).map(file => {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -2835,6 +2870,26 @@ Mergers & Acquisitions Team`
                                     data: e.target.result,
                                     uploadedAt: new Date().toISOString()
                                 };
+
+                                // Try to save to check if we're exceeding localStorage quota
+                                const testAcquisition = JSON.parse(JSON.stringify(acquisition));
+                                testAcquisition.files = [...(testAcquisition.files || []), fileData];
+                                try {
+                                    localStorage.setItem('test_acquisition', JSON.stringify(testAcquisition));
+                                    localStorage.removeItem('test_acquisition');
+                                } catch (storageError) {
+                                    if (storageError.name === 'QuotaExceededError') {
+                                        reject(new Error(
+                                            `Storage quota exceeded. Your browser's localStorage is full.\n\n` +
+                                            `Options:\n` +
+                                            `1. Delete some files from other acquisitions\n` +
+                                            `2. Configure Firebase Storage for unlimited file storage (Settings ⚙️)`
+                                        ));
+                                        return;
+                                    }
+                                    throw storageError;
+                                }
+
                                 acquisition.files.push(fileData);
                                 resolve();
                             } catch (error) {
@@ -2857,7 +2912,7 @@ Mergers & Acquisitions Team`
                 showStatus('Files uploaded to local storage');
             } catch (error) {
                 console.error('Error uploading to localStorage:', error);
-                throw new Error('Failed to upload files to local storage: ' + error.message);
+                throw error; // Re-throw to preserve the detailed error message
             }
         }
 
