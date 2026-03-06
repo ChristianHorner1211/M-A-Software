@@ -1862,9 +1862,17 @@ Mergers & Acquisitions Team`
             initializeMSAL();
 
             if (!firebaseInitialized) {
-                // If Firebase not configured, show main app with sample data (old behavior)
+                // If Firebase not configured, load from localStorage or sample data
                 showMainApp();
-                loadSampleData();
+
+                // Try to load from localStorage first
+                const hasLocalData = loadDataFromLocalStorage();
+
+                if (!hasLocalData) {
+                    // If no local data, load sample data
+                    loadSampleData();
+                }
+
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
                     selectAcquisition(acquisitions[0].id);
@@ -2057,6 +2065,9 @@ Mergers & Acquisitions Team`
 
                 // Don't auto-load sample data - user creates their own acquisitions
 
+                // Backup to localStorage after loading from Firebase
+                saveDataToLocalStorage();
+
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
                     selectAcquisition(acquisitions[0].id);
@@ -2072,6 +2083,9 @@ Mergers & Acquisitions Team`
         }
 
         async function saveAcquisitionToFirebase(acquisition) {
+            // Always save to localStorage first (immediate backup)
+            saveDataToLocalStorage();
+
             if (!firestore || !currentUser) return;
 
             try {
@@ -2092,6 +2106,9 @@ Mergers & Acquisitions Team`
         }
 
         async function saveActivityToFirebase(activity) {
+            // Always save to localStorage first (immediate backup)
+            saveDataToLocalStorage();
+
             if (!firestore || !currentUser) return;
 
             try {
@@ -2198,6 +2215,70 @@ Mergers & Acquisitions Team`
             document.getElementById('syncStatus').style.display = 'none';
         }
 
+        // ========================================
+        // LOCAL STORAGE PERSISTENCE (FALLBACK)
+        // ========================================
+
+        function saveDataToLocalStorage() {
+            try {
+                // Save acquisitions (includes carriers with files)
+                localStorage.setItem('acquisitions', JSON.stringify(acquisitions));
+
+                // Save activities
+                localStorage.setItem('activities', JSON.stringify(activities));
+
+                console.log('Data saved to localStorage');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+                // If storage quota exceeded, try to save without file data
+                if (error.name === 'QuotaExceededError') {
+                    try {
+                        const acquisitionsWithoutLargeFiles = acquisitions.map(acq => ({
+                            ...acq,
+                            carriers: acq.carriers.map(carrier => ({
+                                ...carrier,
+                                files: carrier.files ? carrier.files.slice(0, 5) : [] // Limit to 5 files
+                            }))
+                        }));
+                        localStorage.setItem('acquisitions', JSON.stringify(acquisitionsWithoutLargeFiles));
+                        localStorage.setItem('activities', JSON.stringify(activities));
+                        console.warn('Saved with limited files due to storage quota');
+                    } catch (e) {
+                        console.error('Failed to save even with limits:', e);
+                    }
+                }
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            try {
+                // Load acquisitions
+                const savedAcquisitions = localStorage.getItem('acquisitions');
+                if (savedAcquisitions) {
+                    acquisitions = JSON.parse(savedAcquisitions);
+                    console.log('Loaded acquisitions from localStorage:', acquisitions.length);
+                }
+
+                // Load activities
+                const savedActivities = localStorage.getItem('activities');
+                if (savedActivities) {
+                    activities = JSON.parse(savedActivities);
+                    console.log('Loaded activities from localStorage:', activities.length);
+                }
+
+                return acquisitions.length > 0;
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+                return false;
+            }
+        }
+
+        function clearLocalStorageData() {
+            localStorage.removeItem('acquisitions');
+            localStorage.removeItem('activities');
+            console.log('Cleared data from localStorage');
+        }
+
         function loadSampleData() {
             const sampleAcquisitions = [
                 {
@@ -2302,6 +2383,9 @@ Mergers & Acquisitions Team`
                 if (currentAcquisitionId === contextMenuAcquisitionId) {
                     currentAcquisitionId = acquisitions.length > 0 ? acquisitions[0].id : null;
                 }
+
+                // Save to localStorage after deletion
+                saveDataToLocalStorage();
 
                 renderAcquisitionTabs();
                 if (currentAcquisitionId) {
@@ -2588,7 +2672,7 @@ Mergers & Acquisitions Team`
                     };
                     acquisition.files.push(fileData);
                     displayFiles();
-                    saveData();
+                    saveAcquisitionToFirebase(acquisition);
                 };
                 reader.readAsDataURL(file);
             });
@@ -2619,7 +2703,7 @@ Mergers & Acquisitions Team`
             if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
                 acquisition.files.splice(index, 1);
                 displayFiles();
-                saveData();
+                saveAcquisitionToFirebase(acquisition);
                 showStatus('File deleted successfully');
             }
         }
@@ -3937,7 +4021,7 @@ Mergers & Acquisitions Team`
                     const existingFile = acquisition.files.find(f => f.name === file.name && f.size === file.size);
                     if (!existingFile) {
                         acquisition.files.push(fileData);
-                        saveData();
+                        saveAcquisitionToFirebase(acquisition);
                     }
                 };
                 reader.readAsDataURL(file);
@@ -4067,7 +4151,7 @@ Mergers & Acquisitions Team`
                 acquisition.files = acquisition.files.filter(f =>
                     !(f.name === attachment.name && f.size === attachment.size)
                 );
-                saveData();
+                saveAcquisitionToFirebase(acquisition);
             }
         }
 
