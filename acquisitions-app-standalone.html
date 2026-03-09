@@ -1606,7 +1606,8 @@
                 lastEmailSync: null
             },
             emailSignature: '',
-            signatureImage: null
+            signatureImage: null,
+            signatureImageStoragePath: null
         };
 
         // Firebase and MSAL instances
@@ -1924,7 +1925,7 @@ Mergers & Acquisitions Team`
             // Setup signature image upload handler
             const signatureImageUpload = document.getElementById('signatureImageUpload');
             if (signatureImageUpload) {
-                signatureImageUpload.addEventListener('change', function(event) {
+                signatureImageUpload.addEventListener('change', async function(event) {
                     const file = event.target.files[0];
                     if (!file) return;
 
@@ -1934,26 +1935,101 @@ Mergers & Acquisitions Team`
                         return;
                     }
 
-                    // Validate file size (max 500KB to keep localStorage happy)
-                    if (file.size > 500000) {
-                        alert('Image file is too large. Please choose an image smaller than 500KB.');
+                    // Validate file size (max 2MB for Firebase Storage, 500KB for base64 fallback)
+                    const maxSize = firebaseStorage && currentUser ? 2000000 : 500000;
+                    if (file.size > maxSize) {
+                        alert(`Image file is too large. Please choose an image smaller than ${maxSize / 1000}KB.`);
                         return;
                     }
 
-                    // Read and convert to base64
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const base64Image = e.target.result;
-                        appSettings.signatureImage = base64Image;
+                    // Show uploading status
+                    const statusElement = document.getElementById('signatureImageStatus');
+                    statusElement.textContent = '⏳ Uploading logo...';
+                    statusElement.style.color = '#f39c12';
 
-                        // Show preview
-                        document.getElementById('signatureImagePreviewImg').src = base64Image;
-                        document.getElementById('signatureImagePreview').style.display = 'block';
-                        document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                        document.getElementById('signatureImageStatus').textContent = '✓ Logo added';
-                        document.getElementById('signatureImageStatus').style.color = '#27ae60';
-                    };
-                    reader.readAsDataURL(file);
+                    try {
+                        // Check if Firebase Storage is available
+                        if (firebaseStorage && currentUser) {
+                            // Delete old signature image from Firebase Storage if it exists
+                            if (appSettings.signatureImageStoragePath) {
+                                try {
+                                    const oldStorageRef = firebaseStorage.ref(appSettings.signatureImageStoragePath);
+                                    await oldStorageRef.delete();
+                                    console.log('Old signature image deleted from Firebase Storage');
+                                } catch (error) {
+                                    console.error('Error deleting old signature image:', error);
+                                    // Continue anyway - we'll upload the new one
+                                }
+                            }
+
+                            // Upload to Firebase Storage
+                            const timestamp = Date.now();
+                            const randomId = Math.random().toString(36).substr(2, 9);
+                            const filePath = `users/${currentUser.uid}/signature/${timestamp}-${randomId}-${file.name}`;
+
+                            const storageRef = firebaseStorage.ref(filePath);
+                            const snapshot = await storageRef.put(file);
+                            const downloadURL = await snapshot.ref.getDownloadURL();
+
+                            // Store the public URL instead of base64
+                            appSettings.signatureImage = downloadURL;
+                            appSettings.signatureImageStoragePath = filePath;
+
+                            // Show preview
+                            document.getElementById('signatureImagePreviewImg').src = downloadURL;
+                            document.getElementById('signatureImagePreview').style.display = 'block';
+                            document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                            statusElement.textContent = '✓ Logo uploaded (public URL)';
+                            statusElement.style.color = '#27ae60';
+
+                            // Save settings to persist the change
+                            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                        } else {
+                            // Fallback to base64 if Firebase Storage not available
+                            console.warn('Firebase Storage not available. Using base64 encoding (may not work in emails).');
+
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const base64Image = e.target.result;
+                                appSettings.signatureImage = base64Image;
+                                appSettings.signatureImageStoragePath = null;
+
+                                // Show preview
+                                document.getElementById('signatureImagePreviewImg').src = base64Image;
+                                document.getElementById('signatureImagePreview').style.display = 'block';
+                                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                                statusElement.textContent = '⚠️ Logo added (local only - may not work in emails)';
+                                statusElement.style.color = '#f39c12';
+
+                                // Save settings to persist the change
+                                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    } catch (error) {
+                        console.error('Error uploading signature image:', error);
+                        statusElement.textContent = '❌ Upload failed: ' + error.message;
+                        statusElement.style.color = '#e74c3c';
+
+                        // Show detailed error message
+                        let errorMessage = 'Failed to upload signature logo.\n\n';
+                        if (error.code === 'storage/unauthorized') {
+                            errorMessage += 'Firebase Storage security rules may need to be updated.\n\n';
+                            errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
+                            errorMessage += 'Go to Storage > Rules and ensure you have:\n\n';
+                            errorMessage += 'rules_version = \'2\';\n';
+                            errorMessage += 'service firebase.storage {\n';
+                            errorMessage += '  match /b/{bucket}/o {\n';
+                            errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
+                            errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
+                            errorMessage += '    }\n';
+                            errorMessage += '  }\n';
+                            errorMessage += '}';
+                        } else {
+                            errorMessage += error.message;
+                        }
+                        alert(errorMessage);
+                    }
                 });
             }
         }
@@ -4604,8 +4680,17 @@ Mergers & Acquisitions Team`
                 document.getElementById('signatureImagePreviewImg').src = appSettings.signatureImage;
                 document.getElementById('signatureImagePreview').style.display = 'block';
                 document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                document.getElementById('signatureImageStatus').textContent = '✓ Logo added';
-                document.getElementById('signatureImageStatus').style.color = '#27ae60';
+
+                // Check if it's a public URL or base64
+                const isPublicURL = appSettings.signatureImage.startsWith('http://') || appSettings.signatureImage.startsWith('https://');
+                if (isPublicURL) {
+                    document.getElementById('signatureImageStatus').textContent = '✓ Logo uploaded (public URL)';
+                    document.getElementById('signatureImageStatus').style.color = '#27ae60';
+                } else {
+                    // Legacy base64 format
+                    document.getElementById('signatureImageStatus').textContent = '⚠️ Logo added (local only - may not work in emails)';
+                    document.getElementById('signatureImageStatus').style.color = '#f39c12';
+                }
             }
         }
 
@@ -4649,12 +4734,29 @@ Mergers & Acquisitions Team`
         }
 
         // Handle signature image upload
-        function removeSignatureImage() {
+        async function removeSignatureImage() {
+            // Delete from Firebase Storage if it exists
+            if (appSettings.signatureImageStoragePath && firebaseStorage && currentUser) {
+                try {
+                    const storageRef = firebaseStorage.ref(appSettings.signatureImageStoragePath);
+                    await storageRef.delete();
+                    console.log('Signature image deleted from Firebase Storage');
+                } catch (error) {
+                    console.error('Error deleting signature image from Firebase Storage:', error);
+                    // Continue anyway - we'll clear the local reference
+                }
+            }
+
+            // Clear local references
             appSettings.signatureImage = null;
+            appSettings.signatureImageStoragePath = null;
             document.getElementById('signatureImagePreview').style.display = 'none';
             document.getElementById('removeSignatureImageBtn').style.display = 'none';
             document.getElementById('signatureImageStatus').textContent = '';
             document.getElementById('signatureImageUpload').value = '';
+
+            // Save settings to persist the change
+            localStorage.setItem('appSettings', JSON.stringify(appSettings));
         }
 
         function updateOutlookConnectionUI() {
