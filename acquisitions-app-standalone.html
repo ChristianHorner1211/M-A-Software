@@ -4772,10 +4772,12 @@ Mergers & Acquisitions Team`
                                   appSettings.signatureImage.startsWith('https://');
                 const isDataURI = appSettings.signatureImage.startsWith('data:');
 
-                // Populate URL input field for public URLs
-                if (isPublicURL && urlInput) {
+                // Populate URL input field for both public URLs and data URIs
+                // This ensures the value persists across refreshes and isn't lost
+                // when the onblur handler fires on an empty field
+                if (urlInput) {
                     urlInput.value = appSettings.signatureImage;
-                    console.log('Restored logo URL to input field:', appSettings.signatureImage);
+                    console.log('Restored logo to input field:', isDataURI ? 'data URI (' + appSettings.signatureImage.length + ' chars)' : appSettings.signatureImage);
                 }
 
                 // Show preview for all image types
@@ -4899,8 +4901,18 @@ Mergers & Acquisitions Team`
             const url = urlInput.value.trim();
             const statusElement = document.getElementById('signatureImageStatus');
 
-            // Clear if empty
+            // If field is empty, only clear if there's no existing logo from file upload
+            // The "Remove Logo" button is the explicit way to remove an uploaded logo
             if (!url) {
+                if (!appSettings.signatureImage) {
+                    // No existing logo either - nothing to do
+                    return;
+                }
+                // If the existing logo is a data URI (from file upload), preserve it
+                if (appSettings.signatureImage.startsWith('data:')) {
+                    return;
+                }
+                // If the existing logo was a URL that the user just cleared, remove it
                 removeSignatureImage();
                 return;
             }
@@ -5944,8 +5956,8 @@ Mergers & Acquisitions Team`
         // Save all data before page unload/refresh
         window.addEventListener('beforeunload', function(e) {
             try {
-                // Save all acquisitions and activities data
-                saveDataToLocalStorage();
+                // CRITICAL: Save appSettings FIRST (smaller, higher priority)
+                // This prevents data loss if localStorage quota is hit by acquisitions data
 
                 // Save email signature if present
                 const emailSigField = document.getElementById('emailSignature');
@@ -5953,7 +5965,7 @@ Mergers & Acquisitions Team`
                     appSettings.emailSignature = emailSigField.value;
                 }
 
-                // CRITICAL: Save logo URL from input field, regardless of validation state
+                // Save logo URL from input field, regardless of validation state
                 const logoUrlInput = document.getElementById('signatureImageURL');
                 if (logoUrlInput) {
                     const url = logoUrlInput.value.trim();
@@ -5964,6 +5976,13 @@ Mergers & Acquisitions Team`
                         console.log('Saving logo URL on beforeunload:', url);
                     }
                 }
+
+                // Save appSettings first before bulk data
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('appSettings saved before bulk data on beforeunload');
+
+                // Save all acquisitions and activities data
+                saveDataToLocalStorage();
 
                 // Force synchronous save to localStorage
                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
