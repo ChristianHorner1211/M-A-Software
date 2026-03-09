@@ -1523,16 +1523,40 @@
                 <div class="form-group" style="margin-top: 25px;">
                     <label>Email Signature (Optional)</label>
                     <textarea id="emailSignature" rows="4" placeholder="Enter your email signature here...&#10;&#10;Best regards,&#10;Your Name&#10;Your Title&#10;Company Name"></textarea>
-                    <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
-                        <input type="file" id="signatureImageUpload" accept="image/*" style="display: none;">
-                        <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('signatureImageUpload').click()">
-                            📷 Add Company Logo
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-small" onclick="removeSignatureImage()" id="removeSignatureImageBtn" style="display: none;">
-                            ✖ Remove Logo
-                        </button>
-                        <span id="signatureImageStatus" style="font-size: 12px; color: #7f8c8d;"></span>
+
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Company Logo</label>
+                        <p style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">
+                            <strong>Recommended:</strong> Use a public URL so your logo displays correctly in sent emails.
+                        </p>
+                        <details style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px; cursor: pointer;">
+                            <summary style="margin-bottom: 5px; font-weight: 600; color: #3498db;">Where to get a public URL?</summary>
+                            <ul style="margin: 5px 0 0 20px; line-height: 1.6;">
+                                <li>If deployed to Firebase Hosting: <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 2px;">https://your-project.web.app/assets/logos/your-logo.svg</code></li>
+                                <li>If deployed to GitHub Pages: <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 2px;">https://username.github.io/repo-name/assets/logos/your-logo.svg</code></li>
+                                <li>Upload to Firebase Storage (configure Firebase below)</li>
+                                <li>Use your company website's logo URL</li>
+                            </ul>
+                        </details>
+
+                        <div style="margin-bottom: 10px;">
+                            <input type="text" id="signatureImageURL" placeholder="https://your-project.web.app/assets/logos/carriage-hill-email-signature.svg"
+                                   style="width: 100%; padding: 8px; border: 1px solid #dce4ec; border-radius: 4px; font-size: 13px;"
+                                   onchange="handleSignatureImageURL()">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="signatureImageUpload" accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('signatureImageUpload').click()">
+                                📷 Upload Logo File
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="removeSignatureImage()" id="removeSignatureImageBtn" style="display: none;">
+                                ✖ Remove Logo
+                            </button>
+                            <span id="signatureImageStatus" style="font-size: 12px; color: #7f8c8d;"></span>
+                        </div>
                     </div>
+
                     <div id="signatureImagePreview" style="margin-top: 10px; display: none;">
                         <img id="signatureImagePreviewImg" style="max-width: 200px; max-height: 100px; border: 1px solid #dce4ec; border-radius: 4px; padding: 5px;">
                     </div>
@@ -4739,7 +4763,11 @@ Mergers & Acquisitions Team`
                 // Check if it's a public URL or base64
                 const isPublicURL = appSettings.signatureImage.startsWith('http://') || appSettings.signatureImage.startsWith('https://');
                 if (isPublicURL) {
-                    document.getElementById('signatureImageStatus').textContent = '✓ Logo uploaded (public URL)';
+                    // Populate the URL input field
+                    const urlInput = document.getElementById('signatureImageURL');
+                    if (urlInput) urlInput.value = appSettings.signatureImage;
+
+                    document.getElementById('signatureImageStatus').textContent = '✓ Public URL set (will work in emails)';
                     document.getElementById('signatureImageStatus').style.color = '#27ae60';
                 } else {
                     // Legacy base64 format
@@ -4809,9 +4837,57 @@ Mergers & Acquisitions Team`
             document.getElementById('removeSignatureImageBtn').style.display = 'none';
             document.getElementById('signatureImageStatus').textContent = '';
             document.getElementById('signatureImageUpload').value = '';
+            document.getElementById('signatureImageURL').value = '';
 
             // Save settings to persist the change
             localStorage.setItem('appSettings', JSON.stringify(appSettings));
+        }
+
+        function handleSignatureImageURL() {
+            const urlInput = document.getElementById('signatureImageURL');
+            const url = urlInput.value.trim();
+            const statusElement = document.getElementById('signatureImageStatus');
+
+            // Clear if empty
+            if (!url) {
+                removeSignatureImage();
+                return;
+            }
+
+            // Validate URL format
+            try {
+                new URL(url);
+            } catch (e) {
+                statusElement.textContent = '❌ Invalid URL format';
+                statusElement.style.color = '#e74c3c';
+                return;
+            }
+
+            // Check if URL is accessible by trying to load the image
+            statusElement.textContent = '⏳ Validating image URL...';
+            statusElement.style.color = '#f39c12';
+
+            const img = new Image();
+            img.onload = function() {
+                // URL is valid and image loads successfully
+                appSettings.signatureImage = url;
+                appSettings.signatureImageStoragePath = null; // Not using Firebase Storage
+
+                // Show preview
+                document.getElementById('signatureImagePreviewImg').src = url;
+                document.getElementById('signatureImagePreview').style.display = 'block';
+                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                statusElement.textContent = '✓ Public URL set (will work in emails)';
+                statusElement.style.color = '#27ae60';
+
+                // Save settings to persist the change
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            };
+            img.onerror = function() {
+                statusElement.textContent = '❌ Cannot load image from URL';
+                statusElement.style.color = '#e74c3c';
+            };
+            img.src = url;
         }
 
         function updateOutlookConnectionUI() {
