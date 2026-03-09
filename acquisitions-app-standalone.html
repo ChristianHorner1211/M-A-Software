@@ -1542,9 +1542,9 @@
                         <div style="margin-bottom: 10px;">
                             <input type="text" id="signatureImageURL" placeholder="https://your-project.web.app/assets/logos/carriage-hill-email-signature.svg"
                                    style="width: 100%; padding: 8px; border: 1px solid #dce4ec; border-radius: 4px; font-size: 13px;"
-                                   onchange="handleSignatureImageURL()" onblur="handleSignatureImageURL()" onkeypress="if(event.key==='Enter') handleSignatureImageURL()">
+                                   oninput="autoSaveLogoURL()" onblur="handleSignatureImageURL()" onkeypress="if(event.key==='Enter') { handleSignatureImageURL(); event.preventDefault(); }">
                             <p style="font-size: 11px; color: #95a5a6; margin: 5px 0 0 0; font-style: italic;">
-                                💡 Paste your public logo URL and press Enter or click away to apply
+                                💡 Logo URL is saved automatically as you type
                             </p>
                         </div>
 
@@ -4738,7 +4738,15 @@ Mergers & Acquisitions Team`
             if (savedSettings) {
                 try {
                     const parsed = JSON.parse(savedSettings);
-                    appSettings = { ...appSettings, ...parsed };
+                    // Deep merge to preserve nested objects
+                    appSettings = {
+                        ...appSettings,
+                        ...parsed,
+                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}) },
+                        msal: { ...appSettings.msal, ...(parsed.msal || {}) },
+                        outlook: { ...appSettings.outlook, ...(parsed.outlook || {}) }
+                    };
+                    console.log('Settings loaded from localStorage:', appSettings);
                 } catch (e) {
                     console.error('Error loading settings:', e);
                 }
@@ -4748,58 +4756,77 @@ Mergers & Acquisitions Team`
             const emailSig = document.getElementById('emailSignature');
             const firebaseConfigEl = document.getElementById('firebaseConfig');
             const msalClientIdEl = document.getElementById('msalClientId');
+            const urlInput = document.getElementById('signatureImageURL');
 
             if (emailSig) emailSig.value = appSettings.emailSignature || '';
-            if (firebaseConfigEl && appSettings.firebase.config) {
+            if (firebaseConfigEl && appSettings.firebase && appSettings.firebase.config) {
                 firebaseConfigEl.value = appSettings.firebase.config;
             }
-            if (msalClientIdEl && appSettings.msal.clientId) {
+            if (msalClientIdEl && appSettings.msal && appSettings.msal.clientId) {
                 msalClientIdEl.value = appSettings.msal.clientId;
             }
 
-            // Show signature image if exists
+            // CRITICAL: Always populate the logo URL input field if we have a signatureImage
             if (appSettings.signatureImage) {
-                document.getElementById('signatureImagePreviewImg').src = appSettings.signatureImage;
-                document.getElementById('signatureImagePreview').style.display = 'block';
-                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                const isPublicURL = appSettings.signatureImage.startsWith('http://') ||
+                                  appSettings.signatureImage.startsWith('https://');
+                const isDataURI = appSettings.signatureImage.startsWith('data:');
 
-                // Check if it's a public URL or base64
-                const isPublicURL = appSettings.signatureImage.startsWith('http://') || appSettings.signatureImage.startsWith('https://');
-                if (isPublicURL) {
-                    // Populate the URL input field
-                    const urlInput = document.getElementById('signatureImageURL');
-                    if (urlInput) urlInput.value = appSettings.signatureImage;
-
-                    document.getElementById('signatureImageStatus').textContent = '✓ Public URL set (will work in emails)';
-                    document.getElementById('signatureImageStatus').style.color = '#27ae60';
-                } else {
-                    // Base64 data URI format
-                    document.getElementById('signatureImageStatus').textContent = '✓ Logo loaded (embedded as data URI - works in most email clients)';
-                    document.getElementById('signatureImageStatus').style.color = '#27ae60';
+                // Populate URL input field for public URLs
+                if (isPublicURL && urlInput) {
+                    urlInput.value = appSettings.signatureImage;
+                    console.log('Restored logo URL to input field:', appSettings.signatureImage);
                 }
+
+                // Show preview for all image types
+                const previewImg = document.getElementById('signatureImagePreviewImg');
+                const preview = document.getElementById('signatureImagePreview');
+                const removeBtn = document.getElementById('removeSignatureImageBtn');
+                const statusElement = document.getElementById('signatureImageStatus');
+
+                if (previewImg) previewImg.src = appSettings.signatureImage;
+                if (preview) preview.style.display = 'block';
+                if (removeBtn) removeBtn.style.display = 'inline-block';
+
+                if (statusElement) {
+                    if (isPublicURL) {
+                        statusElement.textContent = '✓ Logo loaded (embedded as data URI - works in most email clients)';
+                        statusElement.style.color = '#27ae60';
+                    } else if (isDataURI) {
+                        statusElement.textContent = '✓ Logo loaded (embedded as data URI - works in most email clients)';
+                        statusElement.style.color = '#27ae60';
+                    } else {
+                        statusElement.textContent = '✓ Logo loaded';
+                        statusElement.style.color = '#27ae60';
+                    }
+                }
+            } else {
+                // Clear logo URL input field if no signature image
+                if (urlInput) urlInput.value = '';
             }
         }
 
         function saveSettings() {
             // Save email signature
-            appSettings.emailSignature = document.getElementById('emailSignature').value;
+            const emailSigField = document.getElementById('emailSignature');
+            if (emailSigField) {
+                appSettings.emailSignature = emailSigField.value;
+            }
 
-            // Save logo URL if present in the input field
+            // Save logo URL if present in the input field (always save, even if invalid)
             const logoUrlInput = document.getElementById('signatureImageURL');
-            if (logoUrlInput && logoUrlInput.value.trim()) {
+            if (logoUrlInput) {
                 const url = logoUrlInput.value.trim();
-                // Validate URL format
-                try {
-                    new URL(url);
-                    // If appSettings.signatureImage is different, it means user changed it but didn't press Enter
-                    if (appSettings.signatureImage !== url) {
-                        appSettings.signatureImage = url;
-                        appSettings.signatureImageStoragePath = null;
-                        console.log('Logo URL saved from input field:', url);
-                    }
-                } catch (e) {
-                    // Invalid URL, but still preserve whatever was there before
-                    console.warn('Logo URL in field is invalid, preserving existing value');
+                if (url) {
+                    // Always save the URL, even if it's invalid or different
+                    // This ensures user never loses their input
+                    appSettings.signatureImage = url;
+                    appSettings.signatureImageStoragePath = null;
+                    console.log('Logo URL saved from input field:', url);
+                } else if (!url && appSettings.signatureImage) {
+                    // If field is empty but we have a saved value, keep the saved value
+                    // (Don't clear unless explicitly removed)
+                    console.log('Logo URL field empty, preserving saved value');
                 }
             }
 
@@ -4867,6 +4894,8 @@ Mergers & Acquisitions Team`
 
         function handleSignatureImageURL() {
             const urlInput = document.getElementById('signatureImageURL');
+            if (!urlInput) return;
+
             const url = urlInput.value.trim();
             const statusElement = document.getElementById('signatureImageStatus');
 
@@ -4880,42 +4909,55 @@ Mergers & Acquisitions Team`
             try {
                 new URL(url);
             } catch (e) {
-                statusElement.textContent = '❌ Invalid URL format';
-                statusElement.style.color = '#e74c3c';
-                // Still save it in case user wants to fix it later
+                if (statusElement) {
+                    statusElement.textContent = '❌ Invalid URL format';
+                    statusElement.style.color = '#e74c3c';
+                }
+                // Still save it so it persists across refreshes
                 appSettings.signatureImage = url;
+                appSettings.signatureImageStoragePath = null;
                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('Invalid logo URL saved to localStorage (will persist):', url);
                 return;
             }
 
+            // Save immediately (already saved by autoSave, but ensure it's persisted)
+            appSettings.signatureImage = url;
+            appSettings.signatureImageStoragePath = null;
+            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+
             // Check if URL is accessible by trying to load the image
-            statusElement.textContent = '⏳ Validating image URL...';
-            statusElement.style.color = '#f39c12';
+            if (statusElement) {
+                statusElement.textContent = '⏳ Validating image...';
+                statusElement.style.color = '#f39c12';
+            }
 
             const img = new Image();
             img.onload = function() {
                 // URL is valid and image loads successfully
-                appSettings.signatureImage = url;
-                appSettings.signatureImageStoragePath = null; // Not using Firebase Storage
-
                 // Show preview
-                document.getElementById('signatureImagePreviewImg').src = url;
-                document.getElementById('signatureImagePreview').style.display = 'block';
-                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                statusElement.textContent = '✓ Public URL set and saved (will work in emails)';
-                statusElement.style.color = '#27ae60';
+                const previewImg = document.getElementById('signatureImagePreviewImg');
+                const preview = document.getElementById('signatureImagePreview');
+                const removeBtn = document.getElementById('removeSignatureImageBtn');
 
-                // Save settings to persist the change IMMEDIATELY
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
-                console.log('Logo URL saved to localStorage:', url);
+                if (previewImg) previewImg.src = url;
+                if (preview) preview.style.display = 'block';
+                if (removeBtn) removeBtn.style.display = 'inline-block';
+
+                if (statusElement) {
+                    statusElement.textContent = '✓ Logo loaded (embedded as data URI - works in most email clients)';
+                    statusElement.style.color = '#27ae60';
+                }
+
+                console.log('Logo URL validated and saved to localStorage:', url);
             };
             img.onerror = function() {
-                // Still save the URL even if image doesn't load - might be a CORS issue
-                appSettings.signatureImage = url;
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
-                statusElement.textContent = '⚠️ URL saved but image cannot be previewed (may still work in emails)';
-                statusElement.style.color = '#f39c12';
-                console.log('Logo URL saved to localStorage (image load failed):', url);
+                // URL doesn't load as image, but it's already saved
+                if (statusElement) {
+                    statusElement.textContent = '⚠️ URL saved but image cannot be previewed (may still work in emails)';
+                    statusElement.style.color = '#f39c12';
+                }
+                console.log('Logo URL saved to localStorage (image validation failed):', url);
             };
             img.src = url;
         }
@@ -4928,6 +4970,40 @@ Mergers & Acquisitions Team`
                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
                 console.log('Email signature auto-saved to localStorage');
             }
+        }
+
+        // Debounce utility for auto-save
+        let logoURLSaveTimeout = null;
+        function autoSaveLogoURL() {
+            // Clear any pending save
+            if (logoURLSaveTimeout) {
+                clearTimeout(logoURLSaveTimeout);
+            }
+
+            // Debounce save to avoid excessive writes while user is typing
+            logoURLSaveTimeout = setTimeout(() => {
+                const urlInput = document.getElementById('signatureImageURL');
+                if (!urlInput) return;
+
+                const url = urlInput.value.trim();
+
+                // If empty, don't save anything (let removeSignatureImage handle it)
+                if (!url) return;
+
+                // Save immediately to localStorage (without validation for auto-save)
+                // This ensures the value is never lost, even if user refreshes
+                appSettings.signatureImage = url;
+                appSettings.signatureImageStoragePath = null;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('Logo URL auto-saved to localStorage:', url);
+
+                // Update status to show it's saved
+                const statusElement = document.getElementById('signatureImageStatus');
+                if (statusElement) {
+                    statusElement.textContent = '💾 Saved';
+                    statusElement.style.color = '#95a5a6';
+                }
+            }, 500); // Wait 500ms after user stops typing
         }
 
         function updateOutlookConnectionUI() {
@@ -5867,25 +5943,34 @@ Mergers & Acquisitions Team`
 
         // Save all data before page unload/refresh
         window.addEventListener('beforeunload', function(e) {
-            // Save all data to localStorage before leaving
-            saveDataToLocalStorage();
+            try {
+                // Save all acquisitions and activities data
+                saveDataToLocalStorage();
 
-            // Save app settings including any unsaved logo URL
-            const logoUrlInput = document.getElementById('signatureImageURL');
-            if (logoUrlInput && logoUrlInput.value.trim()) {
-                const url = logoUrlInput.value.trim();
-                try {
-                    new URL(url);
-                    appSettings.signatureImage = url;
-                    appSettings.signatureImageStoragePath = null;
-                } catch (err) {
-                    // Invalid URL, but save anyway
-                    appSettings.signatureImage = url;
+                // Save email signature if present
+                const emailSigField = document.getElementById('emailSignature');
+                if (emailSigField) {
+                    appSettings.emailSignature = emailSigField.value;
                 }
-            }
-            localStorage.setItem('appSettings', JSON.stringify(appSettings));
 
-            console.log('Data saved before page unload');
+                // CRITICAL: Save logo URL from input field, regardless of validation state
+                const logoUrlInput = document.getElementById('signatureImageURL');
+                if (logoUrlInput) {
+                    const url = logoUrlInput.value.trim();
+                    if (url) {
+                        // Always save, even if invalid - user doesn't want to lose this data
+                        appSettings.signatureImage = url;
+                        appSettings.signatureImageStoragePath = null;
+                        console.log('Saving logo URL on beforeunload:', url);
+                    }
+                }
+
+                // Force synchronous save to localStorage
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('All settings saved before page unload');
+            } catch (error) {
+                console.error('Error saving data on beforeunload:', error);
+            }
             // Note: Don't show confirmation dialog as it's annoying for users
         });
     </script>
