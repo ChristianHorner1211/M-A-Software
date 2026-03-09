@@ -5121,44 +5121,115 @@ Mergers & Acquisitions Team`
                 console.log('Earliest sent email date:', earliestSentDate.toLocaleString());
                 console.log('Filter date (looking back to):', filterDate.toLocaleString());
 
-                // Step 2: Get ALL inbox emails and filter in code
+                // Step 2: Fetch conversation threads for better reply detection
                 let newEmailsCount = 0;
-                console.log('Fetching all inbox emails...');
+                const allEmailsToProcess = [];
 
-                const inboxResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,receivedDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
-                    {
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
+                // Method A: Fetch by conversation ID (most reliable)
+                console.log('\n=== Fetching emails by conversation ID ===');
+                for (const convId of sentConversationIds) {
+                    try {
+                        console.log(`Fetching messages for conversation: ${convId.substring(0, 30)}...`);
+                        const convResponse = await fetch(
+                            `https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '${convId}'&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc&$top=100`,
+                            {
+                                headers: {
+                                    'Authorization': 'Bearer ' + token,
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+
+                        if (convResponse.ok) {
+                            const convData = await convResponse.json();
+                            console.log(`  Found ${convData.value.length} messages in conversation`);
+                            allEmailsToProcess.push(...convData.value);
+                        } else {
+                            console.warn(`  Failed to fetch conversation ${convId}: ${convResponse.status}`);
                         }
+                    } catch (err) {
+                        console.warn(`  Error fetching conversation ${convId}:`, err);
                     }
-                );
-
-                if (!inboxResponse.ok) {
-                    const errorText = await inboxResponse.text();
-                    console.error('Inbox error:', errorText);
-                    throw new Error('Failed to fetch inbox emails');
                 }
 
-                const inboxData = await inboxResponse.json();
-                const allInboxEmails = inboxData.value;
-                console.log('Total inbox emails fetched:', allInboxEmails.length);
+                // Method B: Also check inbox for any new messages from carrier contacts
+                console.log('\n=== Also checking inbox for carrier emails ===');
+                try {
+                    const inboxResponse = await fetch(
+                        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
+                        {
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
 
-                // Log all inbox emails for debugging
-                console.log('\n=== ALL INBOX EMAILS (for debugging) ===');
-                allInboxEmails.slice(0, 20).forEach((email, idx) => {
-                    console.log(`${idx + 1}. "${email.subject}" from ${email.from?.emailAddress?.address} (${email.receivedDateTime})`);
+                    if (inboxResponse.ok) {
+                        const inboxData = await inboxResponse.json();
+                        console.log(`Fetched ${inboxData.value.length} inbox emails`);
+                        allEmailsToProcess.push(...inboxData.value);
+                    }
+                } catch (err) {
+                    console.warn('Error fetching inbox:', err);
+                }
+
+                // Method C: Also check sent items (for testing scenarios where you reply to yourself)
+                console.log('\n=== Also checking sent items ===');
+                try {
+                    const sentItemsResponse = await fetch(
+                        `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=500&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=sentDateTime desc`,
+                        {
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+
+                    if (sentItemsResponse.ok) {
+                        const sentItemsData = await sentItemsResponse.json();
+                        console.log(`Fetched ${sentItemsData.value.length} sent items`);
+                        allEmailsToProcess.push(...sentItemsData.value);
+                    }
+                } catch (err) {
+                    console.warn('Error fetching sent items:', err);
+                }
+
+                // Remove duplicates (same email fetched multiple times)
+                const uniqueEmails = new Map();
+                for (const email of allEmailsToProcess) {
+                    const emailDate = email.receivedDateTime || email.sentDateTime;
+                    const key = `${email.conversationId}-${emailDate}-${email.subject}`;
+                    if (!uniqueEmails.has(key)) {
+                        uniqueEmails.set(key, email);
+                    }
+                }
+                const allUniqueEmails = Array.from(uniqueEmails.values());
+                console.log(`Total unique emails to process: ${allUniqueEmails.length}`);
+
+                // Log all emails for debugging
+                console.log('\n=== ALL EMAILS TO PROCESS (showing first 20) ===');
+                allUniqueEmails.slice(0, 20).forEach((email, idx) => {
+                    const emailDate = email.receivedDateTime || email.sentDateTime;
+                    const fromAddr = email.from?.emailAddress?.address || 'unknown';
+                    const toAddrs = email.toRecipients?.map(r => r.emailAddress?.address).join(', ') || 'unknown';
+                    console.log(`${idx + 1}. "${email.subject}"`);
+                    console.log(`   From: ${fromAddr} → To: ${toAddrs}`);
+                    console.log(`   Date: ${emailDate}`);
                     console.log(`   ConversationId: ${email.conversationId || 'NONE'}`);
                 });
-                if (allInboxEmails.length > 20) {
-                    console.log(`... and ${allInboxEmails.length - 20} more emails`);
+                if (allUniqueEmails.length > 20) {
+                    console.log(`... and ${allUniqueEmails.length - 20} more emails`);
                 }
 
                 // Process each email
-                console.log('\n=== Processing inbox emails ===');
-                for (const email of allInboxEmails) {
+                console.log('\n=== Processing emails ===');
+                for (const email of allUniqueEmails) {
+                    const emailDate = email.receivedDateTime || email.sentDateTime;
                     const senderEmail = email.from?.emailAddress?.address;
+                    const toEmails = email.toRecipients?.map(r => r.emailAddress?.address?.toLowerCase()) || [];
+
                     if (!senderEmail || !email.subject) {
                         console.log('Skipping email with missing sender or subject');
                         continue;
@@ -5167,42 +5238,66 @@ Mergers & Acquisitions Team`
                     const senderEmailLower = senderEmail.toLowerCase();
                     console.log(`\n━━━ Checking email: "${email.subject}" ━━━`);
                     console.log(`  From: ${senderEmail}`);
-                    console.log(`  Date: ${email.receivedDateTime}`);
+                    console.log(`  To: ${toEmails.join(', ')}`);
+                    console.log(`  Date: ${emailDate}`);
                     console.log(`  ConversationId: ${email.conversationId || 'N/A'}`);
 
-                    // Check if sender is a carrier contact
-                    console.log(`  Checking if sender is in carrier contacts...`);
-                    console.log(`  Available carrier emails:`, Array.from(carrierEmailMap.keys()).join(', '));
-                    if (!carrierEmailMap.has(senderEmailLower)) {
-                        console.log(`  ✗ SKIPPED: Sender ${senderEmail} not in carrier contacts`);
-                        continue; // Not from a carrier
-                    }
-                    console.log(`  ✓ Sender IS a carrier contact!`);
+                    // Check if this email involves a carrier contact (either as sender OR recipient)
+                    let carrierEmail = null;
+                    let isReceivedFromCarrier = false;
+                    let isSentToCarrier = false;
 
-                    // Check if this email is a reply to something we sent
-                    // Method 1 (preferred): Check conversationId - more reliable, works even if subject changed
-                    let isReplyByConversation = false;
+                    console.log(`  Checking if email involves carrier contacts...`);
+                    console.log(`  Available carrier emails:`, Array.from(carrierEmailMap.keys()).join(', '));
+
+                    // Check if sender is a carrier contact (received email)
+                    if (carrierEmailMap.has(senderEmailLower)) {
+                        carrierEmail = senderEmailLower;
+                        isReceivedFromCarrier = true;
+                        console.log(`  ✓ Sender ${senderEmail} IS a carrier contact (RECEIVED email)`);
+                    }
+
+                    // Check if any recipient is a carrier contact (sent email)
+                    if (!carrierEmail) {
+                        for (const toEmail of toEmails) {
+                            if (carrierEmailMap.has(toEmail)) {
+                                carrierEmail = toEmail;
+                                isSentToCarrier = true;
+                                console.log(`  ✓ Recipient ${toEmail} IS a carrier contact (SENT email)`);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!carrierEmail) {
+                        console.log(`  ✗ SKIPPED: Email doesn't involve any carrier contacts`);
+                        continue; // Not related to any carrier
+                    }
+
+                    // Check if this is part of a conversation we care about
+                    // Method 1 (preferred): Check conversationId - most reliable
+                    let isPartOfTrackedConversation = false;
                     let originalSentEmail = null;
                     console.log(`  \n  Method 1: Checking ConversationId match...`);
                     if (email.conversationId) {
                         console.log(`    Email ConversationId: ${email.conversationId}`);
                         console.log(`    Checking against ${sentConversationIds.size} sent conversation IDs...`);
                         if (sentConversationIds.has(email.conversationId)) {
-                            isReplyByConversation = true;
+                            isPartOfTrackedConversation = true;
                             originalSentEmail = conversationIdMap.get(email.conversationId);
-                            console.log(`    ✓✓✓ MATCH! ConversationId matches a sent email! (Most reliable match)`);
+                            console.log(`    ✓✓✓ MATCH! ConversationId matches a tracked conversation!`);
                             if (originalSentEmail) {
                                 console.log(`    Original email was to carrier: ${originalSentEmail.carrier}, acquisition: ${originalSentEmail.acquisitionId}`);
                             }
                         } else {
-                            console.log(`    ✗ ConversationId does not match any sent emails`);
+                            console.log(`    ✗ ConversationId does not match any tracked conversations`);
                         }
                     } else {
                         console.log(`    ✗ Email has no ConversationId`);
                     }
 
-                    // Method 2 (fallback): Check subject - for backwards compatibility with old emails
-                    let isReplyBySubject = false;
+                    // Method 2 (fallback): Check subject - for backwards compatibility
+                    let isMatchBySubject = false;
                     console.log(`  \n  Method 2: Checking subject match...`);
                     const normalizedSubject = email.subject
                         .replace(/^\[.*?\]\s*/g, '')  // Remove bracketed tags like [EXTERNAL]
@@ -5214,41 +5309,63 @@ Mergers & Acquisitions Team`
                     console.log(`    Checking against ${sentSubjects.size} sent subjects...`);
 
                     if (sentSubjects.has(normalizedSubject)) {
-                        isReplyBySubject = true;
+                        isMatchBySubject = true;
                         console.log(`    ✓✓✓ MATCH! Subject matches a sent email`);
+
+                        // If we don't have originalSentEmail from conversationId, try to find it by subject
+                        if (!originalSentEmail) {
+                            const matchingSentEmail = sentFromApp.find(e =>
+                                e.subject.replace(/^\[.*?\]\s*/g, '').replace(/^(Re:|RE:|Fwd:|FW:)\s*/gi, '').trim().toLowerCase() === normalizedSubject
+                            );
+                            if (matchingSentEmail) {
+                                originalSentEmail = {
+                                    carrier: matchingSentEmail.carrier,
+                                    acquisitionId: matchingSentEmail.acquisitionId,
+                                    subject: matchingSentEmail.subject
+                                };
+                                console.log(`    Found matching sent email to carrier: ${originalSentEmail.carrier}`);
+                            }
+                        }
                     } else {
                         console.log(`    ✗ Subject does not match any sent emails`);
-                        console.log(`    Expected one of:`, Array.from(sentSubjects).join(' | '));
                     }
 
-                    const isReply = isReplyByConversation || isReplyBySubject;
+                    const isRelevantEmail = isPartOfTrackedConversation || isMatchBySubject;
 
-                    if (!isReply) {
-                        console.log(`  \n  ✗✗✗ SKIPPED: No match found (tried both conversationId and subject)`);
+                    // IMPORTANT: Only process if it's a RECEIVED email from a carrier (not our own sent emails)
+                    if (!isRelevantEmail) {
+                        console.log(`  \n  ✗✗✗ SKIPPED: Not part of any tracked conversation`);
                         continue;
                     }
-                    console.log(`  \n  ✓✓✓ EMAIL IS A REPLY! Processing...`);
 
-                    // If we have the original sent email context from conversationId, use it directly
+                    if (!isReceivedFromCarrier) {
+                        console.log(`  \n  ✗✗✗ SKIPPED: Email is not FROM a carrier (it's one we sent)`);
+                        continue;
+                    }
+
+                    console.log(`  \n  ✓✓✓ EMAIL IS A REPLY FROM CARRIER! Processing...`);
+
+                    // Process the reply from carrier
                     if (originalSentEmail) {
-                        // Find the specific acquisition and carrier
+                        // We have precise context from conversationId or subject matching
                         const acquisition = acquisitions.find(a => a.id === originalSentEmail.acquisitionId);
                         if (acquisition) {
                             const carrier = acquisition.carriers.find(c => c.name === originalSentEmail.carrier);
                             if (carrier) {
-                                console.log(`  Using precise match: carrier ${carrier.name} in acquisition ${acquisition.id}`);
+                                console.log(`  Using context: carrier ${carrier.name} in acquisition ${acquisition.id}`);
 
                                 // Check if we already logged this email (avoid duplicates)
-                                const emailDate = new Date(email.receivedDateTime);
+                                const emailTimestamp = new Date(emailDate);
                                 const alreadyLogged = activities.some(activity =>
                                     activity.carrier === carrier.name &&
                                     activity.contact === senderEmail &&
                                     activity.type === 'email' &&
-                                    Math.abs(new Date(activity.timestamp) - emailDate) < 5000 // Within 5 seconds
+                                    activity.notes && activity.notes.startsWith('Received:') &&
+                                    Math.abs(new Date(activity.timestamp) - emailTimestamp) < 5000 // Within 5 seconds
                                 );
 
                                 if (!alreadyLogged) {
-                                    console.log(`  ✓✓✓ SUCCESS: Adding email to activities for carrier: ${carrier.name}`);
+                                    console.log(`  ✓✓✓ SUCCESS: Adding reply to activities for carrier: ${carrier.name}`);
                                     // Add to activity log
                                     const emailBody = email.body?.content || email.bodyPreview || '';
                                     const activityItem = {
@@ -5257,16 +5374,16 @@ Mergers & Acquisitions Team`
                                         carrier: carrier.name,
                                         notes: `Received: ${email.subject}\n\n${emailBody}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
                                         acquisitionId: acquisition.id,
-                                        timestamp: email.receivedDateTime,
+                                        timestamp: emailDate,
                                         attachments: [],
                                         conversationId: email.conversationId  // Store conversationId for threading
                                     };
                                     activities.unshift(activityItem);
                                     await saveActivityToFirebase(activityItem);
                                     newEmailsCount++;
-                                    console.log(`  Activity saved. Total new emails so far: ${newEmailsCount}`);
+                                    console.log(`  Activity saved. Total new replies so far: ${newEmailsCount}`);
                                 } else {
-                                    console.log(`  ℹ Email already logged for carrier: ${carrier.name} (skipping duplicate)`);
+                                    console.log(`  ℹ Reply already logged for carrier: ${carrier.name} (skipping duplicate)`);
                                 }
                             } else {
                                 console.log(`  ✗ Could not find carrier ${originalSentEmail.carrier} in acquisition`);
@@ -5275,28 +5392,28 @@ Mergers & Acquisitions Team`
                             console.log(`  ✗ Could not find acquisition ${originalSentEmail.acquisitionId}`);
                         }
                     } else {
-                        // Fallback: use carrierEmailMap (less precise, for backwards compatibility)
-                        console.log(`  Using fallback method (subject matching)`);
-                        const matches = carrierEmailMap.get(senderEmailLower);
+                        // Fallback: use carrierEmailMap (when we don't have precise context)
+                        console.log(`  Using fallback method (checking all possible carriers)`);
+                        const matches = carrierEmailMap.get(carrierEmail);
 
                         if (matches) {
-                            // This is a reply from a carrier contact
-                            console.log(`  Found ${matches.length} carrier match(es)`);
+                            console.log(`  Found ${matches.length} possible carrier match(es)`);
                             for (const match of matches) {
                                 const { acquisition, carrier } = match;
                                 console.log(`  Checking carrier: ${carrier.name} in acquisition: ${acquisition.id}`);
 
                                 // Check if we already logged this email (avoid duplicates)
-                                const emailDate = new Date(email.receivedDateTime);
+                                const emailTimestamp = new Date(emailDate);
                                 const alreadyLogged = activities.some(activity =>
                                     activity.carrier === carrier.name &&
                                     activity.contact === senderEmail &&
                                     activity.type === 'email' &&
-                                    Math.abs(new Date(activity.timestamp) - emailDate) < 5000 // Within 5 seconds
+                                    activity.notes && activity.notes.startsWith('Received:') &&
+                                    Math.abs(new Date(activity.timestamp) - emailTimestamp) < 5000 // Within 5 seconds
                                 );
 
                                 if (!alreadyLogged) {
-                                    console.log(`  ✓✓✓ SUCCESS: Adding email to activities for carrier: ${carrier.name}`);
+                                    console.log(`  ✓✓✓ SUCCESS: Adding reply to activities for carrier: ${carrier.name}`);
                                     // Add to activity log
                                     const emailBody = email.body?.content || email.bodyPreview || '';
                                     const activityItem = {
@@ -5305,21 +5422,21 @@ Mergers & Acquisitions Team`
                                         carrier: carrier.name,
                                         notes: `Received: ${email.subject}\n\n${emailBody}${email.hasAttachments ? '\n\n📎 Has attachments' : ''}`,
                                         acquisitionId: acquisition.id,
-                                        timestamp: email.receivedDateTime,
+                                        timestamp: emailDate,
                                         attachments: [],
                                         conversationId: email.conversationId  // Store conversationId for threading
                                     };
                                     activities.unshift(activityItem);
                                     await saveActivityToFirebase(activityItem);
                                     newEmailsCount++;
-                                    console.log(`  Activity saved. Total new emails so far: ${newEmailsCount}`);
+                                    console.log(`  Activity saved. Total new replies so far: ${newEmailsCount}`);
                                 } else {
-                                    console.log(`  ℹ Email already logged for carrier: ${carrier.name} (skipping duplicate)`);
+                                    console.log(`  ℹ Reply already logged for carrier: ${carrier.name} (skipping duplicate)`);
                                 }
                                 break; // Only log once per email
                             }
                         } else {
-                            console.log(`  ✗ No carrier matches found (unexpected)`);
+                            console.log(`  ✗ No carrier matches found in carrierEmailMap (unexpected)`);
                         }
                     }
                 }
@@ -5338,26 +5455,28 @@ Mergers & Acquisitions Team`
                 }
 
                 console.log('\n=== SYNC COMPLETE ===');
-                console.log(`Total inbox emails fetched: ${allInboxEmails.length}`);
-                console.log(`New emails added to activities: ${newEmailsCount}`);
+                console.log(`Total unique emails processed: ${allUniqueEmails.length}`);
+                console.log(`New replies added to activities: ${newEmailsCount}`);
                 console.log(`Sent conversation IDs tracked: ${sentConversationIds.size}`);
                 console.log(`Carrier contacts monitored: ${carrierEmailMap.size}`);
 
                 let alertMessage = `✅ Sync complete!\n\n`;
                 alertMessage += `📊 Summary:\n`;
-                alertMessage += `• Inbox emails checked: ${allInboxEmails.length}\n`;
-                alertMessage += `• New replies found: ${newEmailsCount}\n`;
+                alertMessage += `• Total emails checked: ${allUniqueEmails.length}\n`;
+                alertMessage += `• New replies from carriers: ${newEmailsCount}\n`;
                 alertMessage += `• Conversations tracked: ${sentConversationIds.size}\n\n`;
 
                 if (newEmailsCount === 0) {
                     alertMessage += `ℹ️ No new replies found.\n\n`;
                     alertMessage += `Possible reasons:\n`;
                     alertMessage += `1. No replies have been received yet\n`;
-                    alertMessage += `2. Replies came from different email addresses\n`;
-                    alertMessage += `3. Replies were already synced\n\n`;
+                    alertMessage += `2. Replies came from different email addresses not in carrier contacts\n`;
+                    alertMessage += `3. Replies were already synced\n`;
+                    alertMessage += `4. Email doesn't match conversation ID or subject\n\n`;
+                    alertMessage += `💡 Make sure the reply email address is added as a contact for the carrier.\n\n`;
                 }
 
-                alertMessage += `📋 Check browser console (F12) for detailed analysis.`;
+                alertMessage += `📋 Check browser console (F12) for detailed sync analysis.`;
                 alert(alertMessage);
 
             } catch (error) {
