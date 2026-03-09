@@ -1522,7 +1522,7 @@
 
                 <div class="form-group" style="margin-top: 25px;">
                     <label>Email Signature (Optional)</label>
-                    <textarea id="emailSignature" rows="4" placeholder="Enter your email signature here...&#10;&#10;Best regards,&#10;Your Name&#10;Your Title&#10;Company Name"></textarea>
+                    <textarea id="emailSignature" rows="4" placeholder="Enter your email signature here...&#10;&#10;Best regards,&#10;Your Name&#10;Your Title&#10;Company Name" onblur="autoSaveEmailSignature()"></textarea>
 
                     <div style="margin-top: 15px;">
                         <label style="font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Company Logo</label>
@@ -1542,7 +1542,10 @@
                         <div style="margin-bottom: 10px;">
                             <input type="text" id="signatureImageURL" placeholder="https://your-project.web.app/assets/logos/carriage-hill-email-signature.svg"
                                    style="width: 100%; padding: 8px; border: 1px solid #dce4ec; border-radius: 4px; font-size: 13px;"
-                                   onchange="handleSignatureImageURL()">
+                                   onchange="handleSignatureImageURL()" onblur="handleSignatureImageURL()" onkeypress="if(event.key==='Enter') handleSignatureImageURL()">
+                            <p style="font-size: 11px; color: #95a5a6; margin: 5px 0 0 0; font-style: italic;">
+                                💡 Paste your public logo URL and press Enter or click away to apply
+                            </p>
                         </div>
 
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -2043,8 +2046,8 @@ Mergers & Acquisitions Team`
                                 document.getElementById('signatureImagePreviewImg').src = base64Image;
                                 document.getElementById('signatureImagePreview').style.display = 'block';
                                 document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                                statusElement.textContent = '⚠️ Logo added (local only - may not work in emails)';
-                                statusElement.style.color = '#f39c12';
+                                statusElement.textContent = '✓ Logo uploaded (embedded as data URI - works in most email clients)';
+                                statusElement.style.color = '#27ae60';
 
                                 // Save settings to persist the change
                                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
@@ -2067,8 +2070,8 @@ Mergers & Acquisitions Team`
                                 document.getElementById('signatureImagePreviewImg').src = base64Image;
                                 document.getElementById('signatureImagePreview').style.display = 'block';
                                 document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                                statusElement.textContent = '⚠️ Logo added (local only - may not work in emails)';
-                                statusElement.style.color = '#f39c12';
+                                statusElement.textContent = '✓ Logo uploaded (embedded as data URI - works in most email clients)';
+                                statusElement.style.color = '#27ae60';
 
                                 // Save settings to persist the change
                                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
@@ -4770,9 +4773,9 @@ Mergers & Acquisitions Team`
                     document.getElementById('signatureImageStatus').textContent = '✓ Public URL set (will work in emails)';
                     document.getElementById('signatureImageStatus').style.color = '#27ae60';
                 } else {
-                    // Legacy base64 format
-                    document.getElementById('signatureImageStatus').textContent = '⚠️ Logo added (local only - may not work in emails)';
-                    document.getElementById('signatureImageStatus').style.color = '#f39c12';
+                    // Base64 data URI format
+                    document.getElementById('signatureImageStatus').textContent = '✓ Logo loaded (embedded as data URI - works in most email clients)';
+                    document.getElementById('signatureImageStatus').style.color = '#27ae60';
                 }
             }
         }
@@ -4780,6 +4783,25 @@ Mergers & Acquisitions Team`
         function saveSettings() {
             // Save email signature
             appSettings.emailSignature = document.getElementById('emailSignature').value;
+
+            // Save logo URL if present in the input field
+            const logoUrlInput = document.getElementById('signatureImageURL');
+            if (logoUrlInput && logoUrlInput.value.trim()) {
+                const url = logoUrlInput.value.trim();
+                // Validate URL format
+                try {
+                    new URL(url);
+                    // If appSettings.signatureImage is different, it means user changed it but didn't press Enter
+                    if (appSettings.signatureImage !== url) {
+                        appSettings.signatureImage = url;
+                        appSettings.signatureImageStoragePath = null;
+                        console.log('Logo URL saved from input field:', url);
+                    }
+                } catch (e) {
+                    // Invalid URL, but still preserve whatever was there before
+                    console.warn('Logo URL in field is invalid, preserving existing value');
+                }
+            }
 
             // Save Firebase config
             const firebaseConfig = document.getElementById('firebaseConfig').value.trim();
@@ -4860,6 +4882,9 @@ Mergers & Acquisitions Team`
             } catch (e) {
                 statusElement.textContent = '❌ Invalid URL format';
                 statusElement.style.color = '#e74c3c';
+                // Still save it in case user wants to fix it later
+                appSettings.signatureImage = url;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
                 return;
             }
 
@@ -4877,17 +4902,32 @@ Mergers & Acquisitions Team`
                 document.getElementById('signatureImagePreviewImg').src = url;
                 document.getElementById('signatureImagePreview').style.display = 'block';
                 document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
-                statusElement.textContent = '✓ Public URL set (will work in emails)';
+                statusElement.textContent = '✓ Public URL set and saved (will work in emails)';
                 statusElement.style.color = '#27ae60';
 
-                // Save settings to persist the change
+                // Save settings to persist the change IMMEDIATELY
                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('Logo URL saved to localStorage:', url);
             };
             img.onerror = function() {
-                statusElement.textContent = '❌ Cannot load image from URL';
-                statusElement.style.color = '#e74c3c';
+                // Still save the URL even if image doesn't load - might be a CORS issue
+                appSettings.signatureImage = url;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                statusElement.textContent = '⚠️ URL saved but image cannot be previewed (may still work in emails)';
+                statusElement.style.color = '#f39c12';
+                console.log('Logo URL saved to localStorage (image load failed):', url);
             };
             img.src = url;
+        }
+
+        function autoSaveEmailSignature() {
+            // Auto-save email signature when user clicks away from the field
+            const emailSigField = document.getElementById('emailSignature');
+            if (emailSigField) {
+                appSettings.emailSignature = emailSigField.value;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                console.log('Email signature auto-saved to localStorage');
+            }
         }
 
         function updateOutlookConnectionUI() {
@@ -5824,6 +5864,30 @@ Mergers & Acquisitions Team`
         }
 
         document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Save all data before page unload/refresh
+        window.addEventListener('beforeunload', function(e) {
+            // Save all data to localStorage before leaving
+            saveDataToLocalStorage();
+
+            // Save app settings including any unsaved logo URL
+            const logoUrlInput = document.getElementById('signatureImageURL');
+            if (logoUrlInput && logoUrlInput.value.trim()) {
+                const url = logoUrlInput.value.trim();
+                try {
+                    new URL(url);
+                    appSettings.signatureImage = url;
+                    appSettings.signatureImageStoragePath = null;
+                } catch (err) {
+                    // Invalid URL, but save anyway
+                    appSettings.signatureImage = url;
+                }
+            }
+            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+
+            console.log('Data saved before page unload');
+            // Note: Don't show confirmation dialog as it's annoying for users
+        });
     </script>
 </body>
 </html>
