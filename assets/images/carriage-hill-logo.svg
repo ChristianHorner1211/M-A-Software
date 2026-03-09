@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 420" width="850" height="420">
+  <defs>
+    <style>
+      .navy { fill: #0d1f3c; }
+      .red { fill: #8b1a3a; }
+      .white { fill: #ffffff; }
+      .text-navy { fill: #0d1f3c; font-family: 'Georgia', serif; }
+      .text-red { fill: #8b1a3a; font-family: 'Georgia', serif; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- CH Box -->
+  <rect x="330" y="5" width="240" height="110" class="red" rx="5"/>
+  <rect x="340" y="15" width="220" height="90" class="navy" rx="3"/>
+
+  <!-- CH Text -->
+  <text x="425" y="80" class="white" font-size="65" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">CH</text>
+
+  <!-- Main Oval Border - Navy -->
+  <ellipse cx="425" cy="180" rx="420" ry="110" fill="none" stroke="#0d1f3c" stroke-width="8"/>
+
+  <!-- Main Oval Border - Red -->
+  <ellipse cx="425" cy="180" rx="415" ry="105" fill="none" stroke="#8b1a3a" stroke-width="4"/>
+
+  <!-- Carriage Hill Text -->
+  <text x="425" y="220" class="text-red" font-size="95" text-anchor="middle" letter-spacing="2">Carriage Hill</text>
+
+  <!-- Insurance | Risk Management Text -->
+  <g>
+    <text x="10" y="380" class="text-navy" font-size="42" font-family="Arial, sans-serif" font-weight="300">INSURANCE</text>
+    <text x="320" y="380" class="text-navy" font-size="50" font-family="Arial, sans-serif" font-weight="300">|</text>
+    <text x="360" y="380" class="text-navy" font-size="42" font-family="Arial, sans-serif" font-weight="300">RISK MANAGEMENT</text>
+  </g>
+</svg>

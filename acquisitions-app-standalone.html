@@ -48,6 +48,17 @@
             margin-bottom: 20px;
         }
 
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-logo {
+            height: 60px;
+            width: auto;
+        }
+
         header h1 {
             color: #2c3e50;
             font-size: 24px;
@@ -1043,7 +1054,10 @@
     <!-- Main App -->
     <div id="mainApp" class="container" style="display: none;">
         <header>
-            <h1>Acquisitions Management Platform</h1>
+            <div class="header-brand">
+                <img src="assets/images/carriage-hill-logo.svg" alt="Carriage Hill Insurance" class="header-logo">
+                <h1>Acquisitions Management Platform</h1>
+            </div>
             <div class="header-actions">
                 <div id="userInfo" class="user-info" style="display: none;">
                     <img id="userAvatar" class="user-avatar" src="" alt="User">
