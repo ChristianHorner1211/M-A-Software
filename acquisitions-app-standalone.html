@@ -1948,8 +1948,22 @@ Mergers & Acquisitions Team`
                     statusElement.style.color = '#f39c12';
 
                     try {
-                        // Check if Firebase Storage is available
-                        if (firebaseStorage && currentUser) {
+                        // Check if Firebase Storage is available and properly configured
+                        let useFirebaseStorage = false;
+                        if (firebaseStorage && currentUser && appSettings.firebase.config) {
+                            try {
+                                const config = JSON.parse(appSettings.firebase.config);
+                                if (config.storageBucket) {
+                                    useFirebaseStorage = true;
+                                } else {
+                                    console.warn('Firebase Storage bucket not configured. Using base64 fallback.');
+                                }
+                            } catch (e) {
+                                console.error('Error parsing Firebase config:', e);
+                            }
+                        }
+
+                        if (useFirebaseStorage) {
                             // Delete old signature image from Firebase Storage if it exists
                             if (appSettings.signatureImageStoragePath) {
                                 try {
@@ -1962,13 +1976,20 @@ Mergers & Acquisitions Team`
                                 }
                             }
 
-                            // Upload to Firebase Storage
+                            // Upload to Firebase Storage with timeout
                             const timestamp = Date.now();
                             const randomId = Math.random().toString(36).substr(2, 9);
                             const filePath = `users/${currentUser.uid}/signature/${timestamp}-${randomId}-${file.name}`;
 
                             const storageRef = firebaseStorage.ref(filePath);
-                            const snapshot = await storageRef.put(file);
+
+                            // Add timeout to prevent infinite loading
+                            const uploadPromise = storageRef.put(file);
+                            const timeoutPromise = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('Upload timeout - please check your Firebase Storage configuration')), 30000)
+                            );
+
+                            const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
                             const downloadURL = await snapshot.ref.getDownloadURL();
 
                             // Store the public URL instead of base64
@@ -2008,27 +2029,61 @@ Mergers & Acquisitions Team`
                         }
                     } catch (error) {
                         console.error('Error uploading signature image:', error);
-                        statusElement.textContent = '❌ Upload failed: ' + error.message;
-                        statusElement.style.color = '#e74c3c';
 
-                        // Show detailed error message
-                        let errorMessage = 'Failed to upload signature logo.\n\n';
-                        if (error.code === 'storage/unauthorized') {
-                            errorMessage += 'Firebase Storage security rules may need to be updated.\n\n';
-                            errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
-                            errorMessage += 'Go to Storage > Rules and ensure you have:\n\n';
-                            errorMessage += 'rules_version = \'2\';\n';
-                            errorMessage += 'service firebase.storage {\n';
-                            errorMessage += '  match /b/{bucket}/o {\n';
-                            errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
-                            errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
-                            errorMessage += '    }\n';
-                            errorMessage += '  }\n';
-                            errorMessage += '}';
-                        } else {
-                            errorMessage += error.message;
+                        // Try to fall back to base64 encoding
+                        console.warn('Firebase Storage upload failed. Falling back to base64...');
+                        try {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const base64Image = e.target.result;
+                                appSettings.signatureImage = base64Image;
+                                appSettings.signatureImageStoragePath = null;
+
+                                // Show preview
+                                document.getElementById('signatureImagePreviewImg').src = base64Image;
+                                document.getElementById('signatureImagePreview').style.display = 'block';
+                                document.getElementById('removeSignatureImageBtn').style.display = 'inline-block';
+                                statusElement.textContent = '⚠️ Logo added (local only - may not work in emails)';
+                                statusElement.style.color = '#f39c12';
+
+                                // Save settings to persist the change
+                                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                            };
+                            reader.onerror = function() {
+                                statusElement.textContent = '❌ Upload failed';
+                                statusElement.style.color = '#e74c3c';
+                            };
+                            reader.readAsDataURL(file);
+
+                            // Show informative message about Firebase Storage
+                            let errorMessage = 'Firebase Storage upload failed. Logo saved locally instead.\n\n';
+                            if (error.code === 'storage/unauthorized') {
+                                errorMessage += 'Issue: Firebase Storage security rules need to be updated.\n\n';
+                                errorMessage += 'To fix: Update your Firebase Storage rules in Firebase Console:\n';
+                                errorMessage += 'Go to Storage > Rules and add:\n\n';
+                                errorMessage += 'rules_version = \'2\';\n';
+                                errorMessage += 'service firebase.storage {\n';
+                                errorMessage += '  match /b/{bucket}/o {\n';
+                                errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
+                                errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
+                                errorMessage += '    }\n';
+                                errorMessage += '  }\n';
+                                errorMessage += '}';
+                            } else if (error.message.includes('timeout') || error.message.includes('storageBucket')) {
+                                errorMessage += 'Issue: Firebase Storage may not be configured properly.\n\n';
+                                errorMessage += 'To fix: Go to Settings and ensure your Firebase config includes "storageBucket".\n\n';
+                                errorMessage += 'Note: Local logo will work in the app but may not appear in sent emails.';
+                            } else {
+                                errorMessage += 'Error: ' + error.message + '\n\n';
+                                errorMessage += 'Note: Local logo will work in the app but may not appear in sent emails.';
+                            }
+                            alert(errorMessage);
+                        } catch (fallbackError) {
+                            console.error('Fallback to base64 also failed:', fallbackError);
+                            statusElement.textContent = '❌ Upload failed';
+                            statusElement.style.color = '#e74c3c';
+                            alert('Failed to upload logo: ' + error.message);
                         }
-                        alert(errorMessage);
                     }
                 });
             }
