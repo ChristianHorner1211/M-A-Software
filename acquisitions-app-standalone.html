@@ -1445,7 +1445,7 @@
                         <a href="https://console.firebase.google.com" target="_blank" style="color: #3498db;">Get your config from Firebase Console</a>
                     </p>
                     <p style="font-size: 12px; color: #e74c3c; margin-bottom: 15px;">
-                        ⚠️ <strong>Important:</strong> All keys must be quoted with double quotes. Without Firebase, data is saved only to your browser's localStorage.
+                        ⚠️ <strong>Important:</strong> All keys must be quoted with double quotes. Include "storageBucket" to enable logo uploads. Without Firebase, data is saved only to your browser's localStorage.
                     </p>
                     <textarea id="firebaseConfig" rows="8" placeholder='Paste your Firebase config JSON here:&#10;{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
                 </div>
@@ -1759,7 +1759,7 @@ Mergers & Acquisitions Team`
                 const config = JSON.parse(appSettings.firebase.config);
 
                 // Validate required Firebase fields
-                const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket'];
                 const missingFields = requiredFields.filter(field => !config[field]);
                 if (missingFields.length > 0) {
                     throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
@@ -4761,11 +4761,11 @@ Mergers & Acquisitions Team`
                     const config = JSON.parse(firebaseConfig);
 
                     // Validate required fields
-                    const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+                    const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket'];
                     const missingFields = requiredFields.filter(field => !config[field]);
 
                     if (missingFields.length > 0) {
-                        alert(`Invalid Firebase configuration. Missing required fields: ${missingFields.join(', ')}\n\nMake sure all keys are quoted with double quotes, like:\n{\n  "apiKey": "your-key",\n  "authDomain": "your-domain",\n  "projectId": "your-project"\n}`);
+                        alert(`Invalid Firebase configuration. Missing required fields: ${missingFields.join(', ')}\n\nMake sure all keys are quoted with double quotes, like:\n{\n  "apiKey": "your-key",\n  "authDomain": "your-domain",\n  "projectId": "your-project",\n  "storageBucket": "your-bucket"\n}`);
                         return;
                     }
 
