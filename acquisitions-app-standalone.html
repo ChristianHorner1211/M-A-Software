@@ -3408,8 +3408,11 @@ Mergers & Acquisitions Team`
             const subject = document.getElementById('emailSubject').value;
             let body = document.getElementById('emailBody').value;
 
-            // Build HTML signature
+            // Build HTML signature with inline image support
             let signatureHTML = '';
+            let signatureImageAttachment = null;
+            const signatureImageCID = 'signature-logo-' + Date.now();
+
             if (appSettings.emailSignature || appSettings.signatureImage) {
                 signatureHTML = '<br><br><div style="font-family: Arial, sans-serif;">';
 
@@ -3420,7 +3423,67 @@ Mergers & Acquisitions Team`
                 }
 
                 if (appSettings.signatureImage) {
-                    signatureHTML += '<br><img src="' + appSettings.signatureImage + '" alt="Company Logo" style="max-width: 200px; max-height: 100px; margin-top: 10px;">';
+                    // Use Content-ID reference for inline image (works reliably in all email clients)
+                    signatureHTML += '<br><img src="cid:' + signatureImageCID + '" alt="Company Logo" style="max-width: 200px; max-height: 100px; margin-top: 10px;">';
+
+                    // Prepare signature image as inline attachment
+                    try {
+                        let imageBase64 = '';
+                        let contentType = 'image/png';
+
+                        if (appSettings.signatureImage.startsWith('data:')) {
+                            // Extract base64 from data URI
+                            const dataURIParts = appSettings.signatureImage.split(',');
+                            if (dataURIParts.length === 2) {
+                                imageBase64 = dataURIParts[1];
+                                // Extract content type from data URI (e.g., "data:image/png;base64," -> "image/png")
+                                const contentTypeMatch = dataURIParts[0].match(/data:([^;]+)/);
+                                if (contentTypeMatch) {
+                                    contentType = contentTypeMatch[1];
+                                }
+                            }
+                        } else if (appSettings.signatureImage.startsWith('http://') || appSettings.signatureImage.startsWith('https://')) {
+                            // Fetch image from URL and convert to base64
+                            try {
+                                const response = await fetch(appSettings.signatureImage);
+                                const blob = await response.blob();
+                                contentType = blob.type || 'image/png';
+
+                                // Convert blob to base64
+                                const base64Promise = new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                        const dataUrl = reader.result;
+                                        if (dataUrl && dataUrl.includes(',')) {
+                                            resolve(dataUrl.split(',')[1]);
+                                        } else {
+                                            reject(new Error('Failed to convert image to base64'));
+                                        }
+                                    };
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(blob);
+                                });
+                                imageBase64 = await base64Promise;
+                            } catch (fetchError) {
+                                console.error('Failed to fetch signature image from URL:', fetchError);
+                                // Continue without image rather than failing the entire email
+                            }
+                        }
+
+                        if (imageBase64) {
+                            signatureImageAttachment = {
+                                "@odata.type": "#microsoft.graph.fileAttachment",
+                                "name": "signature-logo.png",
+                                "contentType": contentType,
+                                "contentId": signatureImageCID,
+                                "contentBytes": imageBase64,
+                                "isInline": true
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error processing signature image:', error);
+                        // Continue without image rather than failing the entire email
+                    }
                 }
 
                 signatureHTML += '</div>';
@@ -3473,6 +3536,11 @@ Mergers & Acquisitions Team`
                             "contentBytes": contentBytes
                         };
                     });
+
+                    // Add signature image as inline attachment if present
+                    if (signatureImageAttachment) {
+                        attachments.push(signatureImageAttachment);
+                    }
 
                     let sentCount = 0;
                     let failedCarriers = [];
