@@ -3669,13 +3669,28 @@ Mergers & Acquisitions Team`
                 // Exclude email activities (auto-synced from inbox)
                 if (a.type === 'email') return false;
 
-                // If no due date, always show the activity
-                if (!a.dueDate) return true;
+                // Show all activities regardless of due date
+                return true;
+            }).sort((a, b) => {
+                // Sort by due date: activities with due dates first (ascending), then activities without due dates (by timestamp descending)
 
-                // Check if due date is today
-                const dueDate = new Date(a.dueDate);
-                dueDate.setHours(0, 0, 0, 0);
-                return dueDate.getTime() === today.getTime();
+                // Both have due dates - sort by due date (earliest first)
+                if (a.dueDate && b.dueDate) {
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                }
+
+                // Only a has due date - a comes first
+                if (a.dueDate && !b.dueDate) {
+                    return -1;
+                }
+
+                // Only b has due date - b comes first
+                if (!a.dueDate && b.dueDate) {
+                    return 1;
+                }
+
+                // Neither has due date - sort by timestamp (most recent first)
+                return new Date(b.timestamp) - new Date(a.timestamp);
             });
             if (acquisitionActivities.length === 0) {
                 activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No activities yet</div></div>';
