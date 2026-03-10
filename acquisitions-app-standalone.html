@@ -1388,8 +1388,9 @@
             <span class="close" onclick="closeModal('carrierContactsModal')">&times;</span>
             <h2 id="carrierContactsTitle">Carrier Contacts</h2>
 
-            <div style="margin-bottom: 20px;">
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
                 <button class="btn btn-success btn-small" onclick="showAddContactForm()">+ Add Contact</button>
+                <button class="btn btn-primary btn-small" onclick="showAddActivityFromCarrier()">+ Add Activity</button>
             </div>
 
             <div id="addContactForm" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
@@ -3737,6 +3738,34 @@ Mergers & Acquisitions Team`
                 select.appendChild(option);
             });
             document.getElementById('activityForm').reset();
+        }
+
+        function showAddActivityFromCarrier() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) {
+                alert('Carrier not found');
+                return;
+            }
+
+            // First, show the activity modal normally
+            showActivityModal();
+
+            // Then pre-fill the carrier field
+            document.getElementById('activityCarrier').value = carrier.name;
+
+            // Pre-fill the contact field with the first contact if available
+            if (carrier.contacts && carrier.contacts.length > 0) {
+                document.getElementById('activityContact').value = carrier.contacts[0].name;
+            }
+
+            // Close the carrier contacts modal
+            closeModal('carrierContactsModal');
         }
 
         function showEditActivityModal(activityTimestamp) {
