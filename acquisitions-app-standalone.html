@@ -236,6 +236,34 @@
             transform: translateX(4px);
         }
 
+        .carrier-item.has-response {
+            background: rgba(52, 152, 219, 0.12);
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.15);
+        }
+
+        .carrier-item.has-response.done {
+            background: rgba(39, 174, 96, 0.15);
+            border-left: 4px solid #27ae60;
+        }
+
+        .carrier-item.has-response.outstanding {
+            background: rgba(52, 152, 219, 0.12);
+            border-left: 4px solid #3498db;
+        }
+
+        .response-badge {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
         .carrier-info {
             flex: 1;
         }
@@ -2791,13 +2819,68 @@ Mergers & Acquisitions Team`
             acquisitionNameEl.textContent = acquisition.name;
             carriersList.innerHTML = '';
 
-            acquisition.carriers.forEach(carrier => {
+            // Sort carriers by most recent email response (inbox-style)
+            const sortedCarriers = [...acquisition.carriers].sort((a, b) => {
+                // Find the most recent "Received:" email for each carrier
+                const getLastResponseDate = (carrierName) => {
+                    const receivedEmails = activities.filter(activity =>
+                        activity.acquisitionId === currentAcquisitionId &&
+                        activity.carrier === carrierName &&
+                        activity.type === 'email' &&
+                        activity.notes && activity.notes.startsWith('Received:')
+                    );
+
+                    if (receivedEmails.length === 0) return null;
+
+                    // Get the most recent timestamp
+                    const mostRecent = receivedEmails.reduce((latest, email) => {
+                        const emailDate = new Date(email.timestamp);
+                        return emailDate > latest ? emailDate : latest;
+                    }, new Date(0));
+
+                    return mostRecent;
+                };
+
+                const aLastResponse = getLastResponseDate(a.name);
+                const bLastResponse = getLastResponseDate(b.name);
+
+                // Carriers with responses come first, sorted by most recent
+                if (aLastResponse && bLastResponse) {
+                    return bLastResponse - aLastResponse; // Most recent first
+                } else if (aLastResponse) {
+                    return -1; // a has response, b doesn't - a comes first
+                } else if (bLastResponse) {
+                    return 1; // b has response, a doesn't - b comes first
+                } else {
+                    return 0; // Neither has responses - maintain original order
+                }
+            });
+
+            sortedCarriers.forEach(carrier => {
                 const carrierItem = document.createElement('div');
-                carrierItem.className = `carrier-item ${carrier.status}`;
+
+                // Check if carrier has received email responses
+                const receivedEmails = activities.filter(activity =>
+                    activity.acquisitionId === currentAcquisitionId &&
+                    activity.carrier === carrier.name &&
+                    activity.type === 'email' &&
+                    activity.notes && activity.notes.startsWith('Received:')
+                );
+
+                const hasNewResponses = receivedEmails.length > 0;
+                const responseCount = receivedEmails.length;
+
+                // Add 'has-response' class if carrier has received emails
+                carrierItem.className = `carrier-item ${carrier.status}${hasNewResponses ? ' has-response' : ''}`;
                 const contactCount = carrier.contacts ? carrier.contacts.length : 0;
+
+                // Add response badge if carrier has received responses
+                const responseBadge = hasNewResponses ?
+                    `<span class="response-badge" title="${responseCount} response${responseCount !== 1 ? 's' : ''} received">📨 ${responseCount}</span>` : '';
+
                 carrierItem.innerHTML = `
                     <div class="carrier-info">
-                        <div class="carrier-name" style="cursor: pointer;">${carrier.name}</div>
+                        <div class="carrier-name" style="cursor: pointer;">${carrier.name} ${responseBadge}</div>
                         <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
                     </div>
                     <div class="carrier-actions">
