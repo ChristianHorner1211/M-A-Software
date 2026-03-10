@@ -92,6 +92,15 @@
             font-size: 13px;
         }
 
+        .btn-complete {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-complete:hover {
+            background-color: #229954;
+        }
+
         .tabs-container {
             background: white;
             padding: 0 20px;
@@ -2429,6 +2438,36 @@ Mergers & Acquisitions Team`
             }
         }
 
+        async function markActivityComplete(activityTimestamp) {
+            // Remove from local array
+            activities = activities.filter(a => a.timestamp !== activityTimestamp);
+
+            // Save to localStorage
+            saveDataToLocalStorage();
+
+            // Delete from Firebase
+            if (firestore && currentUser) {
+                try {
+                    const userId = currentUser.uid;
+                    await firestore
+                        .collection('users')
+                        .doc(userId)
+                        .collection('activities')
+                        .doc(activityTimestamp)
+                        .delete();
+
+                    showSyncStatus('synced', 'Activity completed');
+                    setTimeout(() => hideSyncStatus(), 2000);
+                } catch (error) {
+                    console.error('Error deleting activity:', error);
+                    showSyncStatus('error', 'Delete failed');
+                }
+            }
+
+            // Re-render the activity log
+            renderActivityLog();
+        }
+
         async function deleteAcquisitionFromFirebase(acquisitionId) {
             if (!firestore || !currentUser) return;
 
@@ -3729,6 +3768,7 @@ Mergers & Acquisitions Team`
                     ${dueDateHTML}
                     <div class="activity-notes">${activity.notes}</div>
                     ${attachmentHTML}
+                    <button class="btn btn-small btn-complete" onclick="markActivityComplete('${activity.timestamp}')" style="margin-top: 10px;">✓ Mark Complete</button>
                 `;
                 activityList.appendChild(activityItem);
             });
