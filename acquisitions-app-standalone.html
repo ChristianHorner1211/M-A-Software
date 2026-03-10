@@ -4996,44 +4996,37 @@ Mergers & Acquisitions Team`
                 carrier: email.carrier  // Store carrier name for activity logging
             };
 
-            // Switch to the "Email Carriers" section in the current acquisition detail view
+            // Verify acquisition exists
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
                 alert('Please select an acquisition first');
                 return;
             }
 
-            // Show acquisition detail if not already showing
-            if (document.getElementById('acquisitionDetail').style.display !== 'block') {
-                showAcquisitionDetail(currentAcquisitionId);
-            }
+            // Open the email compose modal
+            showEmailCompose();
 
-            // Switch to email tab
-            showAcquisitionTab('email-carriers');
-
-            // Pre-fill the email form
-            // Set To field with the sender's email
-            document.getElementById('emailTo').value = email.contact;
-
-            // Set subject with "Re:" prefix (avoid duplicating Re:)
-            let replySubject = subjectLine;
-            if (!replySubject.toLowerCase().startsWith('re:')) {
-                replySubject = 'Re: ' + replySubject;
-            }
-            document.getElementById('emailSubject').value = replySubject;
-
-            // Build quoted reply body
-            const quotedBody = `\n\n------- Original Message -------\nFrom: ${email.contact}\nDate: ${formattedDate}\n${email.carrier ? 'Carrier: ' + email.carrier + '\n' : ''}\n\n${bodyLines}`;
-            document.getElementById('emailBody').value = quotedBody;
-
-            // Scroll to email form
+            // Pre-fill the email form after modal opens
             setTimeout(() => {
-                document.getElementById('emailSubject').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Set To field with the sender's email
+                document.getElementById('emailTo').value = email.contact;
+
+                // Set subject with "Re:" prefix (avoid duplicating Re:)
+                let replySubject = subjectLine;
+                if (!replySubject.toLowerCase().startsWith('re:')) {
+                    replySubject = 'Re: ' + replySubject;
+                }
+                document.getElementById('emailSubject').value = replySubject;
+
+                // Build quoted reply body
+                const quotedBody = `\n\n------- Original Message -------\nFrom: ${email.contact}\nDate: ${formattedDate}\n${email.carrier ? 'Carrier: ' + email.carrier + '\n' : ''}\n\n${bodyLines}`;
+                document.getElementById('emailBody').value = quotedBody;
+
                 // Focus on body to start typing
                 document.getElementById('emailBody').focus();
                 // Move cursor to beginning (before quoted text)
                 document.getElementById('emailBody').setSelectionRange(0, 0);
-            }, 100);
+            }, 200);
 
             console.log('Reply context set:', replyContext);
         }
