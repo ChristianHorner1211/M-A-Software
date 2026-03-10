@@ -1402,6 +1402,35 @@
                 </form>
             </div>
 
+            <div id="editContactForm" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">Edit Contact</h3>
+                <form id="editContactFormElement" onsubmit="saveEditedContact(event)">
+                    <input type="hidden" id="editContactId">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="editContactName">Name:</label>
+                            <input type="text" id="editContactName" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="editContactEmail">Email:</label>
+                            <input type="email" id="editContactEmail" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="editContactPhone">Phone:</label>
+                            <input type="tel" id="editContactPhone">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="editContactRole">Role/Title:</label>
+                            <input type="text" id="editContactRole" placeholder="e.g., Account Manager">
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-primary btn-small">Save Changes</button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="hideEditContactForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
             <div id="carrierContactsList">
                 <!-- Contacts will be populated here -->
             </div>
@@ -3995,7 +4024,10 @@ Mergers & Acquisitions Team`
                         <div class="contact-details">✉ ${contact.email}${contact.phone ? ' | 📞 ' + contact.phone : ''}</div>
                         ${contact.role ? `<div class="contact-role">${contact.role}</div>` : ''}
                     </div>
-                    <button class="btn btn-danger btn-small" onclick="removeContact('${contact.id}')">Remove</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-small" onclick="showEditContactForm('${contact.id}')">Edit</button>
+                        <button class="btn btn-danger btn-small" onclick="removeContact('${contact.id}')">Remove</button>
+                    </div>
                 `;
                 contactsList.appendChild(contactItem);
             });
@@ -4209,6 +4241,61 @@ Mergers & Acquisitions Team`
         function hideAddContactForm() {
             document.getElementById('addContactForm').style.display = 'none';
             document.getElementById('contactForm').reset();
+        }
+
+        function showEditContactForm(contactId) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const contact = carrier.contacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            // Hide add form if it's open
+            document.getElementById('addContactForm').style.display = 'none';
+
+            // Populate the edit form with current contact data
+            document.getElementById('editContactId').value = contact.id;
+            document.getElementById('editContactName').value = contact.name;
+            document.getElementById('editContactEmail').value = contact.email;
+            document.getElementById('editContactPhone').value = contact.phone || '';
+            document.getElementById('editContactRole').value = contact.role || '';
+
+            // Show the edit form
+            document.getElementById('editContactForm').style.display = 'block';
+        }
+
+        function hideEditContactForm() {
+            document.getElementById('editContactForm').style.display = 'none';
+            document.getElementById('editContactFormElement').reset();
+        }
+
+        async function saveEditedContact(event) {
+            event.preventDefault();
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
+            if (!carrier) return;
+
+            const contactId = document.getElementById('editContactId').value;
+            const contact = carrier.contacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            // Update the contact with new values
+            contact.name = document.getElementById('editContactName').value;
+            contact.email = document.getElementById('editContactEmail').value;
+            contact.phone = document.getElementById('editContactPhone').value;
+            contact.role = document.getElementById('editContactRole').value;
+
+            // Save to Firebase
+            await saveAcquisitionToFirebase(acquisition);
+
+            renderCarrierContacts();
+            renderCarriersList(); // Update contact info display
+            hideEditContactForm();
         }
 
         function showEmailDetail(email, isSent, formattedDate, emailDiv = null) {
