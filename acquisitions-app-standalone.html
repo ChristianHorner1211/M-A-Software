@@ -92,6 +92,15 @@
             font-size: 13px;
         }
 
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2980b9;
+        }
+
         .btn-complete {
             background-color: #27ae60;
             color: white;
@@ -3639,12 +3648,16 @@ Mergers & Acquisitions Team`
             closeModal('emailTemplateModal');
         }
 
+        let editingActivityTimestamp = null;
+
         function showActivityModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
                 alert('Please select an acquisition first');
                 return;
             }
+            editingActivityTimestamp = null;
+            document.querySelector('#activityModal h2').textContent = 'Add Activity';
             const modal = document.getElementById('activityModal');
             modal.style.display = 'block';
             const select = document.getElementById('activityCarrier');
@@ -3655,6 +3668,42 @@ Mergers & Acquisitions Team`
                 option.textContent = carrier.name;
                 select.appendChild(option);
             });
+            document.getElementById('activityForm').reset();
+        }
+
+        function showEditActivityModal(activityTimestamp) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            const activity = activities.find(a => a.timestamp === activityTimestamp);
+            if (!activity) return;
+
+            editingActivityTimestamp = activityTimestamp;
+            document.querySelector('#activityModal h2').textContent = 'Edit Activity';
+
+            const modal = document.getElementById('activityModal');
+            modal.style.display = 'block';
+
+            const select = document.getElementById('activityCarrier');
+            select.innerHTML = '';
+            acquisition.carriers.forEach(carrier => {
+                const option = document.createElement('option');
+                option.value = carrier.name;
+                option.textContent = carrier.name;
+                select.appendChild(option);
+            });
+
+            // Populate form with existing data
+            document.getElementById('activityType').value = activity.type;
+            document.getElementById('activityContact').value = activity.contact;
+            document.getElementById('activityCarrier').value = activity.carrier;
+            document.getElementById('activityNotes').value = activity.notes;
+            if (activity.dueDate) {
+                document.getElementById('activityDueDate').value = activity.dueDate;
+            }
         }
 
         async function addActivity(event) {
@@ -3664,9 +3713,18 @@ Mergers & Acquisitions Team`
             const carrier = document.getElementById('activityCarrier').value;
             const notes = document.getElementById('activityNotes').value;
             const dueDate = document.getElementById('activityDueDate').value;
-            await addActivityLog({ type, contact, carrier, notes, dueDate: dueDate || null });
+
+            if (editingActivityTimestamp) {
+                // Update existing activity
+                await updateActivityLog(editingActivityTimestamp, { type, contact, carrier, notes, dueDate: dueDate || null });
+            } else {
+                // Add new activity
+                await addActivityLog({ type, contact, carrier, notes, dueDate: dueDate || null });
+            }
+
             closeModal('activityModal');
             document.getElementById('activityForm').reset();
+            editingActivityTimestamp = null;
         }
 
         async function addActivityLog(activity) {
@@ -3681,6 +3739,31 @@ Mergers & Acquisitions Team`
 
             // Save to Firebase
             await saveActivityToFirebase(activityItem);
+
+            renderActivityLog();
+
+            // If carrier contacts modal is open, refresh email history
+            const carrierModal = document.getElementById('carrierContactsModal');
+            if (carrierModal && carrierModal.style.display === 'block') {
+                renderCarrierEmailHistory();
+            }
+        }
+
+        async function updateActivityLog(activityTimestamp, updatedData) {
+            const activityIndex = activities.findIndex(a => a.timestamp === activityTimestamp);
+            if (activityIndex === -1) return;
+
+            // Update the activity with new data, keeping the original timestamp and acquisitionId
+            activities[activityIndex] = {
+                ...activities[activityIndex],
+                ...updatedData
+            };
+
+            // Save to localStorage
+            saveDataToLocalStorage();
+
+            // Save to Firebase
+            await saveActivityToFirebase(activities[activityIndex]);
 
             renderActivityLog();
 
@@ -3768,7 +3851,10 @@ Mergers & Acquisitions Team`
                     ${dueDateHTML}
                     <div class="activity-notes">${activity.notes}</div>
                     ${attachmentHTML}
-                    <button class="btn btn-small btn-complete" onclick="markActivityComplete('${activity.timestamp}')" style="margin-top: 10px;">✓ Mark Complete</button>
+                    <div style="margin-top: 10px; display: flex; gap: 8px;">
+                        <button class="btn btn-small btn-edit" onclick="showEditActivityModal('${activity.timestamp}')">✏ Edit</button>
+                        <button class="btn btn-small btn-complete" onclick="markActivityComplete('${activity.timestamp}')">✓ Mark Complete</button>
+                    </div>
                 `;
                 activityList.appendChild(activityItem);
             });
