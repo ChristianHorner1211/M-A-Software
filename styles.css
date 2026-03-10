@@ -343,6 +343,11 @@ header h1 {
     animation: fadeIn 0.3s ease;
 }
 
+/* Email template modal should appear on top when replying from contact history */
+#emailTemplateModal {
+    z-index: 1100;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
