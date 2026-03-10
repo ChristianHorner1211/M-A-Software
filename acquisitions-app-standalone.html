@@ -1695,6 +1695,7 @@
         let activities = [];
         let emailAttachments = [];
         let acquisitionDocuments = [];  // PDFs to attach to new acquisitions
+        let replyContext = null;  // Store reply context for email threading
         let appSettings = {
             firebase: {
                 config: null
@@ -3594,6 +3595,166 @@ Mergers & Acquisitions Team`
                 try {
                     const token = await getAccessToken();
 
+                    // Handle reply to existing email (special case)
+                    if (replyContext && replyContext.messageId) {
+                        console.log('Replying to email with messageId:', replyContext.messageId);
+
+                        // Build CC recipients
+                        const ccRecipients = ccEmails.map(email => ({
+                            emailAddress: { address: email }
+                        }));
+
+                        // Build attachments
+                        const attachments = emailAttachments.map(attachment => {
+                            let contentBytes = attachment.contentBytes;
+                            if (contentBytes && contentBytes.includes(',')) {
+                                contentBytes = contentBytes.split(',')[1];
+                            }
+                            return {
+                                "@odata.type": "#microsoft.graph.fileAttachment",
+                                "name": attachment.name,
+                                "contentType": attachment.type,
+                                "contentBytes": contentBytes
+                            };
+                        });
+
+                        // Add signature image as inline attachment if present
+                        let signatureImageAttachment = null;
+                        const signatureImageCID = 'signature-logo-' + Date.now();
+                        if (appSettings.signatureImage) {
+                            // [Signature image processing - same as below]
+                            try {
+                                let imageBase64 = '';
+                                let contentType = 'image/png';
+                                if (appSettings.signatureImage.startsWith('data:')) {
+                                    const dataURIParts = appSettings.signatureImage.split(',');
+                                    if (dataURIParts.length === 2) {
+                                        imageBase64 = dataURIParts[1];
+                                        const contentTypeMatch = dataURIParts[0].match(/data:([^;]+)/);
+                                        if (contentTypeMatch) contentType = contentTypeMatch[1];
+                                    }
+                                }
+                                if (imageBase64) {
+                                    signatureImageAttachment = {
+                                        "@odata.type": "#microsoft.graph.fileAttachment",
+                                        "name": "signature-logo.png",
+                                        "contentType": contentType,
+                                        "contentId": signatureImageCID,
+                                        "contentBytes": imageBase64,
+                                        "isInline": true
+                                    };
+                                    attachments.push(signatureImageAttachment);
+                                }
+                            } catch (error) {
+                                console.error('Error processing signature image:', error);
+                            }
+                        }
+
+                        // For Graph API reply, we need to use createReply first, then send
+                        // Step 1: Create a reply draft
+                        const createReplyResponse = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${replyContext.messageId}/createReply`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!createReplyResponse.ok) {
+                            const errorData = await createReplyResponse.json();
+                            console.error('Create reply failed:', errorData);
+                            alert('Failed to create reply: ' + (errorData.error?.message || 'Unknown error'));
+                            return;
+                        }
+
+                        const replyDraft = await createReplyResponse.json();
+                        console.log('Reply draft created:', replyDraft.id);
+
+                        // Step 2: Update the draft with our content
+                        const updatePayload = {
+                            body: {
+                                contentType: 'HTML',
+                                content: bodyHTML
+                            },
+                            ccRecipients: ccRecipients
+                        };
+
+                        const updateResponse = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${replyDraft.id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(updatePayload)
+                        });
+
+                        if (!updateResponse.ok) {
+                            const errorData = await updateResponse.json();
+                            console.error('Update reply failed:', errorData);
+                            alert('Failed to update reply: ' + (errorData.error?.message || 'Unknown error'));
+                            return;
+                        }
+
+                        // Step 3: Add attachments if any
+                        if (attachments.length > 0) {
+                            for (const attachment of attachments) {
+                                const attachResponse = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${replyDraft.id}/attachments`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': 'Bearer ' + token,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(attachment)
+                                });
+                                if (!attachResponse.ok) {
+                                    console.error('Failed to add attachment:', await attachResponse.json());
+                                }
+                            }
+                        }
+
+                        // Step 4: Send the reply
+                        const response = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${replyDraft.id}/send`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token
+                            }
+                        });
+
+                        if (response.ok || response.status === 202) {
+                            // Log the reply activity
+                            const recipientInfo = `To: ${document.getElementById('emailTo').value}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                            await addActivityLog({
+                                type: 'email',
+                                contact: document.getElementById('emailTo').value,
+                                carrier: replyContext.carrier || replyContext.originalFrom,
+                                notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
+                                conversationId: replyContext.conversationId,
+                                messageId: replyDraft.id  // Store the new message ID
+                            });
+
+                            alert('Reply sent successfully!');
+
+                            // Clear form and reply context
+                            document.getElementById('emailSubject').value = '';
+                            document.getElementById('emailBody').value = '';
+                            document.getElementById('emailTo').value = '';
+                            document.getElementById('emailCC').value = '';
+                            emailAttachments = [];
+                            renderAttachmentList();
+                            replyContext = null;
+
+                            // Refresh activity list
+                            await loadActivities(currentAcquisitionId);
+                            renderActivityList();
+                        } else {
+                            const errorData = await response.json();
+                            console.error('Reply failed:', errorData);
+                            alert('Failed to send reply: ' + (errorData.error?.message || 'Unknown error'));
+                        }
+
+                        return; // Exit early since we handled the reply
+                    }
+
                     // Build CC recipients (same for all emails)
                     const ccRecipients = ccEmails.map(email => ({
                         emailAddress: { address: email }
@@ -3678,13 +3839,21 @@ Mergers & Acquisitions Team`
                         if (response.ok || response.status === 202) {
                             sentCount++;
 
-                            // Wait a moment for email to appear in sent items, then fetch conversationId
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            // Wait for email to appear in sent items, then fetch conversationId
+                            // Use longer delay to ensure email is indexed
+                            await new Promise(resolve => setTimeout(resolve, 2000));
 
+                            let conversationId = null;
                             try {
-                                // Get the sent email to retrieve conversationId for tracking replies
+                                // Method 1: Try to get conversationId by searching recent sent items
+                                // More reliable than filtering by subject (which can fail with special characters)
+                                const now = new Date();
+                                const tenSecondsAgo = new Date(now.getTime() - 10000);
+                                const timeFilter = tenSecondsAgo.toISOString();
+
+                                console.log('Fetching sent email to capture conversationId...');
                                 const sentEmailsResponse = await fetch(
-                                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=subject eq '${subject.replace(/'/g, "''")}'&$top=1&$select=conversationId&$orderby=sentDateTime desc`,
+                                    `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${timeFilter}&$top=10&$select=conversationId,subject,toRecipients,sentDateTime&$orderby=sentDateTime desc`,
                                     {
                                         headers: {
                                             'Authorization': 'Bearer ' + token,
@@ -3693,36 +3862,46 @@ Mergers & Acquisitions Team`
                                     }
                                 );
 
-                                let conversationId = null;
                                 if (sentEmailsResponse.ok) {
                                     const sentData = await sentEmailsResponse.json();
-                                    if (sentData.value && sentData.value.length > 0) {
-                                        conversationId = sentData.value[0].conversationId;
-                                        console.log('Captured conversationId:', conversationId, 'for subject:', subject);
+                                    console.log('Found', sentData.value.length, 'recent sent emails');
+
+                                    // Find the email we just sent by matching subject and recipient
+                                    const matchingEmail = sentData.value.find(email => {
+                                        const subjectMatches = email.subject === subject;
+                                        const hasMatchingRecipient = email.toRecipients?.some(r =>
+                                            carrierEmails.includes(r.emailAddress?.address)
+                                        );
+                                        return subjectMatches && hasMatchingRecipient;
+                                    });
+
+                                    if (matchingEmail) {
+                                        conversationId = matchingEmail.conversationId;
+                                        console.log('✓ Captured conversationId:', conversationId, 'for subject:', subject);
+                                    } else {
+                                        console.warn('Could not find matching sent email. Subject:', subject, 'Recipients:', carrierEmails);
                                     }
+                                } else {
+                                    console.warn('Failed to fetch sent emails:', sentEmailsResponse.status);
                                 }
 
-                                // Log activity for this carrier with conversationId
-                                const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                                await addActivityLog({
-                                    type: 'email',
-                                    contact: carrierEmails[0],
-                                    carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
-                                    attachments: [...allAttachments],
-                                    conversationId: conversationId  // Store for reply tracking
-                                });
                             } catch (err) {
                                 console.error('Failed to get conversationId:', err);
-                                // Still log the activity even if we couldn't get conversationId
-                                const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
-                                await addActivityLog({
-                                    type: 'email',
-                                    contact: carrierEmails[0],
-                                    carrier: carrier.name,
-                                    notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
-                                    attachments: [...allAttachments]
-                                });
+                            }
+
+                            // Log activity for this carrier with conversationId
+                            const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
+                            await addActivityLog({
+                                type: 'email',
+                                contact: carrierEmails[0],
+                                carrier: carrier.name,
+                                notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
+                                attachments: [...allAttachments],
+                                conversationId: conversationId  // Store for reply tracking (may be null)
+                            });
+
+                            if (!conversationId) {
+                                console.warn('⚠️ No conversationId captured for email to', carrier.name, '- reply tracking may not work');
                             }
                         } else {
                             // Get more detailed error information
@@ -3793,9 +3972,10 @@ Mergers & Acquisitions Team`
                 alert(`Email logged to activity for ${selectedCarriers.length} carrier(s).\n\nConnect Outlook in Settings to send real emails.`);
             }
 
-            // Clear attachments after sending
+            // Clear attachments and reply context after sending
             emailAttachments = [];
             renderAttachments();
+            replyContext = null;
 
             closeModal('emailTemplateModal');
         }
@@ -4724,6 +4904,18 @@ Mergers & Acquisitions Team`
                 `;
             }
 
+            // Build reply button HTML (only for received emails)
+            const replyButtonHTML = !isSent ? `
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8eef3;">
+                    <button id="replyButton"
+                            style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                            onmouseenter="this.style.background='#2980b9'"
+                            onmouseleave="this.style.background='#3498db'">
+                        ↩️ Reply
+                    </button>
+                </div>
+            ` : '';
+
             modalContent.innerHTML = `
                 <div style="margin-bottom: 20px;">
                     <div style="display: inline-block; background: ${isSent ? '#f8f9fa' : '#e8f4f8'}; padding: 6px 12px; border-radius: 20px; margin-bottom: 15px;">
@@ -4760,6 +4952,7 @@ Mergers & Acquisitions Team`
                     </div>
 
                     ${attachmentsHTML}
+                    ${replyButtonHTML}
                 </div>
             `;
 
@@ -4775,7 +4968,74 @@ Mergers & Acquisitions Team`
                 });
             }
 
+            // Add click handler for reply button (only for received emails)
+            if (!isSent) {
+                const replyButton = document.getElementById('replyButton');
+                if (replyButton) {
+                    replyButton.addEventListener('click', () => {
+                        replyToEmail(email, subjectLine, bodyLines, formattedDate);
+                    });
+                }
+            }
+
             document.getElementById('emailDetailModal').style.display = 'block';
+        }
+
+        function replyToEmail(email, subjectLine, bodyLines, formattedDate) {
+            // Close the email detail modal
+            closeModal('emailDetailModal');
+
+            // Store reply context for threading
+            replyContext = {
+                conversationId: email.conversationId,
+                messageId: email.messageId,
+                originalSubject: subjectLine,
+                originalFrom: email.contact,
+                originalDate: formattedDate,
+                originalBody: bodyLines,
+                carrier: email.carrier  // Store carrier name for activity logging
+            };
+
+            // Switch to the "Email Carriers" section in the current acquisition detail view
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            // Show acquisition detail if not already showing
+            if (document.getElementById('acquisitionDetail').style.display !== 'block') {
+                showAcquisitionDetail(currentAcquisitionId);
+            }
+
+            // Switch to email tab
+            showAcquisitionTab('email-carriers');
+
+            // Pre-fill the email form
+            // Set To field with the sender's email
+            document.getElementById('emailTo').value = email.contact;
+
+            // Set subject with "Re:" prefix (avoid duplicating Re:)
+            let replySubject = subjectLine;
+            if (!replySubject.toLowerCase().startsWith('re:')) {
+                replySubject = 'Re: ' + replySubject;
+            }
+            document.getElementById('emailSubject').value = replySubject;
+
+            // Build quoted reply body
+            const quotedBody = `\n\n------- Original Message -------\nFrom: ${email.contact}\nDate: ${formattedDate}\n${email.carrier ? 'Carrier: ' + email.carrier + '\n' : ''}\n\n${bodyLines}`;
+            document.getElementById('emailBody').value = quotedBody;
+
+            // Scroll to email form
+            setTimeout(() => {
+                document.getElementById('emailSubject').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Focus on body to start typing
+                document.getElementById('emailBody').focus();
+                // Move cursor to beginning (before quoted text)
+                document.getElementById('emailBody').setSelectionRange(0, 0);
+            }, 100);
+
+            console.log('Reply context set:', replyContext);
         }
 
         function formatFileSize(bytes) {
@@ -5791,6 +6051,26 @@ Mergers & Acquisitions Team`
 
                 console.log('Carrier email addresses:', Array.from(carrierEmailMap.keys()));
 
+                if (carrierEmailMap.size === 0) {
+                    console.warn('⚠️ WARNING: No carrier contacts found!');
+                    alert('⚠️ No carrier contacts configured!\n\nYou need to add email addresses to your carrier contacts before sync can work.\n\nClick on a carrier name to add contacts.');
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
+                    return;
+                }
+
+                // Build a domain map for fallback matching (e.g., @carrier.com -> carrier)
+                const domainMap = new Map();
+                for (const [email, matches] of carrierEmailMap.entries()) {
+                    const domain = email.split('@')[1];
+                    if (domain) {
+                        if (!domainMap.has(domain)) {
+                            domainMap.set(domain, []);
+                        }
+                        domainMap.get(domain).push(...matches);
+                    }
+                }
+
                 // Step 1: Get conversation IDs and subjects from emails sent through THIS APP
                 console.log('Checking emails sent through this app...');
                 const sentConversationIds = new Set();
@@ -5846,9 +6126,14 @@ Mergers & Acquisitions Team`
                 }
 
                 console.log('=== Emails Sent Through This App ===');
+                let emailsWithoutConvId = 0;
                 sentFromApp.forEach((email, index) => {
                     console.log(`${index + 1}. "${email.subject}" to ${email.carrier} in acquisition ${email.acquisitionId} (${email.date})${email.conversationId ? ' [ConvID: ' + email.conversationId.substring(0, 20) + '...]' : ' [No ConvID]'}`);
+                    if (!email.conversationId) emailsWithoutConvId++;
                 });
+                if (emailsWithoutConvId > 0) {
+                    console.warn(`⚠️ WARNING: ${emailsWithoutConvId} sent email(s) are missing conversationId - reply tracking may not work for these!`);
+                }
                 console.log('\n=== Conversation IDs We\'re Tracking ===');
                 console.log('Count:', sentConversationIds.size);
                 console.log('ConversationId Map entries:', conversationIdMap.size);
@@ -5900,7 +6185,7 @@ Mergers & Acquisitions Team`
                     try {
                         console.log(`Fetching messages for conversation: ${convId.substring(0, 30)}...`);
                         const convResponse = await fetch(
-                            `https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '${convId}'&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc&$top=100`,
+                            `https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '${convId}'&$select=id,subject,from,replyTo,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc&$top=100`,
                             {
                                 headers: {
                                     'Authorization': 'Bearer ' + token,
@@ -5925,7 +6210,7 @@ Mergers & Acquisitions Team`
                 console.log('\n=== Also checking inbox for carrier emails ===');
                 try {
                     const inboxResponse = await fetch(
-                        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
+                        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${filterDateString}&$top=500&$select=id,subject,from,replyTo,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=receivedDateTime desc`,
                         {
                             headers: {
                                 'Authorization': 'Bearer ' + token,
@@ -5947,7 +6232,7 @@ Mergers & Acquisitions Team`
                 console.log('\n=== Also checking sent items ===');
                 try {
                     const sentItemsResponse = await fetch(
-                        `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=500&$select=subject,from,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=sentDateTime desc`,
+                        `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$filter=sentDateTime ge ${filterDateString}&$top=500&$select=id,subject,from,replyTo,toRecipients,receivedDateTime,sentDateTime,body,hasAttachments,conversationId&$orderby=sentDateTime desc`,
                         {
                             headers: {
                                 'Authorization': 'Bearer ' + token,
@@ -5997,6 +6282,7 @@ Mergers & Acquisitions Team`
                 for (const email of allUniqueEmails) {
                     const emailDate = email.receivedDateTime || email.sentDateTime;
                     const senderEmail = email.from?.emailAddress?.address;
+                    const replyToEmail = email.replyTo?.[0]?.emailAddress?.address;
                     const toEmails = email.toRecipients?.map(r => r.emailAddress?.address?.toLowerCase()) || [];
 
                     if (!senderEmail || !email.subject) {
@@ -6005,8 +6291,10 @@ Mergers & Acquisitions Team`
                     }
 
                     const senderEmailLower = senderEmail.toLowerCase();
+                    const replyToEmailLower = replyToEmail?.toLowerCase();
                     console.log(`\n━━━ Checking email: "${email.subject}" ━━━`);
                     console.log(`  From: ${senderEmail}`);
+                    if (replyToEmail) console.log(`  Reply-To: ${replyToEmail}`);
                     console.log(`  To: ${toEmails.join(', ')}`);
                     console.log(`  Date: ${emailDate}`);
                     console.log(`  ConversationId: ${email.conversationId || 'N/A'}`);
@@ -6015,15 +6303,36 @@ Mergers & Acquisitions Team`
                     let carrierEmail = null;
                     let isReceivedFromCarrier = false;
                     let isSentToCarrier = false;
+                    let matchMethod = '';
 
                     console.log(`  Checking if email involves carrier contacts...`);
                     console.log(`  Available carrier emails:`, Array.from(carrierEmailMap.keys()).join(', '));
 
-                    // Check if sender is a carrier contact (received email)
+                    // Method 1: Check if sender is a carrier contact (received email)
                     if (carrierEmailMap.has(senderEmailLower)) {
                         carrierEmail = senderEmailLower;
                         isReceivedFromCarrier = true;
-                        console.log(`  ✓ Sender ${senderEmail} IS a carrier contact (RECEIVED email)`);
+                        matchMethod = 'exact sender match';
+                        console.log(`  ✓ Sender ${senderEmail} IS a carrier contact (RECEIVED email) - ${matchMethod}`);
+                    }
+
+                    // Method 2: Check reply-to address if present
+                    if (!carrierEmail && replyToEmailLower && carrierEmailMap.has(replyToEmailLower)) {
+                        carrierEmail = replyToEmailLower;
+                        isReceivedFromCarrier = true;
+                        matchMethod = 'reply-to match';
+                        console.log(`  ✓ Reply-To ${replyToEmail} IS a carrier contact (RECEIVED email) - ${matchMethod}`);
+                    }
+
+                    // Method 3: Domain-based fallback matching
+                    if (!carrierEmail) {
+                        const senderDomain = senderEmailLower.split('@')[1];
+                        if (senderDomain && domainMap.has(senderDomain)) {
+                            carrierEmail = senderEmailLower;
+                            isReceivedFromCarrier = true;
+                            matchMethod = 'domain match (@' + senderDomain + ')';
+                            console.log(`  ✓ Sender domain @${senderDomain} matches carrier domain (RECEIVED email) - ${matchMethod}`);
+                        }
                     }
 
                     // Check if any recipient is a carrier contact (sent email)
@@ -6145,7 +6454,8 @@ Mergers & Acquisitions Team`
                                         acquisitionId: acquisition.id,
                                         timestamp: emailDate,
                                         attachments: [],
-                                        conversationId: email.conversationId  // Store conversationId for threading
+                                        conversationId: email.conversationId,  // Store conversationId for threading
+                                        messageId: email.id  // Store messageId for reply functionality
                                     };
                                     activities.unshift(activityItem);
                                     await saveActivityToFirebase(activityItem);
@@ -6161,12 +6471,19 @@ Mergers & Acquisitions Team`
                             console.log(`  ✗ Could not find acquisition ${originalSentEmail.acquisitionId}`);
                         }
                     } else {
-                        // Fallback: use carrierEmailMap (when we don't have precise context)
+                        // Fallback: use carrierEmailMap or domainMap (when we don't have precise context)
                         console.log(`  Using fallback method (checking all possible carriers)`);
-                        const matches = carrierEmailMap.get(carrierEmail);
+                        let matches = carrierEmailMap.get(carrierEmail);
+
+                        // If we matched by domain, get matches from domain map
+                        if (!matches && matchMethod.startsWith('domain match')) {
+                            const domain = carrierEmail.split('@')[1];
+                            matches = domainMap.get(domain);
+                            console.log(`  Using domain-based matches for @${domain}`);
+                        }
 
                         if (matches) {
-                            console.log(`  Found ${matches.length} possible carrier match(es)`);
+                            console.log(`  Found ${matches.length} possible carrier match(es) via ${matchMethod}`);
                             for (const match of matches) {
                                 const { acquisition, carrier } = match;
                                 console.log(`  Checking carrier: ${carrier.name} in acquisition: ${acquisition.id}`);
@@ -6193,7 +6510,8 @@ Mergers & Acquisitions Team`
                                         acquisitionId: acquisition.id,
                                         timestamp: emailDate,
                                         attachments: [],
-                                        conversationId: email.conversationId  // Store conversationId for threading
+                                        conversationId: email.conversationId,  // Store conversationId for threading
+                                        messageId: email.id  // Store messageId for reply functionality
                                     };
                                     activities.unshift(activityItem);
                                     await saveActivityToFirebase(activityItem);
@@ -6237,12 +6555,13 @@ Mergers & Acquisitions Team`
 
                 if (newEmailsCount === 0) {
                     alertMessage += `ℹ️ No new replies found.\n\n`;
-                    alertMessage += `Possible reasons:\n`;
-                    alertMessage += `1. No replies have been received yet\n`;
-                    alertMessage += `2. Replies came from different email addresses not in carrier contacts\n`;
-                    alertMessage += `3. Replies were already synced\n`;
-                    alertMessage += `4. Email doesn't match conversation ID or subject\n\n`;
-                    alertMessage += `💡 Make sure the reply email address is added as a contact for the carrier.\n\n`;
+                    alertMessage += `🔍 Troubleshooting steps:\n`;
+                    alertMessage += `1. Check that you've received replies to your sent emails\n`;
+                    alertMessage += `2. Click on the carrier name and add the reply email address as a contact\n`;
+                    alertMessage += `3. The reply must come from the same email or domain as carrier contacts\n`;
+                    alertMessage += `4. Check browser console (F12) for detailed matching info\n\n`;
+                    alertMessage += `💡 Common issue: Replies from "noreply@domain.com" or different addresses\n`;
+                    alertMessage += `   → Solution: Add ALL email addresses you receive replies from as contacts\n\n`;
                 }
 
                 alertMessage += `📋 Check browser console (F12) for detailed sync analysis.`;
