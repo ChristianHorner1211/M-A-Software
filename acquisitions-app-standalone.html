@@ -57,7 +57,7 @@
         }
 
         .header-actions {
-            display: flex;
+            display: none;
             gap: 10px;
         }
 
@@ -951,7 +951,7 @@
 
         /* Hamburger Menu */
         .hamburger-menu {
-            display: none;
+            display: flex;
             flex-direction: column;
             gap: 5px;
             cursor: pointer;
@@ -1088,27 +1088,6 @@
             width: 100%;
             justify-content: flex-start;
             text-align: left;
-        }
-
-        /* Desktop: Show header actions normally */
-        @media (min-width: 769px) {
-            .hamburger-menu {
-                display: none;
-            }
-            .drawer,
-            .drawer-overlay {
-                display: none !important;
-            }
-        }
-
-        /* Mobile: Show hamburger menu and hide header actions */
-        @media (max-width: 768px) {
-            .hamburger-menu {
-                display: flex;
-            }
-            .header-actions {
-                display: none;
-            }
         }
 
         @media (max-width: 1024px) {
