@@ -35,7 +35,7 @@ const availableCarriers = [
 // Email Templates
 const emailTemplates = {
     initial: {
-        subject: 'Agency Conversion - {acquisitionName} - Action Required',
+        subject: 'Agency Conversion - {acquisitionName} - {carrierName} Action Required',
         body: `Dear Carrier Representative,
 
 I hope this email finds you well. I am writing to inform you of an important agency conversion that requires your attention.
@@ -413,11 +413,13 @@ function sendEmail() {
 
     // Log email activities
     selectedCarriers.forEach(carrier => {
+        // Customize subject for this carrier
+        const carrierSubject = subject.replace('{carrierName}', carrier.name);
         addActivityLog({
             type: 'email',
             contact: carrier.repEmail,
             carrier: carrier.name,
-            notes: `Sent: ${subject}`
+            notes: `Sent: ${carrierSubject}`
         });
     });
 

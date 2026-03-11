@@ -1759,7 +1759,7 @@
         let emailTemplates = {
             initial: {
                 name: 'Initial Conversion Request',
-                subject: 'Agency Conversion - {acquisitionName} - Action Required',
+                subject: 'Agency Conversion - {acquisitionName} - {carrierName} Action Required',
                 body: `Dear Carrier Representative,
 
 I hope this email finds you well. I am writing to inform you of an important agency conversion that requires your attention.
@@ -3818,9 +3818,12 @@ Mergers & Acquisitions Team`
                             emailAddress: { address: email }
                         }));
 
+                        // Customize subject for this carrier
+                        const carrierSubject = subject.replace('{carrierName}', carrier.name);
+
                         const emailMessage = {
                             message: {
-                                subject: subject,
+                                subject: carrierSubject,
                                 body: {
                                     contentType: 'HTML',
                                     content: bodyHTML
@@ -3900,7 +3903,7 @@ Mergers & Acquisitions Team`
                                 type: 'email',
                                 contact: carrierEmails[0],
                                 carrier: carrier.name,
-                                notes: `Sent: ${subject}\n${recipientInfo}\n\n${body}`,
+                                notes: `Sent: ${carrierSubject}\n${recipientInfo}\n\n${body}`,
                                 attachments: [...allAttachments],
                                 conversationId: conversationId  // Store for reply tracking (may be null)
                             });
@@ -3943,12 +3946,14 @@ Mergers & Acquisitions Team`
                                 }
                             });
                         }
+                        // Customize subject for this carrier
+                        const carrierSubject = subject.replace('{carrierName}', carrier.name);
                         const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
                         await addActivityLog({
                             type: 'email',
                             contact: carrierEmails[0] || 'Unknown',
                             carrier: carrier.name,
-                            notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
+                            notes: `Draft: ${carrierSubject}\n${recipientInfo}\n\n${body}`,
                             attachments: [...allAttachments]
                         });
                     }
@@ -3964,12 +3969,14 @@ Mergers & Acquisitions Team`
                             }
                         });
                     }
+                    // Customize subject for this carrier
+                    const carrierSubject = subject.replace('{carrierName}', carrier.name);
                     const recipientInfo = `To: ${carrierEmails.join('; ')}${ccEmails.length > 0 ? '\nCC: ' + ccEmails.join('; ') : ''}`;
                     await addActivityLog({
                         type: 'email',
                         contact: carrierEmails[0] || 'Unknown',
                         carrier: carrier.name,
-                        notes: `Draft: ${subject}\n${recipientInfo}\n\n${body}`,
+                        notes: `Draft: ${carrierSubject}\n${recipientInfo}\n\n${body}`,
                         attachments: [...allAttachments]
                     });
                 }
