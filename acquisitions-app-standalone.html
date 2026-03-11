@@ -56,6 +56,32 @@
             font-weight: 600;
         }
 
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .nav-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .nav-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
         .header-actions {
             display: none;
             gap: 10px;
@@ -1197,6 +1223,100 @@
         #emailTemplateModal {
             z-index: 1500;
         }
+
+        /* Code Management Page Styles */
+        .page-container {
+            display: none;
+        }
+
+        .page-container.active {
+            display: block;
+        }
+
+        .map-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .map-title {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .us-map {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .state {
+            fill: #3498db;
+            stroke: #ffffff;
+            stroke-width: 1.5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .state:hover {
+            fill: #2980b9;
+        }
+
+        .state.has-office {
+            fill: #27ae60;
+        }
+
+        .state.has-office:hover {
+            fill: #229954;
+        }
+
+        .state-label {
+            fill: white;
+            font-size: 12px;
+            font-weight: 600;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+
+        .office-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .office-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .office-info {
+            margin-top: 20px;
+        }
+
+        .office-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .office-item strong {
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -1225,7 +1345,10 @@
     <!-- Main App -->
     <div id="mainApp" class="container" style="display: none;">
         <header>
-            <h1>Acquisitions Management Platform</h1>
+            <div class="nav-buttons">
+                <button class="nav-btn active" id="navAcquisitions" onclick="showPage('acquisitions')">Acquisitions</button>
+                <button class="nav-btn" id="navCodeManagement" onclick="showPage('codeManagement')">Code Management</button>
+            </div>
             <div class="header-actions">
                 <div id="userInfo" class="user-info" style="display: none;">
                     <img id="userAvatar" class="user-avatar" src="" alt="User">
@@ -1268,8 +1391,10 @@
             </div>
         </div>
 
-        <main>
-            <div class="tabs-container">
+        <!-- Acquisitions Page -->
+        <div id="acquisitionsPage" class="page-container active">
+            <main>
+                <div class="tabs-container">
                 <div class="tabs" id="acquisitionTabs"></div>
             </div>
 
@@ -1302,8 +1427,257 @@
                     <div class="activity-list" id="activityList"></div>
                 </div>
             </div>
-        </main>
+            </main>
+        </div> <!-- End of acquisitionsPage -->
+
+        <!-- Code Management Page -->
+        <div id="codeManagementPage" class="page-container">
+            <div class="map-container">
+                <h2 class="map-title">Select a State to Manage Offices</h2>
+                <svg class="us-map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+                    <!-- US States SVG Paths - Simplified representation -->
+                    <g id="states">
+                        <!-- Alabama -->
+                        <path class="state" data-state="AL" d="M 740 380 L 750 380 L 760 420 L 740 430 Z" />
+                        <text class="state-label" x="750" y="410">AL</text>
+
+                        <!-- Alaska (scaled down and positioned) -->
+                        <path class="state" data-state="AK" d="M 100 520 L 150 520 L 150 560 L 100 560 Z" />
+                        <text class="state-label" x="125" y="545">AK</text>
+
+                        <!-- Arizona -->
+                        <path class="state" data-state="AZ" d="M 180 320 L 250 320 L 240 390 L 170 390 Z" />
+                        <text class="state-label" x="215" y="360">AZ</text>
+
+                        <!-- Arkansas -->
+                        <path class="state" data-state="AR" d="M 580 340 L 640 340 L 640 390 L 580 390 Z" />
+                        <text class="state-label" x="610" y="370">AR</text>
+
+                        <!-- California -->
+                        <path class="state" data-state="CA" d="M 80 200 L 150 200 L 160 340 L 90 350 Z" />
+                        <text class="state-label" x="125" y="280">CA</text>
+
+                        <!-- Colorado -->
+                        <path class="state" data-state="CO" d="M 280 240 L 380 240 L 380 310 L 280 310 Z" />
+                        <text class="state-label" x="330" y="280">CO</text>
+
+                        <!-- Connecticut -->
+                        <path class="state" data-state="CT" d="M 840 180 L 860 180 L 860 200 L 840 200 Z" />
+                        <text class="state-label" x="850" y="195">CT</text>
+
+                        <!-- Delaware -->
+                        <path class="state" data-state="DE" d="M 820 230 L 835 230 L 835 250 L 820 250 Z" />
+                        <text class="state-label" x="828" y="245">DE</text>
+
+                        <!-- Florida -->
+                        <path class="state" data-state="FL" d="M 760 440 L 800 440 L 820 500 L 750 480 Z" />
+                        <text class="state-label" x="785" y="470">FL</text>
+
+                        <!-- Georgia -->
+                        <path class="state" data-state="GA" d="M 740 390 L 780 390 L 780 440 L 740 440 Z" />
+                        <text class="state-label" x="760" y="420">GA</text>
+
+                        <!-- Hawaii (positioned separately) -->
+                        <path class="state" data-state="HI" d="M 220 520 L 270 520 L 270 560 L 220 560 Z" />
+                        <text class="state-label" x="245" y="545">HI</text>
+
+                        <!-- Idaho -->
+                        <path class="state" data-state="ID" d="M 200 120 L 260 120 L 260 240 L 200 240 Z" />
+                        <text class="state-label" x="230" y="185">ID</text>
+
+                        <!-- Illinois -->
+                        <path class="state" data-state="IL" d="M 620 220 L 670 220 L 670 310 L 620 310 Z" />
+                        <text class="state-label" x="645" y="270">IL</text>
+
+                        <!-- Indiana -->
+                        <path class="state" data-state="IN" d="M 670 230 L 710 230 L 710 300 L 670 300 Z" />
+                        <text class="state-label" x="690" y="270">IN</text>
+
+                        <!-- Iowa -->
+                        <path class="state" data-state="IA" d="M 540 210 L 620 210 L 620 260 L 540 260 Z" />
+                        <text class="state-label" x="580" y="240">IA</text>
+
+                        <!-- Kansas -->
+                        <path class="state" data-state="KS" d="M 420 290 L 540 290 L 540 340 L 420 340 Z" />
+                        <text class="state-label" x="480" y="320">KS</text>
+
+                        <!-- Kentucky -->
+                        <path class="state" data-state="KY" d="M 680 300 L 760 300 L 760 340 L 680 340 Z" />
+                        <text class="state-label" x="720" y="325">KY</text>
+
+                        <!-- Louisiana -->
+                        <path class="state" data-state="LA" d="M 600 400 L 680 400 L 680 450 L 600 450 Z" />
+                        <text class="state-label" x="640" y="430">LA</text>
+
+                        <!-- Maine -->
+                        <path class="state" data-state="ME" d="M 860 80 L 900 80 L 900 150 L 860 150 Z" />
+                        <text class="state-label" x="880" y="120">ME</text>
+
+                        <!-- Maryland -->
+                        <path class="state" data-state="MD" d="M 790 240 L 820 240 L 820 260 L 790 260 Z" />
+                        <text class="state-label" x="805" y="255">MD</text>
+
+                        <!-- Massachusetts -->
+                        <path class="state" data-state="MA" d="M 840 160 L 880 160 L 880 180 L 840 180 Z" />
+                        <text class="state-label" x="860" y="175">MA</text>
+
+                        <!-- Michigan -->
+                        <path class="state" data-state="MI" d="M 680 160 L 730 160 L 730 240 L 680 240 Z" />
+                        <text class="state-label" x="705" y="205">MI</text>
+
+                        <!-- Minnesota -->
+                        <path class="state" data-state="MN" d="M 520 120 L 600 120 L 600 210 L 520 210 Z" />
+                        <text class="state-label" x="560" y="170">MN</text>
+
+                        <!-- Mississippi -->
+                        <path class="state" data-state="MS" d="M 660 380 L 700 380 L 700 440 L 660 440 Z" />
+                        <text class="state-label" x="680" y="415">MS</text>
+
+                        <!-- Missouri -->
+                        <path class="state" data-state="MO" d="M 560 280 L 640 280 L 640 350 L 560 350 Z" />
+                        <text class="state-label" x="600" y="320">MO</text>
+
+                        <!-- Montana -->
+                        <path class="state" data-state="MT" d="M 280 80 L 460 80 L 460 180 L 280 180 Z" />
+                        <text class="state-label" x="370" y="135">MT</text>
+
+                        <!-- Nebraska -->
+                        <path class="state" data-state="NE" d="M 400 230 L 540 230 L 540 290 L 400 290 Z" />
+                        <text class="state-label" x="470" y="265">NE</text>
+
+                        <!-- Nevada -->
+                        <path class="state" data-state="NV" d="M 140 180 L 210 180 L 190 320 L 120 320 Z" />
+                        <text class="state-label" x="165" y="255">NV</text>
+
+                        <!-- New Hampshire -->
+                        <path class="state" data-state="NH" d="M 850 120 L 870 120 L 870 160 L 850 160 Z" />
+                        <text class="state-label" x="860" y="145">NH</text>
+
+                        <!-- New Jersey -->
+                        <path class="state" data-state="NJ" d="M 820 210 L 840 210 L 840 240 L 820 240 Z" />
+                        <text class="state-label" x="830" y="230">NJ</text>
+
+                        <!-- New Mexico -->
+                        <path class="state" data-state="NM" d="M 260 320 L 360 320 L 360 420 L 260 420 Z" />
+                        <text class="state-label" x="310" y="375">NM</text>
+
+                        <!-- New York -->
+                        <path class="state" data-state="NY" d="M 780 160 L 850 160 L 850 210 L 780 210 Z" />
+                        <text class="state-label" x="815" y="190">NY</text>
+
+                        <!-- North Carolina -->
+                        <path class="state" data-state="NC" d="M 760 320 L 840 320 L 840 360 L 760 360 Z" />
+                        <text class="state-label" x="800" y="345">NC</text>
+
+                        <!-- North Dakota -->
+                        <path class="state" data-state="ND" d="M 420 100 L 540 100 L 540 160 L 420 160 Z" />
+                        <text class="state-label" x="480" y="135">ND</text>
+
+                        <!-- Ohio -->
+                        <path class="state" data-state="OH" d="M 710 230 L 770 230 L 770 290 L 710 290 Z" />
+                        <text class="state-label" x="740" y="265">OH</text>
+
+                        <!-- Oklahoma -->
+                        <path class="state" data-state="OK" d="M 420 340 L 580 340 L 580 390 L 420 390 Z" />
+                        <text class="state-label" x="500" y="370">OK</text>
+
+                        <!-- Oregon -->
+                        <path class="state" data-state="OR" d="M 80 120 L 200 120 L 200 200 L 80 200 Z" />
+                        <text class="state-label" x="140" y="165">OR</text>
+
+                        <!-- Pennsylvania -->
+                        <path class="state" data-state="PA" d="M 760 210 L 820 210 L 820 250 L 760 250 Z" />
+                        <text class="state-label" x="790" y="235">PA</text>
+
+                        <!-- Rhode Island -->
+                        <path class="state" data-state="RI" d="M 860 170 L 875 170 L 875 185 L 860 185 Z" />
+                        <text class="state-label" x="868" y="182" font-size="10">RI</text>
+
+                        <!-- South Carolina -->
+                        <path class="state" data-state="SC" d="M 760 360 L 810 360 L 810 400 L 760 400 Z" />
+                        <text class="state-label" x="785" y="385">SC</text>
+
+                        <!-- South Dakota -->
+                        <path class="state" data-state="SD" d="M 400 160 L 540 160 L 540 230 L 400 230 Z" />
+                        <text class="state-label" x="470" y="200">SD</text>
+
+                        <!-- Tennessee -->
+                        <path class="state" data-state="TN" d="M 660 340 L 760 340 L 760 380 L 660 380 Z" />
+                        <text class="state-label" x="710" y="365">TN</text>
+
+                        <!-- Texas -->
+                        <path class="state" data-state="TX" d="M 380 390 L 580 390 L 580 510 L 380 510 Z" />
+                        <text class="state-label" x="480" y="455">TX</text>
+
+                        <!-- Utah -->
+                        <path class="state" data-state="UT" d="M 240 230 L 310 230 L 310 330 L 240 330 Z" />
+                        <text class="state-label" x="275" y="285">UT</text>
+
+                        <!-- Vermont -->
+                        <path class="state" data-state="VT" d="M 840 120 L 860 120 L 860 160 L 840 160 Z" />
+                        <text class="state-label" x="850" y="145">VT</text>
+
+                        <!-- Virginia -->
+                        <path class="state" data-state="VA" d="M 760 280 L 820 280 L 820 320 L 760 320 Z" />
+                        <text class="state-label" x="790" y="305">VA</text>
+
+                        <!-- Washington -->
+                        <path class="state" data-state="WA" d="M 80 60 L 220 60 L 220 130 L 80 130 Z" />
+                        <text class="state-label" x="150" y="100">WA</text>
+
+                        <!-- West Virginia -->
+                        <path class="state" data-state="WV" d="M 750 260 L 790 260 L 790 300 L 750 300 Z" />
+                        <text class="state-label" x="770" y="285">WV</text>
+
+                        <!-- Wisconsin -->
+                        <path class="state" data-state="WI" d="M 600 160 L 670 160 L 670 240 L 600 240 Z" />
+                        <text class="state-label" x="635" y="205">WI</text>
+
+                        <!-- Wyoming -->
+                        <path class="state" data-state="WY" d="M 280 180 L 400 180 L 400 260 L 280 260 Z" />
+                        <text class="state-label" x="340" y="225">WY</text>
+                    </g>
+                </svg>
+            </div>
+        </div> <!-- End of codeManagementPage -->
+
     </div> <!-- End of mainApp -->
+
+    <!-- Office Management Modal -->
+    <div id="officeModal" class="office-modal">
+        <div class="office-modal-content">
+            <span class="close" onclick="closeOfficeModal()">&times;</span>
+            <h2 id="officeModalTitle">Office Management</h2>
+            <div id="officeContent">
+                <div class="form-group">
+                    <label for="officeName">Office Name:</label>
+                    <input type="text" id="officeName" class="form-control" placeholder="e.g., Austin Office">
+                </div>
+                <div class="form-group">
+                    <label for="officeAddress">Address:</label>
+                    <input type="text" id="officeAddress" class="form-control" placeholder="123 Main St">
+                </div>
+                <div class="form-group">
+                    <label for="officeCity">City:</label>
+                    <input type="text" id="officeCity" class="form-control" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label for="officePhone">Phone:</label>
+                    <input type="text" id="officePhone" class="form-control" placeholder="(555) 123-4567">
+                </div>
+                <div class="form-group">
+                    <label for="officeManager">Office Manager:</label>
+                    <input type="text" id="officeManager" class="form-control" placeholder="Manager Name">
+                </div>
+                <button class="btn btn-primary" onclick="saveOffice()">Save Office</button>
+
+                <div class="office-info" id="existingOffices">
+                    <h3>Existing Offices</h3>
+                    <div id="officesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Sync Status Indicator -->
     <div id="syncStatus" class="sync-status" style="display: none;">
@@ -1861,6 +2235,8 @@
         let emailAttachments = [];
         let acquisitionDocuments = [];  // PDFs to attach to new acquisitions
         let replyContext = null;  // Store reply context for email threading
+        let stateOffices = {};  // Store offices by state
+        let currentSelectedState = null;  // Currently selected state for office management
         let appSettings = {
             firebase: {
                 config: null
@@ -2166,6 +2542,9 @@ Mergers & Acquisitions Team`
 
             // Load custom templates from localStorage
             loadCustomTemplates();
+
+            // Load state offices from localStorage
+            loadStateOffices();
 
             // Initialize Firebase if configured
             const firebaseInitialized = initializeFirebase();
@@ -6897,6 +7276,207 @@ Mergers & Acquisitions Team`
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
                     selectAcquisition(acquisitions[0].id);
+                }
+            }
+        }
+
+        // Page Navigation Functions
+        function showPage(pageName) {
+            // Hide all pages
+            const acquisitionsPage = document.getElementById('acquisitionsPage');
+            const codeManagementPage = document.getElementById('codeManagementPage');
+
+            // Hide all pages
+            acquisitionsPage.classList.remove('active');
+            codeManagementPage.classList.remove('active');
+
+            // Remove active class from all nav buttons
+            document.getElementById('navAcquisitions').classList.remove('active');
+            document.getElementById('navCodeManagement').classList.remove('active');
+
+            // Show selected page and activate button
+            if (pageName === 'acquisitions') {
+                acquisitionsPage.classList.add('active');
+                document.getElementById('navAcquisitions').classList.add('active');
+            } else if (pageName === 'codeManagement') {
+                codeManagementPage.classList.add('active');
+                document.getElementById('navCodeManagement').classList.add('active');
+                initializeUSMap();
+            }
+        }
+
+        // Initialize US Map with click handlers
+        function initializeUSMap() {
+            const states = document.querySelectorAll('.state');
+            states.forEach(state => {
+                state.addEventListener('click', function() {
+                    const stateCode = this.getAttribute('data-state');
+                    openOfficeModal(stateCode);
+                });
+
+                // Update visual for states with offices
+                const stateCode = state.getAttribute('data-state');
+                if (stateOffices[stateCode] && stateOffices[stateCode].length > 0) {
+                    state.classList.add('has-office');
+                }
+            });
+        }
+
+        // Office Management Functions
+        function openOfficeModal(stateCode) {
+            currentSelectedState = stateCode;
+            const modal = document.getElementById('officeModal');
+            const title = document.getElementById('officeModalTitle');
+
+            // Get state name from code
+            const stateNames = {
+                'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+                'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+                'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+                'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+                'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+                'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+                'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+                'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+                'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+                'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+                'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+                'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+                'WI': 'Wisconsin', 'WY': 'Wyoming'
+            };
+
+            title.textContent = `Office Management - ${stateNames[stateCode] || stateCode}`;
+
+            // Clear form
+            document.getElementById('officeName').value = '';
+            document.getElementById('officeAddress').value = '';
+            document.getElementById('officeCity').value = '';
+            document.getElementById('officePhone').value = '';
+            document.getElementById('officeManager').value = '';
+
+            // Load existing offices for this state
+            loadOfficesList(stateCode);
+
+            modal.style.display = 'block';
+        }
+
+        function closeOfficeModal() {
+            document.getElementById('officeModal').style.display = 'none';
+            currentSelectedState = null;
+        }
+
+        function saveOffice() {
+            if (!currentSelectedState) return;
+
+            const officeName = document.getElementById('officeName').value;
+            const officeAddress = document.getElementById('officeAddress').value;
+            const officeCity = document.getElementById('officeCity').value;
+            const officePhone = document.getElementById('officePhone').value;
+            const officeManager = document.getElementById('officeManager').value;
+
+            if (!officeName || !officeAddress || !officeCity) {
+                alert('Please fill in at least Office Name, Address, and City');
+                return;
+            }
+
+            const office = {
+                id: 'office-' + Date.now(),
+                name: officeName,
+                address: officeAddress,
+                city: officeCity,
+                phone: officePhone,
+                manager: officeManager,
+                state: currentSelectedState
+            };
+
+            // Initialize state offices array if it doesn't exist
+            if (!stateOffices[currentSelectedState]) {
+                stateOffices[currentSelectedState] = [];
+            }
+
+            stateOffices[currentSelectedState].push(office);
+
+            // Save to localStorage
+            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+
+            // Update map visual
+            const stateElement = document.querySelector(`.state[data-state="${currentSelectedState}"]`);
+            if (stateElement) {
+                stateElement.classList.add('has-office');
+            }
+
+            // Reload offices list
+            loadOfficesList(currentSelectedState);
+
+            // Clear form
+            document.getElementById('officeName').value = '';
+            document.getElementById('officeAddress').value = '';
+            document.getElementById('officeCity').value = '';
+            document.getElementById('officePhone').value = '';
+            document.getElementById('officeManager').value = '';
+
+            alert('Office saved successfully!');
+        }
+
+        function loadOfficesList(stateCode) {
+            const officesList = document.getElementById('officesList');
+            const offices = stateOffices[stateCode] || [];
+
+            if (offices.length === 0) {
+                officesList.innerHTML = '<p style="color: #7f8c8d; font-style: italic;">No offices set up yet</p>';
+                return;
+            }
+
+            officesList.innerHTML = '';
+            offices.forEach((office, index) => {
+                const officeItem = document.createElement('div');
+                officeItem.className = 'office-item';
+                officeItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <strong>${office.name}</strong><br>
+                            ${office.address}<br>
+                            ${office.city}, ${office.state}<br>
+                            ${office.phone ? 'Phone: ' + office.phone + '<br>' : ''}
+                            ${office.manager ? 'Manager: ' + office.manager : ''}
+                        </div>
+                        <button class="btn btn-small" style="background: #e74c3c; color: white;"
+                                onclick="deleteOffice('${stateCode}', ${index})">Delete</button>
+                    </div>
+                `;
+                officesList.appendChild(officeItem);
+            });
+        }
+
+        function deleteOffice(stateCode, index) {
+            if (!confirm('Are you sure you want to delete this office?')) return;
+
+            stateOffices[stateCode].splice(index, 1);
+
+            // Update localStorage
+            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+
+            // Update map visual if no more offices
+            if (stateOffices[stateCode].length === 0) {
+                const stateElement = document.querySelector(`.state[data-state="${stateCode}"]`);
+                if (stateElement) {
+                    stateElement.classList.remove('has-office');
+                }
+            }
+
+            // Reload list
+            loadOfficesList(stateCode);
+        }
+
+        // Load state offices from localStorage on startup
+        function loadStateOffices() {
+            const saved = localStorage.getItem('stateOffices');
+            if (saved) {
+                try {
+                    stateOffices = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading state offices:', e);
+                    stateOffices = {};
                 }
             }
         }
