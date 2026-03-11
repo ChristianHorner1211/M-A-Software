@@ -949,6 +949,168 @@
             background: #c0392b;
         }
 
+        /* Hamburger Menu */
+        .hamburger-menu {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            z-index: 1001;
+        }
+
+        .hamburger-menu span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: #2c3e50;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-menu.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger-menu.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-menu.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Drawer */
+        .drawer-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: white;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .drawer.active {
+            right: 0;
+        }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid #e8eef3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .drawer-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .drawer-close:hover {
+            color: #2c3e50;
+        }
+
+        .drawer-content {
+            padding: 20px;
+        }
+
+        .drawer-user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .drawer-user-info img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+        }
+
+        .drawer-user-info span {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .drawer-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .drawer-actions .btn {
+            width: 100%;
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        /* Desktop: Show header actions normally */
+        @media (min-width: 769px) {
+            .hamburger-menu {
+                display: none;
+            }
+            .drawer,
+            .drawer-overlay {
+                display: none !important;
+            }
+        }
+
+        /* Mobile: Show hamburger menu and hide header actions */
+        @media (max-width: 768px) {
+            .hamburger-menu {
+                display: flex;
+            }
+            .header-actions {
+                display: none;
+            }
+        }
+
         @media (max-width: 1024px) {
             .content-area {
                 grid-template-columns: 1fr;
@@ -1108,7 +1270,36 @@
                 <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn">🔄 Sync Emails</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
+            <button class="hamburger-menu" onclick="toggleDrawer()" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </header>
+
+        <!-- Drawer Overlay -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+
+        <!-- Drawer -->
+        <div class="drawer" id="drawer">
+            <div class="drawer-header">
+                <h2>Menu</h2>
+                <button class="drawer-close" onclick="toggleDrawer()" aria-label="Close menu">&times;</button>
+            </div>
+            <div class="drawer-content">
+                <div id="drawerUserInfo" class="drawer-user-info" style="display: none;">
+                    <img id="drawerUserAvatar" class="user-avatar" src="" alt="User">
+                    <span id="drawerUserName"></span>
+                </div>
+                <div class="drawer-actions">
+                    <button class="btn btn-primary" onclick="showNewAcquisitionModal(); toggleDrawer();">+ New Acquisition</button>
+                    <button class="btn btn-secondary" onclick="showTemplateManager(); toggleDrawer();">📝 Manage Templates</button>
+                    <button class="btn btn-secondary" onclick="syncEmails(); toggleDrawer();" id="drawerSyncEmailsBtn">🔄 Sync Emails</button>
+                    <button class="btn btn-secondary" onclick="showSettingsModal(); toggleDrawer();">⚙ Settings</button>
+                    <button class="signout-btn" onclick="signOut(); toggleDrawer();" style="margin-top: 20px; width: 100%;">Sign Out</button>
+                </div>
+            </div>
+        </div>
 
         <main>
             <div class="tabs-container">
@@ -1998,6 +2189,7 @@ Mergers & Acquisitions Team`
                 document.getElementById('userInfo').style.display = 'flex';
                 document.getElementById('userName').textContent = currentUser.displayName || currentUser.email;
                 document.getElementById('userAvatar').src = currentUser.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentUser.displayName || currentUser.email);
+                updateDrawerUserInfo();
             }
         }
 
@@ -3002,6 +3194,42 @@ Mergers & Acquisitions Team`
 
             checkboxContainer.classList.toggle('collapsed');
             icon.classList.toggle('collapsed');
+        }
+
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawerOverlay');
+            const hamburger = document.querySelector('.hamburger-menu');
+
+            drawer.classList.toggle('active');
+            overlay.classList.toggle('active');
+            if (hamburger) {
+                hamburger.classList.toggle('active');
+            }
+
+            // Prevent body scroll when drawer is open
+            if (drawer.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateDrawerUserInfo() {
+            const userInfo = document.getElementById('userInfo');
+            const drawerUserInfo = document.getElementById('drawerUserInfo');
+            const userName = document.getElementById('userName');
+            const userAvatar = document.getElementById('userAvatar');
+            const drawerUserName = document.getElementById('drawerUserName');
+            const drawerUserAvatar = document.getElementById('drawerUserAvatar');
+
+            if (userInfo && userInfo.style.display !== 'none') {
+                drawerUserInfo.style.display = 'flex';
+                drawerUserName.textContent = userName.textContent;
+                drawerUserAvatar.src = userAvatar.src;
+            } else {
+                drawerUserInfo.style.display = 'none';
+            }
         }
 
         function updateEmailRecipients() {
@@ -6711,6 +6939,16 @@ Mergers & Acquisitions Team`
         }
 
         document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Close drawer with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const drawer = document.getElementById('drawer');
+                if (drawer && drawer.classList.contains('active')) {
+                    toggleDrawer();
+                }
+            }
+        });
 
         // Save all data before page unload/refresh
         window.addEventListener('beforeunload', function(e) {
