@@ -5044,6 +5044,29 @@ Mergers & Acquisitions Team`
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
+        function htmlToPlainText(html) {
+            if (!html) return '';
+
+            // Create a temporary div element to parse HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            // Remove script and style elements
+            const scripts = tempDiv.querySelectorAll('script, style');
+            scripts.forEach(el => el.remove());
+
+            // Get text content (this automatically strips HTML tags)
+            let text = tempDiv.textContent || tempDiv.innerText || '';
+
+            // Clean up excessive whitespace and newlines
+            text = text
+                .replace(/\n\s*\n\s*\n/g, '\n\n')  // Replace 3+ newlines with 2
+                .replace(/[ \t]+/g, ' ')           // Replace multiple spaces/tabs with single space
+                .trim();
+
+            return text;
+        }
+
         function downloadAttachment(attachment) {
             if (!attachment.contentBytes) {
                 alert('Attachment content not available');
@@ -6443,7 +6466,8 @@ Mergers & Acquisitions Team`
                                 if (!alreadyLogged) {
                                     console.log(`  ✓✓✓ SUCCESS: Adding reply to activities for carrier: ${carrier.name}`);
                                     // Add to activity log
-                                    const emailBody = email.body?.content || email.bodyPreview || '';
+                                    const emailBodyHtml = email.body?.content || email.bodyPreview || '';
+                                    const emailBody = htmlToPlainText(emailBodyHtml);
                                     const activityItem = {
                                         type: 'email',
                                         contact: senderEmail,
@@ -6499,7 +6523,8 @@ Mergers & Acquisitions Team`
                                 if (!alreadyLogged) {
                                     console.log(`  ✓✓✓ SUCCESS: Adding reply to activities for carrier: ${carrier.name}`);
                                     // Add to activity log
-                                    const emailBody = email.body?.content || email.bodyPreview || '';
+                                    const emailBodyHtml = email.body?.content || email.bodyPreview || '';
+                                    const emailBody = htmlToPlainText(emailBodyHtml);
                                     const activityItem = {
                                         type: 'email',
                                         contact: senderEmail,
