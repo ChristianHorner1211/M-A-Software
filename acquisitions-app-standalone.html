@@ -3811,6 +3811,23 @@ Mergers & Acquisitions Team`
             acquisitionNameEl.textContent = acquisition.name;
             carriersList.innerHTML = '';
 
+            // Add global email drop zone at the top
+            const globalDropZone = document.createElement('div');
+            globalDropZone.className = 'global-email-drop-zone';
+            globalDropZone.innerHTML = `
+                <div style="border: 3px dashed #3498db; border-radius: 12px; padding: 30px; text-align: center; margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.3s; cursor: pointer;">
+                    <div style="color: white;">
+                        <span style="font-size: 48px; display: block; margin-bottom: 12px;">📧</span>
+                        <strong style="font-size: 18px; display: block; margin-bottom: 8px;">Drop Emails Here</strong>
+                        <div style="font-size: 13px; opacity: 0.9;">Drop Outlook emails (.msg, .eml) and choose which carrier to assign them to</div>
+                    </div>
+                </div>
+            `;
+            carriersList.appendChild(globalDropZone);
+
+            // Add drag-and-drop handlers to global drop zone
+            setupGlobalDropZone(globalDropZone, acquisition);
+
             // Sort carriers by most recent email response (inbox-style)
             const sortedCarriers = [...acquisition.carriers].sort((a, b) => {
                 // Find the most recent "Received:" email for each carrier
@@ -4204,7 +4221,110 @@ Mergers & Acquisitions Team`
             });
         }
 
-        async function handleEmailDrop(event, carrierCode) {
+        function setupGlobalDropZone(dropZone, acquisition) {
+            const dropArea = dropZone.querySelector('div');
+
+            dropArea.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.style.transform = 'scale(1.02)';
+                dropArea.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+            });
+
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            dropArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.target === dropArea) {
+                    dropArea.style.transform = 'scale(1)';
+                    dropArea.style.boxShadow = 'none';
+                }
+            });
+
+            dropArea.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.style.transform = 'scale(1)';
+                dropArea.style.boxShadow = 'none';
+
+                const files = e.dataTransfer.files;
+                if (files.length === 0) {
+                    alert('No files detected. Please drag email files (.msg or .eml)');
+                    return;
+                }
+
+                // Show carrier selection modal
+                showCarrierSelectionModal(files, acquisition);
+            });
+        }
+
+        function showCarrierSelectionModal(files, acquisition) {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="carrierSelectionModal" class="modal" style="display: block;">
+                    <div class="modal-content" style="max-width: 500px;">
+                        <span class="close" onclick="closeCarrierSelectionModal()">&times;</span>
+                        <h2>Select Carrier for Email${files.length > 1 ? 's' : ''}</h2>
+                        <p style="color: #666; margin-bottom: 20px;">
+                            ${files.length === 1 ? 'Select which carrier to assign this email to:' : `Select which carrier to assign these ${files.length} emails to:`}
+                        </p>
+                        <div class="form-group">
+                            <label for="carrierSelectDropdown">Carrier:</label>
+                            <select id="carrierSelectDropdown" class="form-control" style="width: 100%; padding: 10px; font-size: 14px;">
+                                ${acquisition.carriers.map(c => `<option value="${c.code}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-secondary" onclick="closeCarrierSelectionModal()">Cancel</button>
+                            <button class="btn btn-primary" onclick="processDroppedEmails()">
+                                Import Email${files.length > 1 ? 's' : ''}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to document
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = modalHTML;
+            document.body.appendChild(modalContainer);
+
+            // Store files globally for processing
+            window.pendingEmailFiles = files;
+            window.pendingAcquisition = acquisition;
+        }
+
+        function closeCarrierSelectionModal() {
+            const modal = document.getElementById('carrierSelectionModal');
+            if (modal) {
+                modal.remove();
+            }
+            window.pendingEmailFiles = null;
+            window.pendingAcquisition = null;
+        }
+
+        async function processDroppedEmails() {
+            const files = window.pendingEmailFiles;
+            const acquisition = window.pendingAcquisition;
+            const carrierCode = document.getElementById('carrierSelectDropdown').value;
+
+            if (!files || !acquisition || !carrierCode) {
+                alert('Missing required information');
+                return;
+            }
+
+            closeCarrierSelectionModal();
+
+            // Process the emails with the selected carrier
+            await handleEmailDrop({ dataTransfer: { files } }, carrierCode, acquisition);
+        }
+
+        async function handleEmailDrop(event, carrierCode, acquisitionOverride) {
             console.log('handleEmailDrop called');
             console.log('DataTransfer types:', event.dataTransfer.types);
             console.log('DataTransfer files:', event.dataTransfer.files);
@@ -4236,19 +4356,25 @@ Mergers & Acquisitions Team`
                 return;
             }
 
-            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            const acquisition = acquisitionOverride || acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
                 alert('Please select an acquisition first');
                 return;
             }
 
+            console.log('Looking for carrier with code:', carrierCode);
+            console.log('Available carriers:', acquisition.carriers.map(c => ({ code: c.code, name: c.name })));
+
             const carrier = acquisition.carriers.find(c => c.code === carrierCode);
             if (!carrier) {
-                alert('Carrier not found');
+                console.error('Carrier not found! Looking for code:', carrierCode);
+                console.error('Available carrier codes:', acquisition.carriers.map(c => c.code));
+                alert(`Carrier not found.\n\nLooking for: "${carrierCode}"\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
                 return;
             }
 
             console.log('Processing dropped files:', files.length);
+            console.log('Carrier found:', carrier.name);
 
             // Generate a conversation ID for this batch of emails
             const conversationId = `conv-${Date.now()}`;
