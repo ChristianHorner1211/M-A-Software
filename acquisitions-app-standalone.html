@@ -243,11 +243,33 @@
 
         .carrier-item {
             display: flex;
-            align-items: center;
-            padding: 16px;
+            flex-direction: column;
             border-radius: 6px;
             transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .carrier-header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .carrier-header:hover {
+            transform: translateX(4px);
+        }
+
+        .carrier-toggle {
+            margin-right: 12px;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+            color: #7f8c8d;
+        }
+
+        .carrier-item.expanded .carrier-toggle {
+            transform: rotate(90deg);
         }
 
         .carrier-item.done {
@@ -260,8 +282,32 @@
             border-left: 4px solid #e74c3c;
         }
 
-        .carrier-item:hover {
-            transform: translateX(4px);
+        .carrier-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .carrier-item.expanded .carrier-content {
+            max-height: 2000px;
+        }
+
+        .carrier-details {
+            padding: 0 16px 16px 48px;
+        }
+
+        .carrier-details-section {
+            margin-bottom: 20px;
+        }
+
+        .carrier-details-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .carrier-item.has-response {
@@ -3781,30 +3827,120 @@ Mergers & Acquisitions Team`
                 const responseBadge = hasNewResponses ?
                     `<span class="response-badge" title="${responseCount} response${responseCount !== 1 ? 's' : ''} received">📨 ${responseCount}</span>` : '';
 
+                // Build contacts HTML
+                let contactsHTML = '';
+                if (carrier.contacts && carrier.contacts.length > 0) {
+                    contactsHTML = carrier.contacts.map(contact => `
+                        <div class="contact-item">
+                            <div class="contact-info">
+                                <div class="contact-name">${contact.name}</div>
+                                <div class="contact-details">✉ ${contact.email}${contact.phone ? ' | 📞 ' + contact.phone : ''}</div>
+                                ${contact.role ? `<div class="contact-role">${contact.role}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    contactsHTML = '<div style="color: #7f8c8d; font-size: 13px; padding: 8px;">No contacts added yet</div>';
+                }
+
+                // Build email history HTML
+                const carrierEmails = activities.filter(a =>
+                    a.acquisitionId === currentAcquisitionId &&
+                    a.carrier === carrier.name &&
+                    a.type === 'email'
+                );
+
+                let emailHistoryHTML = '';
+                if (carrierEmails.length > 0) {
+                    emailHistoryHTML = carrierEmails.slice(0, 5).map(email => {
+                        const date = new Date(email.timestamp);
+                        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                        const emailType = email.notes && email.notes.startsWith('Sent:') ? 'Sent' : 'Received';
+                        const emailIcon = emailType === 'Sent' ? '📤' : '📥';
+                        return `
+                            <div style="padding: 8px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid ${emailType === 'Sent' ? '#3498db' : '#27ae60'};">
+                                <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 4px;">${emailIcon} ${emailType} - ${formattedDate}</div>
+                                <div style="font-size: 13px; color: #2c3e50;">${email.notes}</div>
+                            </div>
+                        `;
+                    }).join('');
+                    if (carrierEmails.length > 5) {
+                        emailHistoryHTML += `<div style="color: #7f8c8d; font-size: 12px; padding: 8px; text-align: center;">... and ${carrierEmails.length - 5} more emails</div>`;
+                    }
+                } else {
+                    emailHistoryHTML = '<div style="color: #7f8c8d; font-size: 13px; padding: 8px;">No email history</div>';
+                }
+
                 carrierItem.innerHTML = `
-                    <div class="carrier-info">
-                        <div class="carrier-name" style="cursor: pointer;">${carrier.name} ${responseBadge}</div>
-                        <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
+                    <div class="carrier-header">
+                        <div class="carrier-toggle">▶</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">${carrier.name} ${responseBadge}</div>
+                            <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
+                        </div>
+                        <div class="carrier-actions">
+                            <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}">
+                                ${carrier.status === 'done' ? '✓ Done' : 'Mark Done'}
+                            </button>
+                            <button class="email-btn">
+                                ✉ Email
+                            </button>
+                        </div>
                     </div>
-                    <div class="carrier-actions">
-                        <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}">
-                            ${carrier.status === 'done' ? '✓ Done' : 'Mark Done'}
-                        </button>
-                        <button class="email-btn">
-                            ✉ Email
-                        </button>
+                    <div class="carrier-content">
+                        <div class="carrier-details">
+                            <div class="carrier-details-section">
+                                <h4>📇 Contacts</h4>
+                                ${contactsHTML}
+                                <button class="btn btn-success btn-small" style="margin-top: 10px;">+ Add Contact</button>
+                            </div>
+                            <div class="carrier-details-section">
+                                <h4>📧 Email History</h4>
+                                ${emailHistoryHTML}
+                                <button class="btn btn-primary btn-small" style="margin-top: 10px;">View All</button>
+                            </div>
+                        </div>
                     </div>
                 `;
 
                 // Add event listeners properly to avoid issues with special characters in carrier codes
-                const carrierNameEl = carrierItem.querySelector('.carrier-name');
-                carrierNameEl.addEventListener('click', () => showCarrierContacts(carrier.code));
+                const carrierHeader = carrierItem.querySelector('.carrier-header');
+                carrierHeader.addEventListener('click', (e) => {
+                    // Don't toggle if clicking on action buttons
+                    if (e.target.classList.contains('check-btn') || e.target.classList.contains('email-btn')) {
+                        return;
+                    }
+                    carrierItem.classList.toggle('expanded');
+                });
 
                 const checkBtn = carrierItem.querySelector('.check-btn');
-                checkBtn.addEventListener('click', () => toggleCarrierStatus(carrier.code));
+                checkBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleCarrierStatus(carrier.code);
+                });
 
                 const emailBtn = carrierItem.querySelector('.email-btn');
-                emailBtn.addEventListener('click', () => emailCarrier(carrier.code));
+                emailBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    emailCarrier(carrier.code);
+                });
+
+                // Add contact button
+                const addContactBtn = carrierItem.querySelector('.carrier-details-section .btn-success');
+                addContactBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showCarrierContacts(carrier.code);
+                    setTimeout(() => {
+                        showAddContactForm();
+                    }, 100);
+                });
+
+                // View all emails button
+                const viewAllBtn = carrierItem.querySelector('.carrier-details-section .btn-primary');
+                viewAllBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showCarrierContacts(carrier.code);
+                });
 
                 carriersList.appendChild(carrierItem);
             });
