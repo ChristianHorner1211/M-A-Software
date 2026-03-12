@@ -50,12 +50,12 @@ header h1 {
 }
 
 .btn-primary {
-    background: #3498db;
+    background: #3C3B6E;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #2980b9;
+    background: #2A2952;
 }
 
 .btn-secondary {
@@ -73,12 +73,12 @@ header h1 {
 }
 
 .btn-success {
-    background: #27ae60;
+    background: #B22234;
     color: white;
 }
 
 .btn-success:hover {
-    background: #229954;
+    background: #8B1A28;
 }
 
 /* Tabs */
@@ -198,7 +198,7 @@ header h1 {
 
 .carrier-item.done {
     background: rgba(39, 174, 96, 0.15);
-    border-left: 4px solid #27ae60;
+    border-left: 4px solid #B22234;
 }
 
 .carrier-item.outstanding {
@@ -261,7 +261,7 @@ header h1 {
 }
 
 .email-btn {
-    background: #3498db;
+    background: #3C3B6E;
     color: white;
     border: none;
     border-radius: 4px;
@@ -272,7 +272,7 @@ header h1 {
 }
 
 .email-btn:hover {
-    background: #2980b9;
+    background: #2A2952;
 }
 
 /* Activity Log */
@@ -288,7 +288,7 @@ header h1 {
     padding: 14px;
     background: #f8f9fa;
     border-radius: 6px;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid #3C3B6E;
 }
 
 .activity-header {
@@ -525,7 +525,7 @@ header h1 {
     padding: 15px;
     border-radius: 6px;
     margin-bottom: 20px;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid #3C3B6E;
 }
 
 .import-instructions h3 {

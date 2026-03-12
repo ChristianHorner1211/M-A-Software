@@ -1043,12 +1043,12 @@
         }
 
         .btn-success {
-            background: #27ae60;
+            background: #B22234;
             color: white;
         }
 
         .btn-success:hover {
-            background: #229954;
+            background: #8B1A28;
         }
 
         .btn-danger {
@@ -1507,7 +1507,7 @@
             padding: 15px;
             border-radius: 6px;
             margin-bottom: 20px;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #3C3B6E;
         }
 
         .import-instructions h3 {
@@ -1870,7 +1870,7 @@
             background: #f8f9fa;
             border-radius: 6px;
             margin-bottom: 15px;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #3C3B6E;
             overflow: hidden;
         }
 
@@ -2068,12 +2068,12 @@
         }
 
         .btn-success {
-            background: #27ae60;
+            background: #B22234;
             color: white;
         }
 
         .btn-success:hover {
-            background: #229954;
+            background: #8B1A28;
         }
 
         /* Search Results Page Styles */
@@ -2146,7 +2146,7 @@
             background: white;
             padding: 15px;
             border-radius: 6px;
-            border-left: 3px solid #3498db;
+            border-left: 3px solid #3C3B6E;
         }
 
         .search-result-detail-label {
@@ -4718,13 +4718,13 @@ Mergers & Acquisitions Team`
                             actionButtonsHTML = `
                                 <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e9ecef;">
                                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                        <button class="accordion-reply-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        <button class="accordion-reply-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                             ↩ Reply
                                         </button>
-                                        <button class="accordion-reply-all-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        <button class="accordion-reply-all-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                             ⮪ Reply All
                                         </button>
-                                        <button class="accordion-forward-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        <button class="accordion-forward-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                             ⮕ Forward
                                         </button>
                                     </div>
@@ -4733,11 +4733,11 @@ Mergers & Acquisitions Team`
                         }
 
                         return `
-                            <div class="email-accordion-item" style="margin-bottom: 8px; border-radius: 4px; overflow: hidden; border-left: 4px solid ${emailType === 'Sent' ? '#3498db' : '#27ae60'}; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="email-accordion-item" style="margin-bottom: 8px; border-radius: 4px; overflow: hidden; border-left: 4px solid ${emailType === 'Sent' ? '#B22234' : '#3C3B6E'}; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                                 <div class="email-accordion-header" data-email-id="${uniqueId}" data-activity-id="${email.id}" style="padding: 12px; background: #f8f9fa; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;" onmouseenter="this.style.background='#e9ecef'" onmouseleave="this.style.background='#f8f9fa'">
                                     <div style="flex: 1;">
                                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                            <span style="font-size: 12px; font-weight: 600; color: ${emailType === 'Sent' ? '#3498db' : '#27ae60'};">${emailIcon} ${emailType}</span>
+                                            <span style="font-size: 12px; font-weight: 600; color: ${emailType === 'Sent' ? '#B22234' : '#3C3B6E'};">${emailIcon} ${emailType}</span>
                                             <span style="font-size: 11px; color: #7f8c8d;">${formattedDate}</span>
                                             ${email.attachments && email.attachments.length > 0 ? `<span style="background: #95a5a6; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 600;">📎 ${email.attachments.length}</span>` : ''}
                                         </div>
@@ -7448,17 +7448,17 @@ Mergers & Acquisitions Team`
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 ${!isSent ? `
-                                    <button class="inline-reply-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                    <button class="inline-reply-btn" data-email-index="${emailIndex}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                         ↩ Reply
                                     </button>
-                                    <button class="inline-reply-all-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                    <button class="inline-reply-all-btn" data-email-index="${emailIndex}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                         ⮪ Reply All
                                     </button>
-                                    <button class="inline-forward-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                    <button class="inline-forward-btn" data-email-index="${emailIndex}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                         ⮕ Forward
                                     </button>
                                 ` : ''}
-                                <button class="view-full-email-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                <button class="view-full-email-btn" data-email-index="${emailIndex}" style="background: #3C3B6E; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2A2952'" onmouseleave="this.style.background='#3C3B6E'">
                                     📧 View Full Email
                                 </button>
                             </div>
@@ -7725,16 +7725,16 @@ Mergers & Acquisitions Team`
                             <div style="display: flex; gap: 8px;">
                                 ${isPDF ? `
                                     <button id="${viewButtonId}"
-                                            style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                                            onmouseenter="this.style.background='#2980b9'"
-                                            onmouseleave="this.style.background='#3498db'">
+                                            style="background: #3C3B6E; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                            onmouseenter="this.style.background='#2A2952'"
+                                            onmouseleave="this.style.background='#3C3B6E'">
                                         👁️ View
                                     </button>
                                 ` : ''}
                                 <button id="${downloadButtonId}"
-                                        style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                                        onmouseenter="this.style.background='#229954'"
-                                        onmouseleave="this.style.background='#27ae60'">
+                                        style="background: #B22234; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                        onmouseenter="this.style.background='#8B1A28'"
+                                        onmouseleave="this.style.background='#B22234'">
                                     ⬇️ Download
                                 </button>
                             </div>
@@ -7759,21 +7759,21 @@ Mergers & Acquisitions Team`
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8eef3;">
                     <div style="display: flex; gap: 12px;">
                         <button id="replyButton"
-                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                                onmouseenter="this.style.background='#2980b9'"
-                                onmouseleave="this.style.background='#3498db'">
+                                style="background: #3C3B6E; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2A2952'"
+                                onmouseleave="this.style.background='#3C3B6E'">
                             ↩ Reply
                         </button>
                         <button id="replyAllButton"
-                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                                onmouseenter="this.style.background='#2980b9'"
-                                onmouseleave="this.style.background='#3498db'">
+                                style="background: #3C3B6E; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2A2952'"
+                                onmouseleave="this.style.background='#3C3B6E'">
                             ⮪ Reply All
                         </button>
                         <button id="forwardButton"
-                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                                onmouseenter="this.style.background='#2980b9'"
-                                onmouseleave="this.style.background='#3498db'">
+                                style="background: #3C3B6E; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2A2952'"
+                                onmouseleave="this.style.background='#3C3B6E'">
                             ⮕ Forward
                         </button>
                     </div>
