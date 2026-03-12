@@ -1831,6 +1831,7 @@
                                 <button class="btn btn-secondary btn-small" onclick="showImportCarriersModal()">📥 Import Carriers</button>
                                 <button class="btn btn-primary btn-small" onclick="showBulkEmail()">✉ Bulk Email</button>
                                 <button class="btn btn-secondary btn-small" onclick="showFilesModal()">📁 Files</button>
+                                <button class="btn btn-secondary btn-small" onclick="showImportEmailModal()">📧 Import Email</button>
                             </div>
                         </div>
                         <div class="status-legend">
@@ -3811,23 +3812,6 @@ Mergers & Acquisitions Team`
             acquisitionNameEl.textContent = acquisition.name;
             carriersList.innerHTML = '';
 
-            // Add global email drop zone at the top
-            const globalDropZone = document.createElement('div');
-            globalDropZone.className = 'global-email-drop-zone';
-            globalDropZone.innerHTML = `
-                <div style="border: 3px dashed #3498db; border-radius: 12px; padding: 30px; text-align: center; margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.3s; cursor: pointer;">
-                    <div style="color: white;">
-                        <span style="font-size: 48px; display: block; margin-bottom: 12px;">📧</span>
-                        <strong style="font-size: 18px; display: block; margin-bottom: 8px;">Drop Emails Here</strong>
-                        <div style="font-size: 13px; opacity: 0.9;">Drop Outlook emails (.msg, .eml) and choose which carrier to assign them to</div>
-                    </div>
-                </div>
-            `;
-            carriersList.appendChild(globalDropZone);
-
-            // Add drag-and-drop handlers to global drop zone
-            setupGlobalDropZone(globalDropZone, acquisition);
-
             // Sort carriers by most recent email response (inbox-style)
             const sortedCarriers = [...acquisition.carriers].sort((a, b) => {
                 // Find the most recent "Received:" email for each carrier
@@ -4169,46 +4153,39 @@ Mergers & Acquisitions Team`
             });
         }
 
-        function setupGlobalDropZone(dropZone, acquisition) {
-            const dropArea = dropZone.querySelector('div');
+        function showImportEmailModal() {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
 
-            dropArea.addEventListener('dragenter', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropArea.style.transform = 'scale(1.02)';
-                dropArea.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
-            });
+            // Create a hidden file input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.msg,.eml';
+            fileInput.multiple = true;
+            fileInput.style.display = 'none';
 
-            dropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.dataTransfer.dropEffect = 'copy';
-            });
-
-            dropArea.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.target === dropArea) {
-                    dropArea.style.transform = 'scale(1)';
-                    dropArea.style.boxShadow = 'none';
-                }
-            });
-
-            dropArea.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropArea.style.transform = 'scale(1)';
-                dropArea.style.boxShadow = 'none';
-
-                const files = e.dataTransfer.files;
+            // Handle file selection
+            fileInput.addEventListener('change', (e) => {
+                const files = e.target.files;
                 if (files.length === 0) {
-                    alert('No files detected. Please drag email files (.msg or .eml)');
                     return;
                 }
 
-                // Show carrier selection modal
+                // Show carrier selection modal with selected files
                 showCarrierSelectionModal(files, acquisition);
             });
+
+            // Trigger file picker
+            document.body.appendChild(fileInput);
+            fileInput.click();
+
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(fileInput);
+            }, 1000);
         }
 
         function showCarrierSelectionModal(files, acquisition) {
