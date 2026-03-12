@@ -4295,6 +4295,7 @@ Mergers & Acquisitions Team`
                         notes: `Received: ${emailData.subject}\n\n${emailData.body}`,
                         attachments: emailData.attachments || [],
                         isManual: true,
+                        isDroppedEmail: true,  // Flag to exclude from Activity Log (only show in carrier email history)
                         conversationId: files.length > 1 ? conversationId : null  // Link emails in a thread
                     };
 
@@ -5726,9 +5727,12 @@ Mergers & Acquisitions Team`
                     return false;
                 }
 
-                // Exclude only auto-synced email activities (not manually created ones)
-                if (a.type === 'email' && !a.isManual) {
-                    console.log('  -> Filtered out: auto-synced email');
+                // Exclude email activities from Activity Log:
+                // 1. Auto-synced emails (from Outlook inbox)
+                // 2. Dropped emails (drag-and-drop from Outlook)
+                // These should only appear in carrier email history, not Activity Log
+                if (a.type === 'email' && (!a.isManual || a.isDroppedEmail)) {
+                    console.log('  -> Filtered out: email (auto-synced or dropped)');
                     return false;
                 }
 
