@@ -2154,8 +2154,7 @@
                 <div class="section carrier-section">
                     <div class="section-header">
                         <div>
-                            <h2 id="currentAcquisitionName">Select an acquisition</h2>
-                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <div style="display: flex; gap: 8px;">
                                 <button class="btn btn-success btn-small" onclick="showAddCarrierModal()">+ Add Carrier</button>
                                 <button class="btn btn-secondary btn-small" onclick="showRemoveCarrierModal()">- Remove Carrier</button>
                                 <button class="btn btn-secondary btn-small" onclick="showImportCarriersModal()">📥 Import Carriers</button>
@@ -4291,11 +4290,9 @@ Mergers & Acquisitions Team`
         function renderCarriersList() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             const carriersList = document.getElementById('carriersList');
-            const acquisitionNameEl = document.getElementById('currentAcquisitionName');
 
             if (!acquisition) {
                 carriersList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No acquisition selected</div></div>';
-                acquisitionNameEl.textContent = 'Select an acquisition';
                 return;
             }
 
@@ -4324,7 +4321,6 @@ Mergers & Acquisitions Team`
                 });
             });
 
-            acquisitionNameEl.textContent = acquisition.name;
             carriersList.innerHTML = '';
 
             // Sort carriers by most recent email response (inbox-style)
