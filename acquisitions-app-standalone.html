@@ -3950,6 +3950,26 @@ Mergers & Acquisitions Team`
                             `;
                         }
 
+                        // Build action buttons HTML (only for received emails)
+                        let actionButtonsHTML = '';
+                        if (emailType === 'Received') {
+                            actionButtonsHTML = `
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e9ecef;">
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button class="accordion-reply-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                            ↩ Reply
+                                        </button>
+                                        <button class="accordion-reply-all-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                            ⮪ Reply All
+                                        </button>
+                                        <button class="accordion-forward-btn" data-carrier-code="${carrier.code}" data-email-index="${index}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                            ⮕ Forward
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
                         return `
                             <div class="email-accordion-item" style="margin-bottom: 8px; border-radius: 4px; overflow: hidden; border-left: 4px solid ${emailType === 'Sent' ? '#3498db' : '#27ae60'}; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                                 <div class="email-accordion-header" data-email-id="${uniqueId}" style="padding: 12px; background: #f8f9fa; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;" onmouseenter="this.style.background='#e9ecef'" onmouseleave="this.style.background='#f8f9fa'">
@@ -3966,6 +3986,7 @@ Mergers & Acquisitions Team`
                                 <div class="email-accordion-content" id="${uniqueId}" style="display: none; padding: 16px; background: #ffffff; border-top: 1px solid #e9ecef;">
                                     <div style="font-size: 12px; color: #2c3e50; white-space: pre-wrap; line-height: 1.6;">${email.notes}</div>
                                     ${attachmentsHTML}
+                                    ${actionButtonsHTML}
                                 </div>
                             </div>
                         `;
@@ -4086,6 +4107,45 @@ Mergers & Acquisitions Team`
                             }, 100);
                         });
                     }
+                });
+
+                // Add click handlers for accordion email action buttons
+                carrierEmails.forEach((email, emailIdx) => {
+                    setTimeout(() => {
+                        // Extract email details
+                        const emailLines = email.notes.split('\n');
+                        const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
+                        const bodyLines = emailLines.slice(1).join('\n').trim();
+                        const date = new Date(email.timestamp);
+                        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                        // Reply button
+                        const replyBtn = carrierItem.querySelector(`.accordion-reply-btn[data-carrier-code="${carrier.code}"][data-email-index="${emailIdx}"]`);
+                        if (replyBtn) {
+                            replyBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                replyToEmail(email, subjectLine, bodyLines, formattedDate);
+                            });
+                        }
+
+                        // Reply All button
+                        const replyAllBtn = carrierItem.querySelector(`.accordion-reply-all-btn[data-carrier-code="${carrier.code}"][data-email-index="${emailIdx}"]`);
+                        if (replyAllBtn) {
+                            replyAllBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                replyAllToEmail(email, subjectLine, bodyLines, formattedDate);
+                            });
+                        }
+
+                        // Forward button
+                        const forwardBtn = carrierItem.querySelector(`.accordion-forward-btn[data-carrier-code="${carrier.code}"][data-email-index="${emailIdx}"]`);
+                        if (forwardBtn) {
+                            forwardBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                forwardEmail(email, subjectLine, bodyLines, formattedDate);
+                            });
+                        }
+                    }, 100);
                 });
 
                 carriersList.appendChild(carrierItem);
