@@ -5771,8 +5771,12 @@ Mergers & Acquisitions Team`
 
                     let emailAttachmentHTML = '';
                     if (email.attachments && email.attachments.length > 0) {
-                        const attachmentNames = email.attachments.map(a => `<span style="background: #e8eef3; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 5px;">📎 ${a.name}</span>`).join('');
-                        emailAttachmentHTML = `<div style="margin-top: 8px;">${attachmentNames}</div>`;
+                        const attachmentItems = email.attachments.map((a, idx) => {
+                            const isPDF = a.name.toLowerCase().endsWith('.pdf');
+                            const attachmentId = `attachment-${email.timestamp}-${idx}`;
+                            return `<span id="${attachmentId}" class="email-attachment-item" style="background: #e8eef3; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseenter="this.style.background='#d5dde3'" onmouseleave="this.style.background='#e8eef3'" title="${isPDF ? 'Click to view PDF' : 'Click to download'}">📎 ${a.name}${isPDF ? ' 👁️' : ''}</span>`;
+                        }).join('');
+                        emailAttachmentHTML = `<div style="margin-top: 8px;">${attachmentItems}</div>`;
                     }
 
                     const emailDiv = document.createElement('div');
@@ -5818,6 +5822,25 @@ Mergers & Acquisitions Team`
                     });
 
                     expandedView.appendChild(emailDiv);
+
+                    // Add click handlers for attachments in the email list
+                    if (email.attachments && email.attachments.length > 0) {
+                        email.attachments.forEach((attachment, idx) => {
+                            const attachmentId = `attachment-${email.timestamp}-${idx}`;
+                            const attachmentElement = emailDiv.querySelector(`#${attachmentId}`);
+                            if (attachmentElement) {
+                                attachmentElement.addEventListener('click', (e) => {
+                                    e.stopPropagation(); // Prevent opening email detail modal
+                                    const isPDF = attachment.name.toLowerCase().endsWith('.pdf');
+                                    if (isPDF) {
+                                        viewPDFAttachment(attachment);
+                                    } else {
+                                        downloadAttachment(attachment);
+                                    }
+                                });
+                            }
+                        });
+                    }
                 });
 
                 threadContainer.appendChild(expandedView);
@@ -5997,17 +6020,33 @@ Mergers & Acquisitions Team`
             if (email.attachments && email.attachments.length > 0) {
                 const attachmentItems = email.attachments.map((a, index) => {
                     const attachmentId = `email-attachment-${index}`;
+                    const isPDF = a.name.toLowerCase().endsWith('.pdf');
+                    const viewButtonId = `view-attachment-${index}`;
+                    const downloadButtonId = `download-attachment-${index}`;
+
                     return `
-                        <div id="${attachmentId}"
-                             style="background: #e8eef3; padding: 10px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; display: flex; align-items: center; gap: 8px;"
-                             onmouseenter="this.style.background='#d5dde3'; this.style.borderColor='#3498db';"
-                             onmouseleave="this.style.background='#e8eef3'; this.style.borderColor='transparent';">
-                            <span style="font-size: 18px;">📎</span>
+                        <div style="background: #e8eef3; padding: 12px 16px; border-radius: 6px; font-size: 13px; transition: all 0.2s; border: 2px solid transparent; display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 20px;">📎</span>
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #2c3e50;">${a.name}</div>
-                                ${a.size ? `<div style="font-size: 11px; color: #7f8c8d; margin-top: 2px;">${formatFileSize(a.size)}</div>` : ''}
+                                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 2px;">${a.name}</div>
+                                ${a.size ? `<div style="font-size: 11px; color: #7f8c8d;">${formatFileSize(a.size)}</div>` : ''}
                             </div>
-                            <span style="color: #3498db; font-size: 11px; font-weight: 600;">DOWNLOAD</span>
+                            <div style="display: flex; gap: 8px;">
+                                ${isPDF ? `
+                                    <button id="${viewButtonId}"
+                                            style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                            onmouseenter="this.style.background='#2980b9'"
+                                            onmouseleave="this.style.background='#3498db'">
+                                        👁️ View
+                                    </button>
+                                ` : ''}
+                                <button id="${downloadButtonId}"
+                                        style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                        onmouseenter="this.style.background='#229954'"
+                                        onmouseleave="this.style.background='#27ae60'">
+                                    ⬇️ Download
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -6079,9 +6118,22 @@ Mergers & Acquisitions Team`
             // Add click handlers for attachments
             if (email.attachments && email.attachments.length > 0) {
                 email.attachments.forEach((attachment, index) => {
-                    const attachmentElement = document.getElementById(`email-attachment-${index}`);
-                    if (attachmentElement) {
-                        attachmentElement.addEventListener('click', () => {
+                    const isPDF = attachment.name.toLowerCase().endsWith('.pdf');
+
+                    // Add view button handler for PDFs
+                    if (isPDF) {
+                        const viewButton = document.getElementById(`view-attachment-${index}`);
+                        if (viewButton) {
+                            viewButton.addEventListener('click', () => {
+                                viewPDFAttachment(attachment);
+                            });
+                        }
+                    }
+
+                    // Add download button handler
+                    const downloadButton = document.getElementById(`download-attachment-${index}`);
+                    if (downloadButton) {
+                        downloadButton.addEventListener('click', () => {
                             downloadAttachment(attachment);
                         });
                     }
@@ -6210,6 +6262,42 @@ Mergers & Acquisitions Team`
             } catch (error) {
                 console.error('Error downloading attachment:', error);
                 alert('Failed to download attachment: ' + error.message);
+            }
+        }
+
+        function viewPDFAttachment(attachment) {
+            if (!attachment.contentBytes) {
+                alert('PDF content not available');
+                return;
+            }
+
+            try {
+                // Convert base64 to blob
+                const byteCharacters = atob(attachment.contentBytes);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+                // Create object URL and open in new tab
+                const url = window.URL.createObjectURL(blob);
+                const newWindow = window.open(url, '_blank');
+
+                // Clean up the URL after a delay (give the browser time to load the PDF)
+                if (newWindow) {
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                    }, 1000);
+                } else {
+                    // If popup was blocked, fallback to download
+                    alert('Popup blocked. Please allow popups to view PDFs, or use the download button instead.');
+                    window.URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Error viewing PDF:', error);
+                alert('Failed to view PDF: ' + error.message);
             }
         }
 
