@@ -5920,9 +5920,22 @@ Mergers & Acquisitions Team`
                         </div>
                         ${emailAttachmentHTML}
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-                            <button class="view-full-email-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
-                                📧 View Full Email
-                            </button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${!isSent ? `
+                                    <button class="inline-reply-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        ↩ Reply
+                                    </button>
+                                    <button class="inline-reply-all-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        ⮪ Reply All
+                                    </button>
+                                    <button class="inline-forward-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                        ⮕ Forward
+                                    </button>
+                                ` : ''}
+                                <button class="view-full-email-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                                    📧 View Full Email
+                                </button>
+                            </div>
                         </div>
                     `;
 
@@ -5947,7 +5960,7 @@ Mergers & Acquisitions Team`
                         });
                     }
 
-                    // Add click handler for "View Full Email" button
+                    // Add click handlers for action buttons
                     setTimeout(() => {
                         const viewFullBtn = emailDiv.querySelector('.view-full-email-btn');
                         if (viewFullBtn) {
@@ -5955,6 +5968,42 @@ Mergers & Acquisitions Team`
                                 e.stopPropagation();
                                 showEmailDetail(email, isSent, emailFormattedDate);
                             });
+                        }
+
+                        // Add handlers for inline reply buttons (only for received emails)
+                        if (!isSent) {
+                            const inlineReplyBtn = emailDiv.querySelector('.inline-reply-btn');
+                            if (inlineReplyBtn) {
+                                inlineReplyBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    const emailLines = email.notes.split('\n');
+                                    const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
+                                    const bodyLines = emailLines.slice(1).join('\n').trim();
+                                    replyToEmail(email, subjectLine, bodyLines, emailFormattedDate);
+                                });
+                            }
+
+                            const inlineReplyAllBtn = emailDiv.querySelector('.inline-reply-all-btn');
+                            if (inlineReplyAllBtn) {
+                                inlineReplyAllBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    const emailLines = email.notes.split('\n');
+                                    const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
+                                    const bodyLines = emailLines.slice(1).join('\n').trim();
+                                    replyAllToEmail(email, subjectLine, bodyLines, emailFormattedDate);
+                                });
+                            }
+
+                            const inlineForwardBtn = emailDiv.querySelector('.inline-forward-btn');
+                            if (inlineForwardBtn) {
+                                inlineForwardBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    const emailLines = email.notes.split('\n');
+                                    const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
+                                    const bodyLines = emailLines.slice(1).join('\n').trim();
+                                    forwardEmail(email, subjectLine, bodyLines, emailFormattedDate);
+                                });
+                            }
                         }
                     }, 0);
 
