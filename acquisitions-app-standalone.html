@@ -87,6 +87,101 @@
             gap: 10px;
         }
 
+        .global-search-container {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 30px;
+        }
+
+        .global-search-input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .global-search-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .search-suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .search-suggestion-item:hover {
+            background: #f8f9fa;
+        }
+
+        .search-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-type {
+            font-size: 11px;
+            color: #95a5a6;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-subtitle {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .suggestion-codes {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .suggestion-code-tag {
+            background: #e8f4f8;
+            color: #3498db;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .search-no-results {
+            padding: 20px;
+            text-align: center;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+
         .btn {
             padding: 10px 20px;
             border: none;
@@ -1739,6 +1834,126 @@
         .btn-success:hover {
             background: #229954;
         }
+
+        /* Search Results Page Styles */
+        .search-results-header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-results-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-result-section {
+            margin-bottom: 40px;
+        }
+
+        .search-result-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .search-result-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .search-result-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .search-result-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+        }
+
+        .search-result-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .search-result-card-meta {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
+        .search-result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .search-result-detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+        }
+
+        .search-result-detail-label {
+            font-size: 12px;
+            color: #95a5a6;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .search-result-detail-value {
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .search-result-list {
+            margin-top: 10px;
+        }
+
+        .search-result-list-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .search-result-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-badge {
+            display: inline-block;
+            background: #e8f4f8;
+            color: #3498db;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .search-no-data {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -1770,6 +1985,10 @@
             <div class="nav-buttons">
                 <button class="nav-btn active" id="navAcquisitions" onclick="showPage('acquisitions')">Acquisitions</button>
                 <button class="nav-btn" id="navCodeManagement" onclick="showPage('codeManagement')">Code Management</button>
+            </div>
+            <div class="global-search-container">
+                <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
+                <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
             </div>
             <div class="header-actions">
                 <div id="userInfo" class="user-info" style="display: none;">
@@ -2034,6 +2253,18 @@
                 <!-- Locations will be rendered here -->
             </div>
         </div> <!-- End of stateDetailPage -->
+
+        <!-- Search Results Page -->
+        <div id="searchResultsPage" class="page-container" style="display: none;">
+            <div class="search-results-header">
+                <button class="back-button" onclick="closeSearchResults()">← Back</button>
+                <h1 id="searchResultsTitle" style="display: inline; margin-left: 15px;">Search Results</h1>
+            </div>
+
+            <div id="searchResultsContent" class="search-results-content">
+                <!-- Search results will be rendered here -->
+            </div>
+        </div> <!-- End of searchResultsPage -->
 
     </div> <!-- End of mainApp -->
 
@@ -9716,7 +9947,433 @@ Mergers & Acquisitions Team`
             }
         }
 
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        // Global Search Functionality
+        let searchTimeout;
+        let currentSearchResults = [];
+
+        function setupGlobalSearch() {
+            const searchInput = document.getElementById('globalSearchInput');
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+
+                if (query.length < 2) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300);
+            });
+
+            searchInput.addEventListener('focus', (e) => {
+                const query = e.target.value.trim();
+                if (query.length >= 2 && currentSearchResults.length > 0) {
+                    suggestionsDiv.style.display = 'block';
+                }
+            });
+
+            // Click outside to close
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        function performSearch(query) {
+            const results = [];
+            const queryLower = query.toLowerCase();
+
+            // Search in acquisitions
+            acquisitions.forEach(acquisition => {
+                if (acquisition.carriers && acquisition.carriers.length > 0) {
+                    acquisition.carriers.forEach(carrier => {
+                        // Check carrier name and code
+                        if (carrier.name.toLowerCase().includes(queryLower) ||
+                            (carrier.code && carrier.code.toLowerCase().includes(queryLower))) {
+                            results.push({
+                                type: 'carrier',
+                                source: 'acquisition',
+                                carrierName: carrier.name,
+                                carrierCode: carrier.code,
+                                acquisitionName: acquisition.name,
+                                acquisitionId: acquisition.id,
+                                contacts: carrier.contacts || [],
+                                matchScore: calculateMatchScore(carrier.name, carrier.code, queryLower)
+                            });
+                        }
+
+                        // Check contacts
+                        if (carrier.contacts && carrier.contacts.length > 0) {
+                            carrier.contacts.forEach(contact => {
+                                if ((contact.name && contact.name.toLowerCase().includes(queryLower)) ||
+                                    (contact.email && contact.email.toLowerCase().includes(queryLower)) ||
+                                    (contact.phone && contact.phone.includes(query))) {
+                                    results.push({
+                                        type: 'contact',
+                                        source: 'acquisition',
+                                        contactName: contact.name,
+                                        contactEmail: contact.email,
+                                        contactPhone: contact.phone,
+                                        carrierName: carrier.name,
+                                        acquisitionName: acquisition.name,
+                                        acquisitionId: acquisition.id,
+                                        matchScore: calculateMatchScore(contact.name, contact.email, queryLower)
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Search in code management
+            Object.keys(stateOffices).forEach(stateCode => {
+                const locations = stateOffices[stateCode];
+                if (locations && locations.length > 0) {
+                    locations.forEach(location => {
+                        // Check location name
+                        if (location.name.toLowerCase().includes(queryLower)) {
+                            results.push({
+                                type: 'location',
+                                source: 'codeManagement',
+                                locationName: location.name,
+                                locationAddress: location.address,
+                                stateCode: stateCode,
+                                stateName: stateNames[stateCode],
+                                locationId: location.id,
+                                carrierCount: location.carriers ? location.carriers.length : 0,
+                                matchScore: calculateMatchScore(location.name, '', queryLower)
+                            });
+                        }
+
+                        // Check carriers in location
+                        if (location.carriers && location.carriers.length > 0) {
+                            location.carriers.forEach(carrier => {
+                                if (carrier.name.toLowerCase().includes(queryLower) ||
+                                    (carrier.codes && carrier.codes.some(code => code.toLowerCase().includes(queryLower)))) {
+                                    results.push({
+                                        type: 'carrier',
+                                        source: 'codeManagement',
+                                        carrierName: carrier.name,
+                                        codes: carrier.codes || [],
+                                        locationName: location.name,
+                                        stateCode: stateCode,
+                                        stateName: stateNames[stateCode],
+                                        locationId: location.id,
+                                        reps: carrier.reps || [],
+                                        matchScore: calculateMatchScore(carrier.name, carrier.codes ? carrier.codes.join(' ') : '', queryLower)
+                                    });
+                                }
+
+                                // Check reps
+                                if (carrier.reps && carrier.reps.length > 0) {
+                                    carrier.reps.forEach(rep => {
+                                        if ((rep.name && rep.name.toLowerCase().includes(queryLower)) ||
+                                            (rep.email && rep.email.toLowerCase().includes(queryLower)) ||
+                                            (rep.phone && rep.phone.includes(query))) {
+                                            results.push({
+                                                type: 'rep',
+                                                source: 'codeManagement',
+                                                repName: rep.name,
+                                                repEmail: rep.email,
+                                                repPhone: rep.phone,
+                                                carrierName: carrier.name,
+                                                locationName: location.name,
+                                                stateCode: stateCode,
+                                                stateName: stateNames[stateCode],
+                                                locationId: location.id,
+                                                matchScore: calculateMatchScore(rep.name, rep.email, queryLower)
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Sort by match score and limit results
+            results.sort((a, b) => b.matchScore - a.matchScore);
+            currentSearchResults = results.slice(0, 10);
+
+            displaySearchSuggestions(currentSearchResults, query);
+        }
+
+        function calculateMatchScore(text1, text2, query) {
+            let score = 0;
+            const t1Lower = text1 ? text1.toLowerCase() : '';
+            const t2Lower = text2 ? text2.toLowerCase() : '';
+
+            // Exact match gets highest score
+            if (t1Lower === query || t2Lower === query) score += 100;
+
+            // Starts with query
+            if (t1Lower.startsWith(query) || t2Lower.startsWith(query)) score += 50;
+
+            // Contains query
+            if (t1Lower.includes(query)) score += 25;
+            if (t2Lower.includes(query)) score += 25;
+
+            return score;
+        }
+
+        function displaySearchSuggestions(results, query) {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+
+            if (results.length === 0) {
+                suggestionsDiv.innerHTML = '<div class="search-no-results">No results found</div>';
+                suggestionsDiv.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            results.forEach((result, index) => {
+                html += createSuggestionHTML(result, index);
+            });
+
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.style.display = 'block';
+        }
+
+        function createSuggestionHTML(result, index) {
+            let html = '';
+
+            if (result.type === 'carrier') {
+                const codes = result.source === 'acquisition'
+                    ? [result.carrierCode]
+                    : (result.codes || []).slice(0, 3);
+
+                const codesHTML = codes.length > 0
+                    ? `<div class="suggestion-codes">${codes.map(code => `<span class="suggestion-code-tag">${code}</span>`).join('')}</div>`
+                    : '';
+
+                const subtitle = result.source === 'acquisition'
+                    ? `Acquisition: ${result.acquisitionName}`
+                    : `${result.stateName} - ${result.locationName}`;
+
+                html = `
+                    <div class="search-suggestion-item" onclick="showSearchResult(${index})">
+                        <div class="suggestion-type">Carrier</div>
+                        <div class="suggestion-title">${result.carrierName}</div>
+                        <div class="suggestion-subtitle">${subtitle}</div>
+                        ${codesHTML}
+                    </div>
+                `;
+            } else if (result.type === 'contact' || result.type === 'rep') {
+                const name = result.type === 'contact' ? result.contactName : result.repName;
+                const email = result.type === 'contact' ? result.contactEmail : result.repEmail;
+                const subtitle = result.type === 'contact'
+                    ? `${result.carrierName} - ${result.acquisitionName}`
+                    : `${result.carrierName} - ${result.locationName}`;
+
+                html = `
+                    <div class="search-suggestion-item" onclick="showSearchResult(${index})">
+                        <div class="suggestion-type">${result.type === 'contact' ? 'Contact' : 'Representative'}</div>
+                        <div class="suggestion-title">${name}</div>
+                        <div class="suggestion-subtitle">${subtitle}</div>
+                        <div class="suggestion-subtitle" style="margin-top: 4px;">${email || ''}</div>
+                    </div>
+                `;
+            } else if (result.type === 'location') {
+                html = `
+                    <div class="search-suggestion-item" onclick="showSearchResult(${index})">
+                        <div class="suggestion-type">Location</div>
+                        <div class="suggestion-title">${result.locationName}</div>
+                        <div class="suggestion-subtitle">${result.stateName}</div>
+                        <div class="suggestion-subtitle" style="margin-top: 4px;">${result.carrierCount} carriers</div>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        function showSearchResult(index) {
+            const result = currentSearchResults[index];
+            if (!result) return;
+
+            // Hide suggestions
+            document.getElementById('searchSuggestions').style.display = 'none';
+
+            // Clear search input
+            document.getElementById('globalSearchInput').value = '';
+
+            // Show search results page
+            showSearchResultsPage(result);
+        }
+
+        function showSearchResultsPage(result) {
+            // Hide all pages
+            document.getElementById('acquisitionsPage').classList.remove('active');
+            document.getElementById('codeManagementPage').classList.remove('active');
+            document.getElementById('stateDetailPage').classList.remove('active');
+
+            // Show search results page
+            const searchResultsPage = document.getElementById('searchResultsPage');
+            searchResultsPage.style.display = 'block';
+
+            // Render the search result details
+            renderSearchResultDetails(result);
+        }
+
+        function renderSearchResultDetails(result) {
+            const title = document.getElementById('searchResultsTitle');
+            const content = document.getElementById('searchResultsContent');
+
+            // Set title based on result type
+            if (result.type === 'carrier') {
+                title.textContent = `Carrier: ${result.carrierName}`;
+            } else if (result.type === 'contact') {
+                title.textContent = `Contact: ${result.contactName}`;
+            } else if (result.type === 'rep') {
+                title.textContent = `Representative: ${result.repName}`;
+            } else if (result.type === 'location') {
+                title.textContent = `Location: ${result.locationName}`;
+            }
+
+            // Build detailed content
+            let html = '';
+
+            if (result.type === 'carrier') {
+                html = renderCarrierSearchResult(result);
+            } else if (result.type === 'contact' || result.type === 'rep') {
+                html = renderContactSearchResult(result);
+            } else if (result.type === 'location') {
+                html = renderLocationSearchResult(result);
+            }
+
+            content.innerHTML = html;
+        }
+
+        function renderCarrierSearchResult(result) {
+            let html = '<div class="search-result-section">';
+            html += '<div class="search-result-section-title">Carrier Information</div>';
+            html += '<div class="search-result-card">';
+            html += `<div class="search-result-card-title">${result.carrierName}</div>`;
+
+            if (result.source === 'acquisition') {
+                html += `<div class="search-result-card-meta">Found in Acquisition: ${result.acquisitionName}</div>`;
+                html += '<div class="search-result-details">';
+                html += `<div class="search-result-detail-item">
+                    <div class="search-result-detail-label">Code</div>
+                    <div class="search-result-detail-value">${result.carrierCode || 'N/A'}</div>
+                </div>`;
+                html += `<div class="search-result-detail-item">
+                    <div class="search-result-detail-label">Contacts</div>
+                    <div class="search-result-detail-value">${result.contacts.length} contact${result.contacts.length !== 1 ? 's' : ''}</div>
+                </div>`;
+                html += '</div>';
+
+                // List contacts
+                if (result.contacts.length > 0) {
+                    html += '<div class="search-result-list">';
+                    result.contacts.forEach(contact => {
+                        html += `<div class="search-result-list-item">
+                            <strong>${contact.name || 'Unknown'}</strong><br>
+                            ${contact.email || ''} ${contact.phone ? '| ' + contact.phone : ''}
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+            } else {
+                html += `<div class="search-result-card-meta">Found in ${result.stateName} - ${result.locationName}</div>`;
+                html += '<div class="search-result-details">';
+                html += `<div class="search-result-detail-item">
+                    <div class="search-result-detail-label">Codes</div>
+                    <div class="search-result-detail-value">
+                        ${result.codes.length > 0 ? result.codes.map(c => `<span class="search-result-badge">${c}</span>`).join('') : 'No codes'}
+                    </div>
+                </div>`;
+                html += `<div class="search-result-detail-item">
+                    <div class="search-result-detail-label">Representatives</div>
+                    <div class="search-result-detail-value">${result.reps.length} rep${result.reps.length !== 1 ? 's' : ''}</div>
+                </div>`;
+                html += '</div>';
+
+                // List reps
+                if (result.reps.length > 0) {
+                    html += '<div class="search-result-list">';
+                    result.reps.forEach(rep => {
+                        html += `<div class="search-result-list-item">
+                            <strong>${rep.name || 'Unknown'}</strong><br>
+                            ${rep.email || ''} ${rep.phone ? '| ' + rep.phone : ''}
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+            }
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderContactSearchResult(result) {
+            const isContact = result.type === 'contact';
+            const name = isContact ? result.contactName : result.repName;
+            const email = isContact ? result.contactEmail : result.repEmail;
+            const phone = isContact ? result.contactPhone : result.repPhone;
+
+            let html = '<div class="search-result-section">';
+            html += `<div class="search-result-section-title">${isContact ? 'Contact' : 'Representative'} Information</div>`;
+            html += '<div class="search-result-card">';
+            html += `<div class="search-result-card-title">${name}</div>`;
+            html += `<div class="search-result-card-meta">Associated with ${result.carrierName}</div>`;
+            html += '<div class="search-result-details">';
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">Email</div>
+                <div class="search-result-detail-value">${email || 'N/A'}</div>
+            </div>`;
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">Phone</div>
+                <div class="search-result-detail-value">${phone || 'N/A'}</div>
+            </div>`;
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">Carrier</div>
+                <div class="search-result-detail-value">${result.carrierName}</div>
+            </div>`;
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">${isContact ? 'Acquisition' : 'Location'}</div>
+                <div class="search-result-detail-value">${isContact ? result.acquisitionName : result.locationName}</div>
+            </div>`;
+            html += '</div></div></div>';
+            return html;
+        }
+
+        function renderLocationSearchResult(result) {
+            let html = '<div class="search-result-section">';
+            html += '<div class="search-result-section-title">Location Information</div>';
+            html += '<div class="search-result-card">';
+            html += `<div class="search-result-card-title">${result.locationName}</div>`;
+            html += `<div class="search-result-card-meta">${result.stateName}</div>`;
+            html += '<div class="search-result-details">';
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">Address</div>
+                <div class="search-result-detail-value">${result.locationAddress || 'N/A'}</div>
+            </div>`;
+            html += `<div class="search-result-detail-item">
+                <div class="search-result-detail-label">Carriers</div>
+                <div class="search-result-detail-value">${result.carrierCount} carrier${result.carrierCount !== 1 ? 's' : ''}</div>
+            </div>`;
+            html += '</div></div></div>';
+            return html;
+        }
+
+        function closeSearchResults() {
+            document.getElementById('searchResultsPage').style.display = 'none';
+            // Show the appropriate page based on context
+            showPage('acquisitions');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            setupGlobalSearch();
+        });
 
         // Close drawer with Escape key
         document.addEventListener('keydown', function(e) {
