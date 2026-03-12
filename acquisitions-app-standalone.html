@@ -4388,10 +4388,13 @@ Mergers & Acquisitions Team`
                 hideSyncStatus();
             }
 
+            // Refresh carrier list to show new emails with action buttons
+            renderCarriersList();
+
             // Show summary
             if (files.length === 1) {
                 if (successCount > 0) {
-                    alert(`Email "${processedEmails[0]}" added successfully to ${carrier.name}!`);
+                    alert(`Email "${processedEmails[0]}" added successfully to ${carrier.name}!\n\nCheck the carrier's email history for reply/forward buttons.`);
                 } else {
                     alert(`Failed to process email. Please try a different format.`);
                 }
@@ -4403,6 +4406,7 @@ Mergers & Acquisitions Team`
                     message += `❌ Failed: ${errorCount} email(s)\n`;
                 }
                 message += `\nCarrier: ${carrier.name}`;
+                message += `\n\nCheck the carrier's email history for reply/forward buttons.`;
                 alert(message);
             }
         }
