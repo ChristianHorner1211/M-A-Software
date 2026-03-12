@@ -3895,15 +3895,51 @@ Mergers & Acquisitions Team`
 
                 let emailHistoryHTML = '';
                 if (carrierEmails.length > 0) {
-                    emailHistoryHTML = carrierEmails.slice(0, 5).map(email => {
+                    emailHistoryHTML = carrierEmails.slice(0, 5).map((email, index) => {
                         const date = new Date(email.timestamp);
                         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
                         const emailType = email.notes && email.notes.startsWith('Sent:') ? 'Sent' : 'Received';
                         const emailIcon = emailType === 'Sent' ? '📤' : '📥';
+
+                        // Extract subject line from email notes
+                        const emailLines = email.notes.split('\n');
+                        const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
+
+                        // Get preview of body (first 60 chars)
+                        let bodyPreview = '';
+                        if (emailLines.length > 1) {
+                            let bodyStartIndex = 1;
+                            if (emailType === 'Sent') {
+                                // Skip "To:" and "CC:" lines for sent emails
+                                for (let i = 1; i < emailLines.length; i++) {
+                                    const line = emailLines[i].trim();
+                                    if (!line.startsWith('To:') && !line.startsWith('CC:') && line !== '') {
+                                        bodyStartIndex = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            const bodyText = emailLines.slice(bodyStartIndex).join(' ').trim();
+                            bodyPreview = bodyText.substring(0, 60) + (bodyText.length > 60 ? '...' : '');
+                        }
+
+                        const uniqueId = `email-${carrier.code}-${index}`;
+
                         return `
-                            <div style="padding: 8px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid ${emailType === 'Sent' ? '#3498db' : '#27ae60'};">
-                                <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 4px;">${emailIcon} ${emailType} - ${formattedDate}</div>
-                                <div style="font-size: 13px; color: #2c3e50;">${email.notes}</div>
+                            <div class="email-accordion-item" style="margin-bottom: 6px; border-radius: 4px; overflow: hidden; border-left: 3px solid ${emailType === 'Sent' ? '#3498db' : '#27ae60'};">
+                                <div class="email-accordion-header" data-email-id="${uniqueId}" style="padding: 8px; background: #f8f9fa; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#e9ecef'" onmouseleave="this.style.background='#f8f9fa'">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span class="email-accordion-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 10px; color: #7f8c8d;">▶</span>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 2px;">${emailIcon} ${emailType} - ${formattedDate}</div>
+                                            <div style="font-weight: 600; color: #2c3e50; font-size: 12px; margin-bottom: 2px;">${subjectLine}</div>
+                                            ${bodyPreview ? `<div style="color: #7f8c8d; font-size: 11px; font-style: italic;">${bodyPreview}</div>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="email-accordion-content" id="${uniqueId}" style="display: none; padding: 8px 8px 8px 20px; background: #ffffff; border-top: 1px solid #e9ecef;">
+                                    <div style="font-size: 13px; color: #2c3e50; white-space: pre-wrap; line-height: 1.5;">${email.notes}</div>
+                                </div>
                             </div>
                         `;
                     }).join('');
@@ -3983,6 +4019,23 @@ Mergers & Acquisitions Team`
                 viewAllBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     showCarrierContacts(carrier.code);
+                });
+
+                // Email accordion functionality
+                const emailAccordionHeaders = carrierItem.querySelectorAll('.email-accordion-header');
+                emailAccordionHeaders.forEach(header => {
+                    header.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const emailId = header.getAttribute('data-email-id');
+                        const content = document.getElementById(emailId);
+                        const arrow = header.querySelector('.email-accordion-arrow');
+
+                        if (content && arrow) {
+                            const isExpanded = content.style.display !== 'none';
+                            content.style.display = isExpanded ? 'none' : 'block';
+                            arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+                        }
+                    });
                 });
 
                 carriersList.appendChild(carrierItem);
