@@ -3895,7 +3895,7 @@ Mergers & Acquisitions Team`
 
                 let emailHistoryHTML = '';
                 if (carrierEmails.length > 0) {
-                    emailHistoryHTML = carrierEmails.slice(0, 5).map((email, index) => {
+                    emailHistoryHTML = carrierEmails.map((email, index) => {
                         const date = new Date(email.timestamp);
                         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
                         const emailType = email.notes && email.notes.startsWith('Sent:') ? 'Sent' : 'Received';
@@ -3943,9 +3943,6 @@ Mergers & Acquisitions Team`
                             </div>
                         `;
                     }).join('');
-                    if (carrierEmails.length > 5) {
-                        emailHistoryHTML += `<div style="color: #7f8c8d; font-size: 12px; padding: 8px; text-align: center;">... and ${carrierEmails.length - 5} more emails</div>`;
-                    }
                 } else {
                     emailHistoryHTML = '<div style="color: #7f8c8d; font-size: 13px; padding: 8px;">No email history</div>';
                 }
