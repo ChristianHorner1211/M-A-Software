@@ -4209,6 +4209,17 @@ Mergers & Acquisitions Team`
 
             console.log('Processing dropped files:', files.length);
 
+            // Generate a conversation ID for this batch of emails
+            const conversationId = `conv-${Date.now()}`;
+            let successCount = 0;
+            let errorCount = 0;
+            const processedEmails = [];
+
+            // Show processing message for multiple emails
+            if (files.length > 1) {
+                showSyncStatus('syncing', `Processing ${files.length} emails...`);
+            }
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 console.log('Processing file:', file.name, 'Type:', file.type);
@@ -4230,27 +4241,52 @@ Mergers & Acquisitions Team`
                     }
 
                     if (!emailData) {
-                        alert(`Could not parse email from ${file.name}. Please try a different format.`);
+                        console.error(`Could not parse email from ${file.name}`);
+                        errorCount++;
                         continue;
                     }
 
-                    // Create email activity
+                    // Create email activity with conversation ID
                     const emailActivity = {
                         type: 'email',
                         contact: emailData.from || 'Unknown Sender',
                         carrier: carrier.name,
                         notes: `Received: ${emailData.subject}\n\n${emailData.body}`,
                         attachments: emailData.attachments || [],
-                        isManual: true
+                        isManual: true,
+                        conversationId: files.length > 1 ? conversationId : null  // Link emails in a thread
                     };
 
                     await addActivityLog(emailActivity);
-
-                    alert(`Email "${emailData.subject}" added successfully to ${carrier.name}!`);
+                    successCount++;
+                    processedEmails.push(emailData.subject);
                 } catch (error) {
                     console.error('Error processing email:', error);
-                    alert(`Error processing ${file.name}: ${error.message}`);
+                    errorCount++;
                 }
+            }
+
+            // Hide processing message
+            if (files.length > 1) {
+                hideSyncStatus();
+            }
+
+            // Show summary
+            if (files.length === 1) {
+                if (successCount > 0) {
+                    alert(`Email "${processedEmails[0]}" added successfully to ${carrier.name}!`);
+                } else {
+                    alert(`Failed to process email. Please try a different format.`);
+                }
+            } else {
+                // Multiple emails - show summary
+                let message = `📧 Email Thread Imported!\n\n`;
+                message += `✅ Successfully added: ${successCount} email(s)\n`;
+                if (errorCount > 0) {
+                    message += `❌ Failed: ${errorCount} email(s)\n`;
+                }
+                message += `\nCarrier: ${carrier.name}`;
+                alert(message);
             }
         }
 
