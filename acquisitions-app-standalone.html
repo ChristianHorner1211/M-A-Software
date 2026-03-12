@@ -2381,9 +2381,9 @@
     <!-- Main App -->
     <div id="mainApp" class="container" style="display: none;">
         <header>
-            <div class="nav-buttons">
-                <button class="nav-btn active" id="navAcquisitions" onclick="showPage('acquisitions')">Acquisitions</button>
-                <button class="nav-btn" id="navCodeManagement" onclick="showPage('codeManagement')">Code Management</button>
+            <div class="nav-buttons btn-group">
+                <button class="active" id="navAcquisitions" onclick="setActiveButton(event); showPage('acquisitions')">Acquisitions</button>
+                <button id="navCodeManagement" onclick="setActiveButton(event); showPage('codeManagement')">Code Management</button>
             </div>
             <div class="global-search-container">
                 <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
@@ -4801,12 +4801,14 @@ Mergers & Acquisitions Team`
                             <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
                         </div>
                         <div class="carrier-actions">
-                            <button class="check-btn ${carrier.status === 'done' ? 'checked' : ''}">
-                                ${carrier.status === 'done' ? '✓ Done' : 'Mark Done'}
-                            </button>
-                            <button class="email-btn">
-                                ✉ Email
-                            </button>
+                            <div class="btn-group">
+                                <button class="${carrier.status === 'done' ? 'active' : ''}" onclick="setActiveButton(event)">
+                                    ${carrier.status === 'done' ? '✓ Done' : 'Mark Done'}
+                                </button>
+                                <button onclick="setActiveButton(event)">
+                                    ✉ Email
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="carrier-content">
@@ -4828,24 +4830,26 @@ Mergers & Acquisitions Team`
                 // Add event listeners properly to avoid issues with special characters in carrier codes
                 const carrierHeader = carrierItem.querySelector('.carrier-header');
                 carrierHeader.addEventListener('click', (e) => {
-                    // Don't toggle if clicking on action buttons
-                    if (e.target.classList.contains('check-btn') || e.target.classList.contains('email-btn')) {
+                    // Don't toggle if clicking on action buttons in btn-group
+                    if (e.target.closest('.btn-group')) {
                         return;
                     }
                     carrierItem.classList.toggle('expanded');
                 });
 
-                const checkBtn = carrierItem.querySelector('.check-btn');
-                checkBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleCarrierStatus(carrier.code);
-                });
-
-                const emailBtn = carrierItem.querySelector('.email-btn');
-                emailBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    emailCarrier(carrier.code);
-                });
+                const actionButtons = carrierItem.querySelectorAll('.carrier-actions .btn-group button');
+                if (actionButtons[0]) {
+                    actionButtons[0].addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleCarrierStatus(carrier.code);
+                    });
+                }
+                if (actionButtons[1]) {
+                    actionButtons[1].addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        emailCarrier(carrier.code);
+                    });
+                }
 
                 // Add contact button
                 const addContactBtn = carrierItem.querySelector('.carrier-details-section .btn-success');
