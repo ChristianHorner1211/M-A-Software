@@ -264,6 +264,8 @@
             overflow-y: auto;
             box-shadow: var(--shadow-xl);
             z-index: 1000;
+            opacity: 1;
+            backdrop-filter: none;
         }
 
         .search-suggestion-item {
@@ -271,10 +273,12 @@
             cursor: pointer;
             border-bottom: 1px solid var(--gray-100);
             transition: var(--transition-base);
+            background: white;
+            opacity: 1;
         }
 
         .search-suggestion-item:hover {
-            background: var(--gray-50);
+            background: #F9FAFB;
         }
 
         .search-suggestion-item:last-child {
@@ -283,23 +287,26 @@
 
         .suggestion-type {
             font-size: 11px;
-            color: var(--gray-500);
+            color: #6B7280;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 0.5px;
             margin-bottom: var(--space-1);
+            opacity: 1;
         }
 
         .suggestion-title {
             font-weight: 600;
-            color: var(--gray-900);
+            color: #111827;
             font-size: 15px;
             margin-bottom: var(--space-1);
+            opacity: 1;
         }
 
         .suggestion-subtitle {
             font-size: 13px;
-            color: var(--gray-600);
+            color: #4B5563;
+            opacity: 1;
         }
 
         .suggestion-codes {
