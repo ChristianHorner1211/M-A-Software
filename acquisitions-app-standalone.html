@@ -376,6 +376,42 @@
             background: linear-gradient(135deg, var(--success-dark) 0%, #059669 100%);
         }
 
+        /* Button Group - Claude-style unified buttons */
+        .btn-group {
+            display: inline-flex;
+            background: var(--primary);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 2px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-group button {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-group button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-group button.active {
+            background: var(--secondary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-group button.active:hover {
+            background: var(--secondary-dark);
+        }
+
         .tabs-container {
             background: var(--gray-50);
             padding: var(--space-4) var(--space-5);
@@ -2404,13 +2440,13 @@
                 <div class="section carrier-section">
                     <div class="section-header">
                         <div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-success btn-small" onclick="showAddCarrierModal()">+ Add Carrier</button>
-                                <button class="btn btn-secondary btn-small" onclick="showRemoveCarrierModal()">- Remove Carrier</button>
-                                <button class="btn btn-secondary btn-small" onclick="showImportCarriersModal()">📥 Import Carriers</button>
-                                <button class="btn btn-primary btn-small" onclick="showBulkEmail()">✉ Bulk Email</button>
-                                <button class="btn btn-secondary btn-small" onclick="showFilesModal()">📁 Files</button>
-                                <button class="btn btn-secondary btn-small" onclick="showImportEmailModal()">📧 Import Email</button>
+                            <div class="btn-group">
+                                <button class="active" onclick="setActiveButton(event); showAddCarrierModal()">+ Add Carrier</button>
+                                <button onclick="setActiveButton(event); showRemoveCarrierModal()">- Remove Carrier</button>
+                                <button onclick="setActiveButton(event); showImportCarriersModal()">📥 Import Carriers</button>
+                                <button onclick="setActiveButton(event); showBulkEmail()">✉ Bulk Email</button>
+                                <button onclick="setActiveButton(event); showFilesModal()">📁 Files</button>
+                                <button onclick="setActiveButton(event); showImportEmailModal()">📧 Import Email</button>
                             </div>
                         </div>
                         <div class="status-legend">
@@ -6967,6 +7003,15 @@ Mergers & Acquisitions Team`
                 `;
                 activityList.appendChild(activityItem);
             });
+        }
+
+        // Helper function to set active button in button group
+        function setActiveButton(event) {
+            const buttonGroup = event.target.closest('.btn-group');
+            if (buttonGroup) {
+                buttonGroup.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            }
         }
 
         function showAddCarrierModal() {
