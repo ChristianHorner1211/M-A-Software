@@ -4000,8 +4000,8 @@ Mergers & Acquisitions Team`
                                     </div>
                                     <span class="email-accordion-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 14px; color: #7f8c8d; margin-left: 12px;">▼</span>
                                 </div>
-                                <div class="email-accordion-content" id="${uniqueId}" style="display: none; padding: 16px; background: #ffffff; border-top: 1px solid #e9ecef;">
-                                    <div style="font-size: 12px; color: #2c3e50; white-space: pre-wrap; line-height: 1.6;">${email.notes}</div>
+                                <div class="email-accordion-content" id="${uniqueId}" style="display: none; padding: 16px; background: #ffffff; border-top: 1px solid #e9ecef; max-height: 600px; overflow-y: auto;">
+                                    <div style="font-size: 12px; color: #2c3e50; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word;">${email.notes}</div>
                                     ${attachmentsHTML}
                                     ${actionButtonsHTML}
                                 </div>
