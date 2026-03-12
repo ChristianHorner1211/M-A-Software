@@ -3364,6 +3364,10 @@ Mergers & Acquisitions Team`
                 // Add/override with localStorage activities (these might be newer)
                 localActivities.forEach(activity => {
                     if (activity.timestamp) {
+                        // Ensure activity has an ID (use timestamp as ID if missing)
+                        if (!activity.id) {
+                            activity.id = activity.timestamp;
+                        }
                         activitiesMap.set(activity.timestamp, activity);
                     }
                 });
@@ -4613,8 +4617,11 @@ Mergers & Acquisitions Team`
         }
 
         async function deleteEmailActivity(activityId) {
+            console.log('Attempting to delete activity with ID:', activityId);
+
             if (!activityId) {
                 alert('Unable to delete email: Activity ID not found');
+                console.error('No activity ID provided');
                 return;
             }
 
@@ -4627,20 +4634,39 @@ Mergers & Acquisitions Team`
             try {
                 // Find and remove the activity from the activities array
                 const activityIndex = activities.findIndex(a => a.id === activityId);
+                console.log('Activity index found:', activityIndex);
+                console.log('Total activities:', activities.length);
+
                 if (activityIndex === -1) {
+                    console.error('Activity not found in array. Available activity IDs:', activities.map(a => a.id));
                     alert('Email not found');
                     return;
                 }
 
+                const deletedActivity = activities[activityIndex];
                 activities.splice(activityIndex, 1);
+                console.log('Removed activity from local array:', deletedActivity);
 
-                // Delete from Firebase
-                const activityRef = firebase.database().ref('activities/' + activityId);
-                await activityRef.remove();
+                // Delete from Firestore
+                if (firestore && currentUser) {
+                    const userId = currentUser.uid;
+                    await firestore
+                        .collection('users')
+                        .doc(userId)
+                        .collection('activities')
+                        .doc(activityId)
+                        .delete();
+                    console.log('Deleted from Firestore');
+                }
+
+                // Save updated data to localStorage
+                saveDataToLocalStorage();
 
                 // Refresh the display
                 renderCarriersList();
                 renderActivityLog();
+
+                console.log('Email deleted successfully');
             } catch (error) {
                 console.error('Error deleting email:', error);
                 alert('Failed to delete email. Please try again.');
@@ -5871,10 +5897,12 @@ Mergers & Acquisitions Team`
                 console.error('No acquisition found for currentAcquisitionId:', currentAcquisitionId);
                 return;
             }
+            const timestamp = new Date().toISOString();
             const activityItem = {
                 ...activity,
+                id: timestamp,  // Set ID to match Firebase document ID
                 acquisitionId: currentAcquisitionId,
-                timestamp: new Date().toISOString(),
+                timestamp: timestamp,
                 isManual: true  // Flag to indicate manually-created activity (not auto-synced)
             };
             activities.unshift(activityItem);
