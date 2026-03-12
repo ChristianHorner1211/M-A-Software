@@ -4242,13 +4242,19 @@ Mergers & Acquisitions Team`
                 return;
             }
 
+            console.log('Looking for carrier with code:', carrierCode);
+            console.log('Available carriers:', acquisition.carriers.map(c => ({ code: c.code, name: c.name })));
+
             const carrier = acquisition.carriers.find(c => c.code === carrierCode);
             if (!carrier) {
-                alert('Carrier not found');
+                console.error('Carrier not found! Looking for code:', carrierCode);
+                console.error('Available carrier codes:', acquisition.carriers.map(c => c.code));
+                alert(`Carrier not found.\n\nLooking for: "${carrierCode}"\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
                 return;
             }
 
             console.log('Processing dropped files:', files.length);
+            console.log('Carrier found:', carrier.name);
 
             // Generate a conversation ID for this batch of emails
             const conversationId = `conv-${Date.now()}`;
