@@ -10251,7 +10251,8 @@ Mergers & Acquisitions Team`
             let html = '';
 
             if (result.type === 'carrier') {
-                html = renderCarrierSearchResult(result);
+                // Find ALL instances of this carrier across acquisitions and code management
+                html = renderAllCarrierInstances(result.carrierName);
             } else if (result.type === 'contact' || result.type === 'rep') {
                 html = renderContactSearchResult(result);
             } else if (result.type === 'location') {
@@ -10259,6 +10260,146 @@ Mergers & Acquisitions Team`
             }
 
             content.innerHTML = html;
+        }
+
+        function renderAllCarrierInstances(carrierName) {
+            let html = '';
+            const carrierNameLower = carrierName.toLowerCase();
+
+            // Find all instances in acquisitions
+            const acquisitionInstances = [];
+            acquisitions.forEach(acquisition => {
+                if (acquisition.carriers && acquisition.carriers.length > 0) {
+                    acquisition.carriers.forEach(carrier => {
+                        if (carrier.name && carrier.name.toLowerCase() === carrierNameLower) {
+                            acquisitionInstances.push({
+                                carrierName: carrier.name,
+                                carrierCode: carrier.code,
+                                acquisitionName: acquisition.name,
+                                acquisitionId: acquisition.id,
+                                contacts: carrier.contacts || []
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Find all instances in code management
+            const codeManagementInstances = [];
+            Object.keys(stateOffices).forEach(stateCode => {
+                const locations = stateOffices[stateCode];
+                if (locations && locations.length > 0) {
+                    locations.forEach(location => {
+                        if (location.carriers && location.carriers.length > 0) {
+                            location.carriers.forEach(carrier => {
+                                if (carrier.name && carrier.name.toLowerCase() === carrierNameLower) {
+                                    codeManagementInstances.push({
+                                        carrierName: carrier.name,
+                                        codes: carrier.codes || [],
+                                        locationName: location.name,
+                                        stateCode: stateCode,
+                                        stateName: stateNames[stateCode],
+                                        locationId: location.id,
+                                        reps: carrier.reps || [],
+                                        notes: carrier.notes || ''
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Render acquisitions section
+            if (acquisitionInstances.length > 0) {
+                html += '<div class="search-result-section">';
+                html += '<div class="search-result-section-title">Found in Acquisitions</div>';
+
+                acquisitionInstances.forEach(instance => {
+                    html += '<div class="search-result-card">';
+                    html += `<div class="search-result-card-title">${instance.acquisitionName}</div>`;
+                    html += '<div class="search-result-details">';
+                    html += `<div class="search-result-detail-item">
+                        <div class="search-result-detail-label">Code</div>
+                        <div class="search-result-detail-value">${instance.carrierCode || 'N/A'}</div>
+                    </div>`;
+                    html += `<div class="search-result-detail-item">
+                        <div class="search-result-detail-label">Contacts</div>
+                        <div class="search-result-detail-value">${instance.contacts.length} contact${instance.contacts.length !== 1 ? 's' : ''}</div>
+                    </div>`;
+                    html += '</div>';
+
+                    // List contacts
+                    if (instance.contacts.length > 0) {
+                        html += '<div class="search-result-list">';
+                        instance.contacts.forEach(contact => {
+                            html += `<div class="search-result-list-item">
+                                <strong>${contact.name || 'Unknown'}</strong><br>
+                                ${contact.email || ''} ${contact.phone ? '| ' + contact.phone : ''}
+                            </div>`;
+                        });
+                        html += '</div>';
+                    }
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            // Render code management section
+            if (codeManagementInstances.length > 0) {
+                html += '<div class="search-result-section">';
+                html += '<div class="search-result-section-title">Found in Code Management</div>';
+
+                codeManagementInstances.forEach(instance => {
+                    html += '<div class="search-result-card">';
+                    html += `<div class="search-result-card-title">${instance.stateName} - ${instance.locationName}</div>`;
+                    html += '<div class="search-result-details">';
+                    html += `<div class="search-result-detail-item">
+                        <div class="search-result-detail-label">Codes</div>
+                        <div class="search-result-detail-value">
+                            ${instance.codes.length > 0 ? instance.codes.map(c => `<span class="search-result-badge">${c}</span>`).join('') : 'No codes'}
+                        </div>
+                    </div>`;
+                    html += `<div class="search-result-detail-item">
+                        <div class="search-result-detail-label">Representatives</div>
+                        <div class="search-result-detail-value">${instance.reps.length} rep${instance.reps.length !== 1 ? 's' : ''}</div>
+                    </div>`;
+                    html += '</div>';
+
+                    // List reps
+                    if (instance.reps.length > 0) {
+                        html += '<div class="search-result-list">';
+                        instance.reps.forEach(rep => {
+                            html += `<div class="search-result-list-item">
+                                <strong>${rep.name || 'Unknown'}</strong><br>
+                                ${rep.email || ''} ${rep.phone ? '| ' + rep.phone : ''}
+                            </div>`;
+                        });
+                        html += '</div>';
+                    }
+
+                    // Show notes if available
+                    if (instance.notes) {
+                        html += `<div style="margin-top: 15px; padding: 10px; background: white; border-radius: 4px;">
+                            <div class="search-result-detail-label">Notes</div>
+                            <div style="font-size: 13px; color: #2c3e50; white-space: pre-wrap;">${instance.notes}</div>
+                        </div>`;
+                    }
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            // If no instances found
+            if (acquisitionInstances.length === 0 && codeManagementInstances.length === 0) {
+                html = '<div class="search-no-data">No data found for this carrier.</div>';
+            }
+
+            return html;
         }
 
         function renderCarrierSearchResult(result) {
