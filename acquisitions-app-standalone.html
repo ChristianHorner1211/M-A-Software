@@ -4037,13 +4037,6 @@ Mergers & Acquisitions Team`
                             </div>
                             <div class="carrier-details-section">
                                 <h4>📧 Email History</h4>
-                                <div class="email-drop-zone" data-carrier-code="${carrier.code}" style="border: 2px dashed #cbd5e0; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 12px; background: #f8f9fa; transition: all 0.3s;">
-                                    <div style="color: #718096; font-size: 13px;">
-                                        <span style="font-size: 24px; display: block; margin-bottom: 8px;">📧</span>
-                                        <strong>Drag & Drop Emails Here</strong>
-                                        <div style="font-size: 11px; margin-top: 4px;">Drop Outlook emails (.msg, .eml) with attachments</div>
-                                    </div>
-                                </div>
                                 ${emailHistoryHTML}
                                 <button class="btn btn-primary btn-small" style="margin-top: 10px;">View All</button>
                             </div>
@@ -4171,51 +4164,6 @@ Mergers & Acquisitions Team`
                         }
                     }, 100);
                 });
-
-                // Add drag-and-drop handlers for email drop zone
-                const dropZone = carrierItem.querySelector('.email-drop-zone');
-                if (dropZone) {
-                    // Prevent default drag behaviors on the drop zone
-                    dropZone.addEventListener('dragenter', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        dropZone.style.borderColor = '#3498db';
-                        dropZone.style.background = '#e3f2fd';
-                        console.log('Drag enter detected');
-                    });
-
-                    dropZone.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.dataTransfer.dropEffect = 'copy';
-                        dropZone.style.borderColor = '#3498db';
-                        dropZone.style.background = '#e3f2fd';
-                    });
-
-                    dropZone.addEventListener('dragleave', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Only reset if leaving the drop zone itself, not child elements
-                        if (e.target === dropZone) {
-                            dropZone.style.borderColor = '#cbd5e0';
-                            dropZone.style.background = '#f8f9fa';
-                        }
-                    });
-
-                    dropZone.addEventListener('drop', async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Drop event fired!');
-                        console.log('DataTransfer items:', e.dataTransfer.items);
-                        console.log('DataTransfer files:', e.dataTransfer.files);
-
-                        dropZone.style.borderColor = '#cbd5e0';
-                        dropZone.style.background = '#f8f9fa';
-
-                        const carrierCode = dropZone.getAttribute('data-carrier-code');
-                        await handleEmailDrop(e, carrierCode);
-                    });
-                }
 
                 carriersList.appendChild(carrierItem);
             });
