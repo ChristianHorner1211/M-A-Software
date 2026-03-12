@@ -8609,14 +8609,16 @@ Mergers & Acquisitions Team`
 
         async function syncEmails() {
             if (!appSettings.outlook.connected || !msalInstance) {
-                alert('Please connect Outlook in Settings first');
+                console.log('Outlook not connected, skipping auto-sync');
                 return;
             }
 
             const syncBtn = document.getElementById('syncEmailsBtn');
-            const originalText = syncBtn.textContent;
-            syncBtn.textContent = '🔄 Syncing...';
-            syncBtn.disabled = true;
+            const originalText = syncBtn ? syncBtn.textContent : '';
+            if (syncBtn) {
+                syncBtn.textContent = '🔄 Syncing...';
+                syncBtn.disabled = true;
+            }
 
             try {
                 const token = await getAccessToken();
@@ -8646,8 +8648,10 @@ Mergers & Acquisitions Team`
                 if (carrierEmailMap.size === 0) {
                     console.warn('⚠️ WARNING: No carrier contacts found!');
                     alert('⚠️ No carrier contacts configured!\n\nYou need to add email addresses to your carrier contacts before sync can work.\n\nClick on a carrier name to add contacts.');
-                    syncBtn.textContent = originalText;
-                    syncBtn.disabled = false;
+                    if (syncBtn) {
+                        syncBtn.textContent = originalText;
+                        syncBtn.disabled = false;
+                    }
                     return;
                 }
 
@@ -8742,8 +8746,10 @@ Mergers & Acquisitions Team`
                     alert('No sent emails found.\n\nYou must send emails through this app first before syncing replies.\n\nCheck browser console (F12) for details.');
                     appSettings.outlook.lastEmailSync = new Date().toISOString();
                     saveSettings();
-                    syncBtn.textContent = originalText;
-                    syncBtn.disabled = false;
+                    if (syncBtn) {
+                        syncBtn.textContent = originalText;
+                        syncBtn.disabled = false;
+                    }
                     return;
                 }
 
@@ -9181,8 +9187,10 @@ Mergers & Acquisitions Team`
                 console.error('Email sync error:', error);
                 alert('Failed to sync emails: ' + error.message + '\n\nCheck browser console (F12) for details.');
             } finally {
-                syncBtn.textContent = originalText;
-                syncBtn.disabled = false;
+                if (syncBtn) {
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
+                }
             }
         }
 
