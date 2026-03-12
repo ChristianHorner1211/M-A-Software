@@ -6182,12 +6182,26 @@ Mergers & Acquisitions Team`
             // Build reply button HTML (only for received emails)
             const replyButtonHTML = !isSent ? `
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8eef3;">
-                    <button id="replyButton"
-                            style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                            onmouseenter="this.style.background='#2980b9'"
-                            onmouseleave="this.style.background='#3498db'">
-                        ↩️ Reply
-                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button id="replyButton"
+                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2980b9'"
+                                onmouseleave="this.style.background='#3498db'">
+                            ↩ Reply
+                        </button>
+                        <button id="replyAllButton"
+                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2980b9'"
+                                onmouseleave="this.style.background='#3498db'">
+                            ⮪ Reply All
+                        </button>
+                        <button id="forwardButton"
+                                style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                onmouseenter="this.style.background='#2980b9'"
+                                onmouseleave="this.style.background='#3498db'">
+                            ⮕ Forward
+                        </button>
+                    </div>
                 </div>
             ` : '';
 
@@ -6256,12 +6270,26 @@ Mergers & Acquisitions Team`
                 });
             }
 
-            // Add click handler for reply button (only for received emails)
+            // Add click handlers for reply buttons (only for received emails)
             if (!isSent) {
                 const replyButton = document.getElementById('replyButton');
                 if (replyButton) {
                     replyButton.addEventListener('click', () => {
                         replyToEmail(email, subjectLine, bodyLines, formattedDate);
+                    });
+                }
+
+                const replyAllButton = document.getElementById('replyAllButton');
+                if (replyAllButton) {
+                    replyAllButton.addEventListener('click', () => {
+                        replyAllToEmail(email, subjectLine, bodyLines, formattedDate);
+                    });
+                }
+
+                const forwardButton = document.getElementById('forwardButton');
+                if (forwardButton) {
+                    forwardButton.addEventListener('click', () => {
+                        forwardEmail(email, subjectLine, bodyLines, formattedDate);
                     });
                 }
             }
@@ -6317,6 +6345,100 @@ Mergers & Acquisitions Team`
             }, 200);
 
             console.log('Reply context set:', replyContext);
+        }
+
+        function replyAllToEmail(email, subjectLine, bodyLines, formattedDate) {
+            // Close the email detail modal
+            closeModal('emailDetailModal');
+
+            // Store reply context for threading
+            replyContext = {
+                conversationId: email.conversationId,
+                messageId: email.messageId,
+                originalSubject: subjectLine,
+                originalFrom: email.contact,
+                originalDate: formattedDate,
+                originalBody: bodyLines,
+                carrier: email.carrier  // Store carrier name for activity logging
+            };
+
+            // Verify acquisition exists
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            // Open the email compose modal
+            showEmailCompose();
+
+            // Pre-fill the email form after modal opens
+            setTimeout(() => {
+                // Set To field with the sender's email
+                document.getElementById('emailTo').value = email.contact;
+
+                // For Reply All, we would typically also populate CC field with other recipients
+                // Since we don't have CC info in the current email structure, we'll just reply to the sender
+                // Future enhancement: Add CC field support
+
+                // Set subject with "Re:" prefix (avoid duplicating Re:)
+                let replySubject = subjectLine;
+                if (!replySubject.toLowerCase().startsWith('re:')) {
+                    replySubject = 'Re: ' + replySubject;
+                }
+                document.getElementById('emailSubject').value = replySubject;
+
+                // Build quoted reply body
+                const quotedBody = `\n\n------- Original Message -------\nFrom: ${email.contact}\nDate: ${formattedDate}\n${email.carrier ? 'Carrier: ' + email.carrier + '\n' : ''}\n\n${bodyLines}`;
+                document.getElementById('emailBody').value = quotedBody;
+
+                // Focus on body to start typing
+                document.getElementById('emailBody').focus();
+                // Move cursor to beginning (before quoted text)
+                document.getElementById('emailBody').setSelectionRange(0, 0);
+            }, 200);
+
+            console.log('Reply All context set:', replyContext);
+        }
+
+        function forwardEmail(email, subjectLine, bodyLines, formattedDate) {
+            // Close the email detail modal
+            closeModal('emailDetailModal');
+
+            // Clear reply context since this is a forward, not a reply
+            replyContext = null;
+
+            // Verify acquisition exists
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) {
+                alert('Please select an acquisition first');
+                return;
+            }
+
+            // Open the email compose modal
+            showEmailCompose();
+
+            // Pre-fill the email form after modal opens
+            setTimeout(() => {
+                // Leave To field empty for user to fill in
+                document.getElementById('emailTo').value = '';
+
+                // Set subject with "Fwd:" prefix (avoid duplicating Fwd:)
+                let forwardSubject = subjectLine;
+                if (!forwardSubject.toLowerCase().startsWith('fwd:') && !forwardSubject.toLowerCase().startsWith('fw:')) {
+                    forwardSubject = 'Fwd: ' + forwardSubject;
+                }
+                document.getElementById('emailSubject').value = forwardSubject;
+
+                // Build forwarded message body
+                const forwardedBody = `\n\n------- Forwarded Message -------\nFrom: ${email.contact}\nDate: ${formattedDate}\n${email.carrier ? 'Carrier: ' + email.carrier + '\n' : ''}Subject: ${subjectLine}\n\n${bodyLines}`;
+                document.getElementById('emailBody').value = forwardedBody;
+
+                // Focus on To field for user to enter recipient
+                document.getElementById('emailTo').focus();
+            }, 200);
+
+            console.log('Forward email opened');
         }
 
         function formatFileSize(bytes) {
