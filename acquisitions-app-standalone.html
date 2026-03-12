@@ -3813,6 +3813,31 @@ Mergers & Acquisitions Team`
                 return;
             }
 
+            // Save expanded state before re-rendering
+            const expandedCarriers = new Set();
+            const expandedEmails = new Set();
+
+            const existingCarriers = carriersList.querySelectorAll('.carrier-item');
+            existingCarriers.forEach(carrierItem => {
+                // Save carrier accordion state
+                if (carrierItem.classList.contains('expanded')) {
+                    const carrierName = carrierItem.querySelector('.carrier-name');
+                    if (carrierName) {
+                        // Extract carrier name without badge
+                        const nameText = carrierName.textContent.trim().split('📨')[0].trim();
+                        expandedCarriers.add(nameText);
+                    }
+                }
+
+                // Save email accordion state
+                const expandedEmailElements = carrierItem.querySelectorAll('.email-accordion-content');
+                expandedEmailElements.forEach(content => {
+                    if (content.style.display === 'block') {
+                        expandedEmails.add(content.id);
+                    }
+                });
+            });
+
             acquisitionNameEl.textContent = acquisition.name;
             carriersList.innerHTML = '';
 
@@ -4163,6 +4188,38 @@ Mergers & Acquisitions Team`
 
                 carriersList.appendChild(carrierItem);
             });
+
+            // Restore expanded state after re-rendering
+            setTimeout(() => {
+                const allCarrierItems = carriersList.querySelectorAll('.carrier-item');
+                allCarrierItems.forEach(carrierItem => {
+                    const carrierName = carrierItem.querySelector('.carrier-name');
+                    if (carrierName) {
+                        // Extract carrier name without badge
+                        const nameText = carrierName.textContent.trim().split('📨')[0].trim();
+
+                        // Restore carrier accordion state
+                        if (expandedCarriers.has(nameText)) {
+                            carrierItem.classList.add('expanded');
+                        }
+                    }
+
+                    // Restore email accordion state
+                    const emailContents = carrierItem.querySelectorAll('.email-accordion-content');
+                    emailContents.forEach(content => {
+                        if (expandedEmails.has(content.id)) {
+                            content.style.display = 'block';
+                            const header = carrierItem.querySelector(`[data-email-id="${content.id}"]`);
+                            if (header) {
+                                const arrow = header.querySelector('.email-accordion-arrow');
+                                if (arrow) {
+                                    arrow.style.transform = 'rotate(180deg)';
+                                }
+                            }
+                        }
+                    });
+                });
+            }, 0);
         }
 
         function showImportEmailModal() {
