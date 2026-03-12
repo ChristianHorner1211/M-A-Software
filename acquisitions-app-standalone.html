@@ -1998,7 +1998,6 @@
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
                 <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
-                <button class="btn btn-secondary" onclick="syncEmails()" id="syncEmailsBtn">🔄 Sync Emails</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
             <button class="hamburger-menu" onclick="toggleDrawer()" aria-label="Menu">
@@ -2025,7 +2024,6 @@
                 <div class="drawer-actions">
                     <button class="btn btn-primary" onclick="showNewAcquisitionModal(); toggleDrawer();">+ New Acquisition</button>
                     <button class="btn btn-secondary" onclick="showTemplateManager(); toggleDrawer();">📝 Manage Templates</button>
-                    <button class="btn btn-secondary" onclick="syncEmails(); toggleDrawer();" id="drawerSyncEmailsBtn">🔄 Sync Emails</button>
                     <button class="btn btn-secondary" onclick="showSettingsModal(); toggleDrawer();">⚙ Settings</button>
                     <button class="signout-btn" onclick="signOut(); toggleDrawer();" style="margin-top: 20px; width: 100%;">Sign Out</button>
                 </div>
@@ -9322,6 +9320,11 @@ Mergers & Acquisitions Team`
             if (pageName === 'acquisitions') {
                 acquisitionsPage.classList.add('active');
                 document.getElementById('navAcquisitions').classList.add('active');
+
+                // Auto-sync emails when switching to acquisitions
+                if (appSettings.outlook.connected && msalInstance) {
+                    syncEmails();
+                }
             } else if (pageName === 'codeManagement') {
                 codeManagementPage.classList.add('active');
                 document.getElementById('navCodeManagement').classList.add('active');
