@@ -256,7 +256,8 @@ header h1 {
 }
 
 .check-btn.checked {
-    background: #95a5a6;
+    background: #4B5563;
+    color: white;
 }
 
 .email-btn {
