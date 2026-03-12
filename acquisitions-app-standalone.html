@@ -161,6 +161,20 @@
             letter-spacing: -0.02em;
         }
 
+        /* Header Navigation and Search Container */
+        .header-nav-search-container {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            background: var(--surface);
+            padding: var(--space-2);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            flex: 1;
+            max-width: 900px;
+        }
+
         /* ==================== MODERN NAVIGATION ==================== */
         .nav-buttons {
             display: flex;
@@ -216,8 +230,7 @@
         .global-search-container {
             position: relative;
             flex: 1;
-            max-width: 500px;
-            margin: 0 30px;
+            margin: 0;
         }
 
         .global-search-input {
@@ -2381,13 +2394,15 @@
     <!-- Main App -->
     <div id="mainApp" class="container" style="display: none;">
         <header>
-            <div class="nav-buttons btn-group">
-                <button class="active" id="navAcquisitions" onclick="setActiveButton(event); showPage('acquisitions')">Acquisitions</button>
-                <button id="navCodeManagement" onclick="setActiveButton(event); showPage('codeManagement')">Code Management</button>
-            </div>
-            <div class="global-search-container">
-                <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
-                <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
+            <div class="header-nav-search-container">
+                <div class="nav-buttons btn-group">
+                    <button class="active" id="navAcquisitions" onclick="setActiveButton(event); showPage('acquisitions')">Acquisitions</button>
+                    <button id="navCodeManagement" onclick="setActiveButton(event); showPage('codeManagement')">Code Management</button>
+                </div>
+                <div class="global-search-container">
+                    <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
+                    <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
+                </div>
             </div>
             <div class="header-actions">
                 <div id="userInfo" class="user-info" style="display: none;">
