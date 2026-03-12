@@ -4362,14 +4362,15 @@ Mergers & Acquisitions Team`
                 return;
             }
 
-            console.log('Looking for carrier with code:', carrierCode);
-            console.log('Available carriers:', acquisition.carriers.map(c => ({ code: c.code, name: c.name })));
+            console.log('Looking for carrier with code:', carrierCode, 'Type:', typeof carrierCode);
+            console.log('Available carriers:', acquisition.carriers.map(c => ({ code: c.code, type: typeof c.code, name: c.name })));
 
-            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            // Use string comparison to handle both string and number carrier codes
+            const carrier = acquisition.carriers.find(c => String(c.code) === String(carrierCode));
             if (!carrier) {
-                console.error('Carrier not found! Looking for code:', carrierCode);
-                console.error('Available carrier codes:', acquisition.carriers.map(c => c.code));
-                alert(`Carrier not found.\n\nLooking for: "${carrierCode}"\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
+                console.error('Carrier not found! Looking for code:', carrierCode, 'Type:', typeof carrierCode);
+                console.error('Available carrier codes:', acquisition.carriers.map(c => `${c.code} (${typeof c.code})`));
+                alert(`Carrier not found.\n\nLooking for: "${carrierCode}" (${typeof carrierCode})\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
                 return;
             }
 
