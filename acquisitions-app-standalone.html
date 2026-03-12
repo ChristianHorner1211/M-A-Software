@@ -393,7 +393,7 @@
         }
 
         .carrier-details-section {
-            margin-bottom: 20px;
+            margin-bottom: 35px;
         }
 
         .carrier-details-section h4 {
@@ -4151,7 +4151,7 @@ Mergers & Acquisitions Team`
                 let contactsHTML = '';
                 if (carrier.contacts && carrier.contacts.length > 0) {
                     contactsHTML = carrier.contacts.map(contact => `
-                        <div class="contact-item">
+                        <div class="contact-item" data-contact-id="${contact.id}" data-carrier-code="${carrier.code}">
                             <div class="contact-info">
                                 <div class="contact-name">${contact.name}</div>
                                 <div class="contact-details">✉ ${contact.email}${contact.phone ? ' | 📞 ' + contact.phone : ''}</div>
@@ -4431,6 +4431,18 @@ Mergers & Acquisitions Team`
                             });
                         }
                     }, 100);
+                });
+
+                // Add right-click context menu for contacts
+                const contactItems = carrierItem.querySelectorAll('.contact-item');
+                contactItems.forEach(contactItem => {
+                    contactItem.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const contactId = contactItem.getAttribute('data-contact-id');
+                        const carrierCode = contactItem.getAttribute('data-carrier-code');
+                        showContactContextMenu(e.clientX, e.clientY, contactId, carrierCode);
+                    });
                 });
 
                 carriersList.appendChild(carrierItem);
@@ -4918,6 +4930,119 @@ Mergers & Acquisitions Team`
             if (existingMenu) {
                 existingMenu.remove();
             }
+        }
+
+        function showContactContextMenu(x, y, contactId, carrierCode) {
+            // Remove any existing context menu
+            hideContactContextMenu();
+
+            // Create context menu
+            const contextMenu = document.createElement('div');
+            contextMenu.id = 'contactContextMenu';
+            contextMenu.style.cssText = `
+                position: fixed;
+                left: ${x}px;
+                top: ${y}px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                min-width: 150px;
+                overflow: hidden;
+            `;
+
+            contextMenu.innerHTML = `
+                <div class="context-menu-item edit-contact" style="padding: 10px 16px; cursor: pointer; transition: all 0.2s; font-size: 13px; color: #2c3e50; border-bottom: 1px solid #ecf0f1;" onmouseenter="this.style.background='#ecf0f1'" onmouseleave="this.style.background='white'">
+                    ✏️ Edit Contact
+                </div>
+                <div class="context-menu-item delete-contact" style="padding: 10px 16px; cursor: pointer; transition: all 0.2s; font-size: 13px; color: #c0392b; font-weight: 600;" onmouseenter="this.style.background='#ecf0f1'" onmouseleave="this.style.background='white'">
+                    🗑️ Remove Contact
+                </div>
+            `;
+
+            document.body.appendChild(contextMenu);
+
+            // Add click handlers
+            const editItem = contextMenu.querySelector('.edit-contact');
+            editItem.addEventListener('click', () => {
+                editContact(contactId, carrierCode);
+                hideContactContextMenu();
+            });
+
+            const deleteItem = contextMenu.querySelector('.delete-contact');
+            deleteItem.addEventListener('click', () => {
+                deleteContact(contactId, carrierCode);
+                hideContactContextMenu();
+            });
+
+            // Close menu when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', hideContactContextMenu, { once: true });
+            }, 0);
+        }
+
+        function hideContactContextMenu() {
+            const existingMenu = document.getElementById('contactContextMenu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+        }
+
+        function editContact(contactId, carrierCode) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            if (!carrier) return;
+
+            const contact = carrier.contacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            // Set current carrier for the modal
+            currentCarrierForContacts = carrierCode;
+
+            // Show the contacts modal and populate with contact data
+            showCarrierContacts(carrierCode);
+
+            // After modal is shown, trigger edit for this specific contact
+            setTimeout(() => {
+                // Find the contact in the modal and click edit
+                const contactItems = document.querySelectorAll('#carrierContactsList .contact-card');
+                contactItems.forEach(item => {
+                    const itemContactId = item.getAttribute('data-contact-id');
+                    if (itemContactId === contactId) {
+                        const editBtn = item.querySelector('.edit-contact-btn');
+                        if (editBtn) {
+                            editBtn.click();
+                        }
+                    }
+                });
+            }, 100);
+        }
+
+        async function deleteContact(contactId, carrierCode) {
+            if (!confirm('Are you sure you want to remove this contact?')) {
+                return;
+            }
+
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+
+            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            if (!carrier) return;
+
+            // Find and remove the contact
+            const contactIndex = carrier.contacts.findIndex(c => c.id === contactId);
+            if (contactIndex === -1) return;
+
+            carrier.contacts.splice(contactIndex, 1);
+
+            // Save to Firebase
+            await saveAcquisitionToFirebase(acquisition);
+
+            // Refresh the display
+            renderCarriersList();
         }
 
         async function deleteEmailActivity(activityId) {
