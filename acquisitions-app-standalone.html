@@ -1541,17 +1541,40 @@
 
         .carrier-card {
             background: #f8f9fa;
-            padding: 20px;
             border-radius: 6px;
             margin-bottom: 15px;
             border-left: 4px solid #3498db;
+            overflow: hidden;
         }
 
         .carrier-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .carrier-card-header:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .carrier-card-title-section {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .carrier-card-toggle {
+            margin-right: 12px;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+            color: #7f8c8d;
+        }
+
+        .carrier-card.expanded .carrier-card-toggle {
+            transform: rotate(90deg);
         }
 
         .carrier-card-title {
@@ -1560,9 +1583,29 @@
             color: #2c3e50;
         }
 
+        .carrier-card-summary {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
         .carrier-card-actions {
             display: flex;
             gap: 8px;
+        }
+
+        .carrier-card-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .carrier-card.expanded .carrier-card-body {
+            max-height: 2000px;
+        }
+
+        .carrier-card-content {
+            padding: 0 20px 20px 52px;
         }
 
         .codes-section, .reps-section {
@@ -8032,16 +8075,31 @@ Mergers & Acquisitions Team`
             let html = '';
 
             location.carriers.forEach((carrier, index) => {
+                const codeCount = carrier.codes ? carrier.codes.length : 0;
+                const repCount = carrier.reps ? carrier.reps.length : 0;
+                const codesList = carrier.codes && carrier.codes.length > 0 ? carrier.codes.join(', ') : 'None';
+                const repsList = carrier.reps && carrier.reps.length > 0 ? carrier.reps.map(r => r.name).join(', ') : 'None';
+
                 html += `
-                    <div class="carrier-card">
-                        <div class="carrier-card-header">
-                            <div class="carrier-card-title">${carrier.name}</div>
+                    <div class="carrier-card" id="carrier-card-${index}">
+                        <div class="carrier-card-header" onclick="toggleCarrierCard(${index})">
+                            <div class="carrier-card-title-section">
+                                <div class="carrier-card-toggle">▶</div>
+                                <div>
+                                    <div class="carrier-card-title">${carrier.name}</div>
+                                    <div class="carrier-card-summary">
+                                        Codes: ${codesList} | Reps: ${repsList}
+                                    </div>
+                                </div>
+                            </div>
                             <div class="carrier-card-actions">
-                                <button class="btn btn-small btn-danger" onclick="deleteCarrier(${index})">Delete</button>
+                                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteCarrier(${index})">Delete</button>
                             </div>
                         </div>
 
-                        <div class="codes-section">
+                        <div class="carrier-card-body">
+                            <div class="carrier-card-content">
+                                <div class="codes-section">
                             <div class="section-subtitle">Codes</div>
                             <div id="codes-${index}">
                                 ${carrier.codes && carrier.codes.length > 0 ?
@@ -8094,15 +8152,24 @@ Mergers & Acquisitions Team`
                             </div>
                         </div>
 
-                        <div class="carrier-notes">
-                            <div class="section-subtitle">Notes</div>
-                            <textarea id="carrierNotes-${index}" onblur="saveCarrierNotes(${index})" placeholder="Add notes about this carrier...">${carrier.notes || ''}</textarea>
+                                <div class="carrier-notes">
+                                    <div class="section-subtitle">Notes</div>
+                                    <textarea id="carrierNotes-${index}" onblur="saveCarrierNotes(${index})" placeholder="Add notes about this carrier...">${carrier.notes || ''}</textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
             container.innerHTML = html;
+        }
+
+        function toggleCarrierCard(index) {
+            const card = document.getElementById(`carrier-card-${index}`);
+            if (card) {
+                card.classList.toggle('expanded');
+            }
         }
 
         function showAddCarrierForm() {
