@@ -9976,6 +9976,16 @@ Mergers & Acquisitions Team`
                 }
             });
 
+            // Handle Enter key
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (currentSearchResults.length > 0) {
+                        showSearchResult(0); // Show first result
+                    }
+                }
+            });
+
             // Click outside to close
             document.addEventListener('click', (e) => {
                 if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
@@ -9993,8 +10003,8 @@ Mergers & Acquisitions Team`
                 if (acquisition.carriers && acquisition.carriers.length > 0) {
                     acquisition.carriers.forEach(carrier => {
                         // Check carrier name and code
-                        if (carrier.name.toLowerCase().includes(queryLower) ||
-                            (carrier.code && carrier.code.toLowerCase().includes(queryLower))) {
+                        if ((carrier.name && carrier.name.toLowerCase().includes(queryLower)) ||
+                            (carrier.code && String(carrier.code).toLowerCase().includes(queryLower))) {
                             results.push({
                                 type: 'carrier',
                                 source: 'acquisition',
@@ -10003,7 +10013,7 @@ Mergers & Acquisitions Team`
                                 acquisitionName: acquisition.name,
                                 acquisitionId: acquisition.id,
                                 contacts: carrier.contacts || [],
-                                matchScore: calculateMatchScore(carrier.name, carrier.code, queryLower)
+                                matchScore: calculateMatchScore(carrier.name, carrier.code ? String(carrier.code) : '', queryLower)
                             });
                         }
 
@@ -10037,7 +10047,7 @@ Mergers & Acquisitions Team`
                 if (locations && locations.length > 0) {
                     locations.forEach(location => {
                         // Check location name
-                        if (location.name.toLowerCase().includes(queryLower)) {
+                        if (location.name && location.name.toLowerCase().includes(queryLower)) {
                             results.push({
                                 type: 'location',
                                 source: 'codeManagement',
@@ -10054,8 +10064,8 @@ Mergers & Acquisitions Team`
                         // Check carriers in location
                         if (location.carriers && location.carriers.length > 0) {
                             location.carriers.forEach(carrier => {
-                                if (carrier.name.toLowerCase().includes(queryLower) ||
-                                    (carrier.codes && carrier.codes.some(code => code.toLowerCase().includes(queryLower)))) {
+                                if ((carrier.name && carrier.name.toLowerCase().includes(queryLower)) ||
+                                    (carrier.codes && carrier.codes.some(code => code && String(code).toLowerCase().includes(queryLower)))) {
                                     results.push({
                                         type: 'carrier',
                                         source: 'codeManagement',
