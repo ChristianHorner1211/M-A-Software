@@ -2023,7 +2023,10 @@
                         <button class="back-button" onclick="backToMap()">← Back to Map</button>
                         <h1 class="state-detail-title" id="stateDetailTitle" style="display: inline; margin-left: 15px;">State Details</h1>
                     </div>
-                    <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
+                        <button class="btn btn-success" onclick="showImportFromAcquisitionModal()">📦 New from Acquisitions</button>
+                    </div>
                 </div>
             </div>
 
@@ -2084,6 +2087,19 @@
                 <textarea id="locationAddress" class="form-control" rows="3" placeholder="123 Main St, Austin, TX 78701"></textarea>
             </div>
             <button class="btn btn-primary" onclick="saveLocation()">Save Location</button>
+        </div>
+    </div>
+
+    <!-- Import from Acquisition Modal -->
+    <div id="importFromAcquisitionModal" class="office-modal">
+        <div class="office-modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeImportFromAcquisitionModal()">&times;</span>
+            <h2>Import from Acquisitions</h2>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Select an acquisition to import all carriers, codes, and contacts into Code Management for <span id="importStateNameDisplay"></span>.</p>
+
+            <div id="acquisitionsListForImport" style="max-height: 400px; overflow-y: auto;">
+                <!-- Acquisitions will be rendered here -->
+            </div>
         </div>
     </div>
 
@@ -9098,6 +9114,114 @@ Mergers & Acquisitions Team`
 
             closeAddLocationModal();
             renderLocations();
+        }
+
+        function showImportFromAcquisitionModal() {
+            // Display current state name
+            document.getElementById('importStateNameDisplay').textContent = stateNames[currentStateCode];
+
+            // Render acquisitions list
+            const container = document.getElementById('acquisitionsListForImport');
+
+            if (acquisitions.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">No acquisitions available to import. Please create an acquisition first.</div>';
+            } else {
+                container.innerHTML = acquisitions.map(acq => {
+                    const carrierCount = acq.carriers ? acq.carriers.length : 0;
+                    return `
+                        <div class="acquisition-import-item" onclick="importFromAcquisition('${acq.id}')" style="padding: 15px; margin-bottom: 10px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.borderColor='#3498db'; this.style.background='#f8f9fa'" onmouseleave="this.style.borderColor='#e0e0e0'; this.style.background='#fff'">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 16px; color: #2c3e50; margin-bottom: 4px;">${acq.name}</div>
+                                    <div style="font-size: 13px; color: #7f8c8d;">
+                                        ${carrierCount} carrier${carrierCount !== 1 ? 's' : ''} |
+                                        Acquired: ${acq.dateAcquired ? new Date(acq.dateAcquired).toLocaleDateString() : 'N/A'}
+                                    </div>
+                                    ${acq.previousOwner ? `<div style="font-size: 12px; color: #95a5a6; margin-top: 4px;">Previous Owner: ${acq.previousOwner}</div>` : ''}
+                                </div>
+                                <div style="color: #3498db; font-size: 20px;">→</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('importFromAcquisitionModal').style.display = 'block';
+        }
+
+        function closeImportFromAcquisitionModal() {
+            document.getElementById('importFromAcquisitionModal').style.display = 'none';
+        }
+
+        function importFromAcquisition(acquisitionId) {
+            const acquisition = acquisitions.find(a => a.id === acquisitionId);
+            if (!acquisition) {
+                alert('Acquisition not found');
+                return;
+            }
+
+            // Confirm import
+            const carrierCount = acquisition.carriers ? acquisition.carriers.length : 0;
+            const contactCount = acquisition.carriers ? acquisition.carriers.reduce((sum, c) => sum + (c.contacts ? c.contacts.length : 0), 0) : 0;
+
+            if (!confirm(`Import "${acquisition.name}" to ${stateNames[currentStateCode]}?\n\nThis will create a new location with:\n• ${carrierCount} carrier${carrierCount !== 1 ? 's' : ''}\n• ${contactCount} contact${contactCount !== 1 ? 's' : ''}\n\nYou can continue to convert codes after import.`)) {
+                return;
+            }
+
+            // Create new location from acquisition
+            const location = {
+                id: 'location-' + Date.now(),
+                name: acquisition.name,
+                address: acquisition.previousOwner ? `Previously owned by ${acquisition.previousOwner}` : '',
+                carriers: []
+            };
+
+            // Import carriers with their codes and contacts
+            if (acquisition.carriers && acquisition.carriers.length > 0) {
+                location.carriers = acquisition.carriers.map(acqCarrier => {
+                    // Map contacts to reps
+                    const reps = [];
+                    if (acqCarrier.contacts && acqCarrier.contacts.length > 0) {
+                        acqCarrier.contacts.forEach(contact => {
+                            if (contact.email) {
+                                reps.push({
+                                    name: contact.name || 'Unknown',
+                                    email: contact.email,
+                                    phone: contact.phone || ''
+                                });
+                            }
+                        });
+                    }
+
+                    // Create carrier for code management
+                    return {
+                        name: acqCarrier.name,
+                        codes: acqCarrier.code ? [acqCarrier.code] : [], // Import the carrier code
+                        reps: reps,
+                        notes: `Imported from acquisition: ${acquisition.name}\nDate Acquired: ${acquisition.dateAcquired || 'N/A'}\nFEIN: ${acquisition.fein || 'N/A'}`
+                    };
+                });
+            }
+
+            // Add location to state
+            if (!stateOffices[currentStateCode]) {
+                stateOffices[currentStateCode] = [];
+            }
+
+            stateOffices[currentStateCode].push(location);
+            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+
+            // Update map visual
+            const stateElement = document.querySelector(`.state[data-state="${currentStateCode}"]`);
+            if (stateElement) {
+                stateElement.classList.add('has-office');
+            }
+
+            closeImportFromAcquisitionModal();
+            renderLocations();
+
+            // Show success message
+            alert(`Successfully imported "${acquisition.name}" to ${stateNames[currentStateCode]}!\n\n${carrierCount} carrier${carrierCount !== 1 ? 's' : ''} and ${contactCount} contact${contactCount !== 1 ? 's' : ''} have been added.`);
         }
 
         function openLocationDetail(locationId) {
