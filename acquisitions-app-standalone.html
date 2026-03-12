@@ -5734,21 +5734,12 @@ Mergers & Acquisitions Team`
 
             // Group emails by conversationId (thread)
             const threads = new Map();
-            console.log('=== Email Threading Debug ===');
-            console.log('Total carrier emails:', carrierEmails.length);
             carrierEmails.forEach(email => {
                 const threadId = email.conversationId || `standalone-${email.timestamp}`;
-                const emailType = email.notes && email.notes.startsWith('Sent:') ? 'Sent' : 'Received';
-                console.log(`Email: ${emailType}, ConversationId: ${email.conversationId || 'NONE'}, Timestamp: ${email.timestamp}`);
                 if (!threads.has(threadId)) {
                     threads.set(threadId, []);
                 }
                 threads.get(threadId).push(email);
-            });
-
-            console.log('Threads created:', threads.size);
-            threads.forEach((emails, threadId) => {
-                console.log(`Thread ${threadId}: ${emails.length} email(s)`);
             });
 
             // Sort each thread by timestamp (oldest first)
@@ -5765,41 +5756,51 @@ Mergers & Acquisitions Team`
 
             // Render each thread
             threadArray.forEach(([threadId, threadEmails]) => {
-                console.log(`Rendering thread ${threadId} with ${threadEmails.length} email(s)`);
                 // Find the first sent email to show as the collapsed view
                 const sentEmail = threadEmails.find(e => e.notes && e.notes.startsWith('Sent:'));
                 if (!sentEmail) return; // Skip threads without a sent email
 
                 const threadContainer = document.createElement('div');
-                threadContainer.className = 'activity-item';
-                threadContainer.style.position = 'relative';
+                threadContainer.style.marginBottom = '8px';
+                threadContainer.style.border = '1px solid #e0e0e0';
+                threadContainer.style.borderRadius = '6px';
+                threadContainer.style.overflow = 'hidden';
+                threadContainer.style.background = '#fff';
 
                 const hasReplies = threadEmails.length > 1;
                 const replyCount = threadEmails.length - 1;
 
-                // Extract subject from sent email notes (format: "Sent: SUBJECT\n...")
+                // Extract subject from sent email notes
                 const sentEmailLines = sentEmail.notes.split('\n');
                 const subjectLine = sentEmailLines[0].replace('Sent: ', '');
 
-                // Create collapsed view (just subject line)
+                // Create collapsed view
                 const date = new Date(sentEmail.timestamp);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 
                 const collapsedView = document.createElement('div');
-                collapsedView.className = 'email-thread-collapsed';
+                collapsedView.style.padding = '12px';
                 collapsedView.style.cursor = 'pointer';
+                collapsedView.style.background = '#f8f9fa';
+                collapsedView.style.transition = 'background 0.2s';
+
+                collapsedView.addEventListener('mouseenter', () => {
+                    collapsedView.style.background = '#e9ecef';
+                });
+                collapsedView.addEventListener('mouseleave', () => {
+                    collapsedView.style.background = '#f8f9fa';
+                });
+
                 collapsedView.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                            <span class="thread-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 14px; color: #7f8c8d;">▶</span>
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                    <span style="font-weight: 600; color: #2c3e50; font-size: 14px;">${subjectLine}</span>
-                                    ${hasReplies ? `<span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
-                                </div>
-                                <div style="color: #7f8c8d; font-size: 12px;">
-                                    ${formattedDate} • To: ${sentEmail.contact}
-                                </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="thread-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 12px; color: #7f8c8d;">▶</span>
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                                <span style="font-weight: 600; color: #2c3e50; font-size: 14px;">${subjectLine}</span>
+                                ${hasReplies ? `<span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}</span>` : ''}
+                            </div>
+                            <div style="color: #7f8c8d; font-size: 12px;">
+                                ${formattedDate} • To: ${sentEmail.contact}
                             </div>
                         </div>
                     </div>
@@ -5807,98 +5808,26 @@ Mergers & Acquisitions Team`
 
                 threadContainer.appendChild(collapsedView);
 
-                // Create expanded view (all emails in thread with full details)
+                // Create expanded view with all emails in the thread
                 const expandedView = document.createElement('div');
-                expandedView.className = 'email-thread-expanded';
                 expandedView.style.display = 'none';
-                expandedView.style.marginTop = '15px';
-                expandedView.style.paddingLeft = '25px';
-                expandedView.style.borderLeft = '3px solid #3498db';
+                expandedView.style.borderTop = '1px solid #e0e0e0';
+                expandedView.style.background = '#fff';
 
                 threadEmails.forEach((email, emailIndex) => {
                     const emailDate = new Date(email.timestamp);
                     const emailFormattedDate = emailDate.toLocaleDateString() + ' ' + emailDate.toLocaleTimeString();
-
                     const isSent = email.notes && email.notes.startsWith('Sent:');
                     const isReceived = email.notes && email.notes.startsWith('Received:');
                     const isUnread = isReceived && !email.isRead;
 
-                    // Extract subject from email notes
+                    // Extract subject and body
                     const emailLines = email.notes.split('\n');
-                    const subjectLine = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
-
-                    // Get preview of body (first 100 chars)
-                    let bodyPreview = '';
-                    if (emailLines.length > 1) {
-                        let bodyStartIndex = 1;
-                        if (isSent) {
-                            // Skip "To:" and "CC:" lines for sent emails
-                            for (let i = 1; i < emailLines.length; i++) {
-                                const line = emailLines[i].trim();
-                                if (!line.startsWith('To:') && !line.startsWith('CC:') && line !== '') {
-                                    bodyStartIndex = i;
-                                    break;
-                                }
-                            }
-                        }
-                        const bodyText = emailLines.slice(bodyStartIndex).join(' ').trim();
-                        bodyPreview = bodyText.substring(0, 100) + (bodyText.length > 100 ? '...' : '');
-                    }
-
-                    // Build attachments HTML for expanded view
-                    let emailAttachmentHTML = '';
-                    if (email.attachments && email.attachments.length > 0) {
-                        const attachmentItems = email.attachments.map((a, idx) => {
-                            const isPDF = a.name.toLowerCase().endsWith('.pdf');
-                            const attachmentId = `attachment-${email.timestamp}-${idx}`;
-                            return `<span id="${attachmentId}" class="email-attachment-item" style="background: #e8eef3; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseenter="this.style.background='#d5dde3'" onmouseleave="this.style.background='#e8eef3'" title="${isPDF ? 'Click to view PDF' : 'Click to download'}">📎 ${a.name}${isPDF ? ' 👁️' : ''}</span>`;
-                        }).join('');
-                        emailAttachmentHTML = `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;"><div style="font-weight: 600; font-size: 12px; color: #555; margin-bottom: 6px;">Attachments (${email.attachments.length}):</div>${attachmentItems}</div>`;
-                    }
-
-                    // Create email accordion container
-                    const emailAccordion = document.createElement('div');
-                    emailAccordion.style.marginBottom = '10px';
-
-                    // Create collapsed header
-                    const emailHeader = document.createElement('div');
-                    emailHeader.style.padding = '10px 12px';
-                    emailHeader.style.background = isUnread ? '#e8f4f8' : '#f8f9fa';
-                    emailHeader.style.borderRadius = '6px';
-                    emailHeader.style.border = isUnread ? '1px solid #3498db' : '1px solid #dee2e6';
-                    emailHeader.style.cursor = 'pointer';
-                    emailHeader.style.transition = 'all 0.2s';
-
-                    emailHeader.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="email-arrow" style="user-select: none; transition: transform 0.2s; display: inline-block; font-size: 12px; color: #7f8c8d;">▶</span>
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-                                    <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : (isUnread ? '#2980b9' : '#5a6c7d')}; font-size: 13px;">${isSent ? '📤 Sent' : '📥 Received'}</span>
-                                    <span style="color: #7f8c8d; font-size: 11px;">${emailFormattedDate}</span>
-                                    ${email.attachments && email.attachments.length > 0 ? `<span style="background: #95a5a6; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 600;">📎 ${email.attachments.length}</span>` : ''}
-                                </div>
-                                <div style="color: #555; font-size: 12px; margin-bottom: 2px;">
-                                    <strong>${isSent ? 'To' : 'From'}:</strong> ${email.contact}
-                                </div>
-                                ${bodyPreview ? `<div style="color: #7f8c8d; font-size: 11px; font-style: italic;">${bodyPreview}</div>` : ''}
-                            </div>
-                        </div>
-                    `;
-
-                    // Create expanded content
-                    const emailContent = document.createElement('div');
-                    emailContent.style.display = 'none';
-                    emailContent.style.padding = '12px';
-                    emailContent.style.marginTop = '5px';
-                    emailContent.style.background = '#ffffff';
-                    emailContent.style.borderRadius = '6px';
-                    emailContent.style.border = '1px solid #dee2e6';
+                    const emailSubject = emailLines[0].replace('Sent: ', '').replace('Received: ', '');
 
                     // Get full body content
                     let fullBody = email.notes;
                     if (isSent) {
-                        // For sent emails, remove the "Sent: SUBJECT" and "To:/CC:" headers
                         let bodyStartIndex = 1;
                         for (let i = 1; i < emailLines.length; i++) {
                             const line = emailLines[i].trim();
@@ -5909,112 +5838,98 @@ Mergers & Acquisitions Team`
                         }
                         fullBody = emailLines.slice(bodyStartIndex).join('\n').trim();
                     } else {
-                        // For received emails, remove the "Received: SUBJECT" header
                         fullBody = emailLines.slice(1).join('\n').trim();
                     }
 
-                    emailContent.innerHTML = `
+                    // Build attachments HTML
+                    let emailAttachmentHTML = '';
+                    if (email.attachments && email.attachments.length > 0) {
+                        const attachmentItems = email.attachments.map((a, idx) => {
+                            const isPDF = a.name.toLowerCase().endsWith('.pdf');
+                            const attachmentId = `attachment-${email.timestamp}-${idx}`;
+                            return `<span id="${attachmentId}" class="email-attachment-item" style="background: #e8eef3; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseenter="this.style.background='#d5dde3'" onmouseleave="this.style.background='#e8eef3'" title="${isPDF ? 'Click to view PDF' : 'Click to download'}">📎 ${a.name}${isPDF ? ' 👁️' : ''}</span>`;
+                        }).join('');
+                        emailAttachmentHTML = `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;"><div style="font-weight: 600; font-size: 12px; color: #555; margin-bottom: 6px;">Attachments (${email.attachments.length}):</div>${attachmentItems}</div>`;
+                    }
+
+                    const emailDiv = document.createElement('div');
+                    emailDiv.style.padding = '12px';
+                    emailDiv.style.borderBottom = emailIndex < threadEmails.length - 1 ? '1px solid #f0f0f0' : 'none';
+
+                    emailDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-weight: 600; color: ${isSent ? '#2c3e50' : (isUnread ? '#2980b9' : '#5a6c7d')}; font-size: 13px;">${isSent ? '📤 Sent' : '📥 Received'}</span>
+                            <span style="color: #7f8c8d; font-size: 11px;">${emailFormattedDate}</span>
+                            ${email.attachments && email.attachments.length > 0 ? `<span style="background: #95a5a6; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 600;">📎 ${email.attachments.length}</span>` : ''}
+                        </div>
+                        <div style="color: #555; font-size: 12px; margin-bottom: 8px;">
+                            <strong>${isSent ? 'To' : 'From'}:</strong> ${email.contact}
+                        </div>
                         <div style="color: #2c3e50; white-space: pre-wrap; line-height: 1.6; font-size: 13px; margin-bottom: 12px;">
                             ${fullBody || '<em style="color: #95a5a6;">No message body</em>'}
                         </div>
                         ${emailAttachmentHTML}
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-                            <button class="view-full-email-btn" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
+                            <button class="view-full-email-btn" data-email-index="${emailIndex}" style="background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2980b9'" onmouseleave="this.style.background='#3498db'">
                                 📧 View Full Email
                             </button>
                         </div>
                     `;
 
-                    // Add hover effect to header
-                    emailHeader.addEventListener('mouseenter', () => {
-                        emailHeader.style.transform = 'translateY(-1px)';
-                        emailHeader.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    });
-                    emailHeader.addEventListener('mouseleave', () => {
-                        emailHeader.style.transform = 'translateY(0)';
-                        emailHeader.style.boxShadow = 'none';
-                    });
-
-                    // Add click handler to toggle email accordion
-                    const arrow = emailHeader.querySelector('.email-arrow');
-                    emailHeader.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const isExpanded = emailContent.style.display !== 'none';
-                        emailContent.style.display = isExpanded ? 'none' : 'block';
-                        arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
-
-                        // Mark as read when expanded
-                        if (!isExpanded && !isSent && !email.isRead) {
-                            email.isRead = true;
-                            const activityIndex = activities.findIndex(a => a.timestamp === email.timestamp);
-                            if (activityIndex !== -1) {
-                                activities[activityIndex].isRead = true;
-                                saveActivityToFirebase(activities[activityIndex]);
-                            }
-                            // Update styling
-                            emailHeader.style.background = '#f8f9fa';
-                            emailHeader.style.border = '1px solid #dee2e6';
-                            const badge = emailHeader.querySelector('span[style*="font-weight: 600"]');
-                            if (badge) {
-                                badge.style.color = '#5a6c7d';
-                            }
-                        }
-                    });
-
-                    // Add click handler for "View Full Email" button
-                    const viewFullBtn = emailContent.querySelector('.view-full-email-btn');
-                    if (viewFullBtn) {
-                        viewFullBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            showEmailDetail(email, isSent, emailFormattedDate, emailHeader);
-                        });
-                    }
-
                     // Add click handlers for attachments
                     if (email.attachments && email.attachments.length > 0) {
                         email.attachments.forEach((attachment, idx) => {
-                            const attachmentId = `attachment-${email.timestamp}-${idx}`;
-                            const attachmentElement = emailContent.querySelector(`#${attachmentId}`);
-                            if (attachmentElement) {
-                                attachmentElement.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const isPDF = attachment.name.toLowerCase().endsWith('.pdf');
-                                    if (isPDF) {
-                                        viewPDFAttachment(attachment);
-                                    } else {
-                                        downloadAttachment(attachment);
-                                    }
-                                });
-                            }
+                            setTimeout(() => {
+                                const attachmentId = `attachment-${email.timestamp}-${idx}`;
+                                const attachmentElement = emailDiv.querySelector(`#${attachmentId}`);
+                                if (attachmentElement) {
+                                    attachmentElement.addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                        const isPDF = attachment.name.toLowerCase().endsWith('.pdf');
+                                        if (isPDF) {
+                                            viewPDFAttachment(attachment);
+                                        } else {
+                                            downloadAttachment(attachment);
+                                        }
+                                    });
+                                }
+                            }, 0);
                         });
                     }
 
-                    emailAccordion.appendChild(emailHeader);
-                    emailAccordion.appendChild(emailContent);
-                    expandedView.appendChild(emailAccordion);
+                    // Add click handler for "View Full Email" button
+                    setTimeout(() => {
+                        const viewFullBtn = emailDiv.querySelector('.view-full-email-btn');
+                        if (viewFullBtn) {
+                            viewFullBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                showEmailDetail(email, isSent, emailFormattedDate);
+                            });
+                        }
+                    }, 0);
+
+                    // Mark as read when email is displayed
+                    if (!isSent && !email.isRead) {
+                        email.isRead = true;
+                        const activityIndex = activities.findIndex(a => a.timestamp === email.timestamp);
+                        if (activityIndex !== -1) {
+                            activities[activityIndex].isRead = true;
+                            saveActivityToFirebase(activities[activityIndex]);
+                        }
+                    }
+
+                    expandedView.appendChild(emailDiv);
                 });
 
                 threadContainer.appendChild(expandedView);
 
-                // Add click handler to toggle expansion or open email directly for single-email threads
+                // Add click handler to toggle expansion
                 const arrow = collapsedView.querySelector('.thread-arrow');
-                if (arrow) {
-                    collapsedView.addEventListener('click', () => {
-                        // If thread has only one email (no replies), open it directly in modal
-                        if (threadEmails.length === 1) {
-                            const email = threadEmails[0];
-                            const emailDate = new Date(email.timestamp);
-                            const emailFormattedDate = emailDate.toLocaleDateString() + ' ' + emailDate.toLocaleTimeString();
-                            const isSent = email.notes && email.notes.startsWith('Sent:');
-                            showEmailDetail(email, isSent, emailFormattedDate);
-                        } else {
-                            // Otherwise, toggle expansion to show all emails in thread
-                            const isExpanded = expandedView.style.display !== 'none';
-                            expandedView.style.display = isExpanded ? 'none' : 'block';
-                            arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
-                        }
-                    });
-                }
+                collapsedView.addEventListener('click', () => {
+                    const isExpanded = expandedView.style.display !== 'none';
+                    expandedView.style.display = isExpanded ? 'none' : 'block';
+                    arrow.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+                });
 
                 emailHistoryList.appendChild(threadContainer);
             });
