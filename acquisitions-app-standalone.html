@@ -4158,9 +4158,19 @@ Mergers & Acquisitions Team`
                 // Add drag-and-drop handlers for email drop zone
                 const dropZone = carrierItem.querySelector('.email-drop-zone');
                 if (dropZone) {
+                    // Prevent default drag behaviors on the drop zone
+                    dropZone.addEventListener('dragenter', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropZone.style.borderColor = '#3498db';
+                        dropZone.style.background = '#e3f2fd';
+                        console.log('Drag enter detected');
+                    });
+
                     dropZone.addEventListener('dragover', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        e.dataTransfer.dropEffect = 'copy';
                         dropZone.style.borderColor = '#3498db';
                         dropZone.style.background = '#e3f2fd';
                     });
@@ -4168,13 +4178,20 @@ Mergers & Acquisitions Team`
                     dropZone.addEventListener('dragleave', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        dropZone.style.borderColor = '#cbd5e0';
-                        dropZone.style.background = '#f8f9fa';
+                        // Only reset if leaving the drop zone itself, not child elements
+                        if (e.target === dropZone) {
+                            dropZone.style.borderColor = '#cbd5e0';
+                            dropZone.style.background = '#f8f9fa';
+                        }
                     });
 
                     dropZone.addEventListener('drop', async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        console.log('Drop event fired!');
+                        console.log('DataTransfer items:', e.dataTransfer.items);
+                        console.log('DataTransfer files:', e.dataTransfer.files);
+
                         dropZone.style.borderColor = '#cbd5e0';
                         dropZone.style.background = '#f8f9fa';
 
@@ -4188,10 +4205,34 @@ Mergers & Acquisitions Team`
         }
 
         async function handleEmailDrop(event, carrierCode) {
-            const files = event.dataTransfer.files;
+            console.log('handleEmailDrop called');
+            console.log('DataTransfer types:', event.dataTransfer.types);
+            console.log('DataTransfer files:', event.dataTransfer.files);
 
+            const files = event.dataTransfer.files;
+            const items = event.dataTransfer.items;
+
+            // Check if we have files
             if (files.length === 0) {
-                alert('No files detected. Please drag an email file (.msg or .eml)');
+                // Try to get data from items (for different drag sources)
+                if (items && items.length > 0) {
+                    console.log('No files, but items detected. Trying to process items...');
+                    for (let i = 0; i < items.length; i++) {
+                        console.log(`Item ${i}:`, items[i].type, items[i].kind);
+                    }
+                }
+
+                // Try to get HTML or text content
+                const html = event.dataTransfer.getData('text/html');
+                const text = event.dataTransfer.getData('text/plain');
+
+                if (html || text) {
+                    console.log('HTML/Text data detected');
+                    alert('Please drag the email file directly from Outlook, not the email content.\n\nTip: Try dragging the email to your desktop first to create a .msg or .eml file, then drag that file here.');
+                    return;
+                }
+
+                alert('No files detected. Please drag an email file (.msg or .eml) from Outlook.\n\nTip: You may need to drag the email to your desktop first, then drag the .msg/.eml file here.');
                 return;
             }
 
