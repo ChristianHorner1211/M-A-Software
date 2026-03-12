@@ -1954,9 +1954,122 @@
             color: #95a5a6;
             font-size: 16px;
         }
+        /* Custom Notification System */
+        .custom-notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .custom-notification-overlay.show {
+            display: flex;
+        }
+
+        .custom-notification-box {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+            animation: slideDown 0.3s ease;
+            text-align: center;
+        }
+
+        .custom-notification-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .custom-notification-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .custom-notification-message {
+            font-size: 15px;
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            white-space: pre-line;
+        }
+
+        .custom-notification-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .custom-notification-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .custom-notification-btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .custom-notification-btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .custom-notification-btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .custom-notification-btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Custom Notification System -->
+    <div id="customNotificationOverlay" class="custom-notification-overlay">
+        <div class="custom-notification-box">
+            <div id="customNotificationIcon" class="custom-notification-icon"></div>
+            <div id="customNotificationTitle" class="custom-notification-title"></div>
+            <div id="customNotificationMessage" class="custom-notification-message"></div>
+            <div id="customNotificationButtons" class="custom-notification-buttons"></div>
+        </div>
+    </div>
+
     <!-- Authentication Screen -->
     <div id="authScreen" class="auth-container" style="display: none;">
         <div class="auth-box">
@@ -3081,6 +3194,134 @@ We appreciate your cooperation and timely response throughout this process.
 Best regards,
 Mergers & Acquisitions Team`
             }
+        };
+
+        // ==================== CUSTOM NOTIFICATION SYSTEM ====================
+
+        function showNotification(message, options = {}) {
+            const {
+                title = 'Notification',
+                icon = 'ℹ️',
+                type = 'info', // info, success, warning, error
+                confirmText = 'OK',
+                cancelText = null,
+                onConfirm = null,
+                onCancel = null
+            } = options;
+
+            const overlay = document.getElementById('customNotificationOverlay');
+            const iconEl = document.getElementById('customNotificationIcon');
+            const titleEl = document.getElementById('customNotificationTitle');
+            const messageEl = document.getElementById('customNotificationMessage');
+            const buttonsEl = document.getElementById('customNotificationButtons');
+
+            // Set icon based on type
+            const icons = {
+                info: 'ℹ️',
+                success: '✅',
+                warning: '⚠️',
+                error: '❌',
+                question: '❓'
+            };
+            iconEl.textContent = icon || icons[type] || icons.info;
+
+            // Set title and message
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            // Build buttons
+            buttonsEl.innerHTML = '';
+
+            if (cancelText) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'custom-notification-btn custom-notification-btn-secondary';
+                cancelBtn.textContent = cancelText;
+                cancelBtn.onclick = () => {
+                    hideNotification();
+                    if (onCancel) onCancel();
+                };
+                buttonsEl.appendChild(cancelBtn);
+            }
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'custom-notification-btn custom-notification-btn-primary';
+            confirmBtn.textContent = confirmText;
+            confirmBtn.onclick = () => {
+                hideNotification();
+                if (onConfirm) onConfirm();
+            };
+            buttonsEl.appendChild(confirmBtn);
+
+            // Show overlay
+            overlay.classList.add('show');
+
+            // Focus confirm button for keyboard accessibility
+            setTimeout(() => confirmBtn.focus(), 100);
+        }
+
+        function hideNotification() {
+            const overlay = document.getElementById('customNotificationOverlay');
+            overlay.classList.remove('show');
+        }
+
+        // Helper function for success notifications
+        function showSuccess(message, title = 'Success') {
+            showNotification(message, {
+                title: title,
+                type: 'success',
+                icon: '✅'
+            });
+        }
+
+        // Helper function for error notifications
+        function showError(message, title = 'Error') {
+            showNotification(message, {
+                title: title,
+                type: 'error',
+                icon: '❌'
+            });
+        }
+
+        // Helper function for warning notifications
+        function showWarning(message, title = 'Warning') {
+            showNotification(message, {
+                title: title,
+                type: 'warning',
+                icon: '⚠️'
+            });
+        }
+
+        // Helper function for info notifications
+        function showInfo(message, title = 'Information') {
+            showNotification(message, {
+                title: title,
+                type: 'info',
+                icon: 'ℹ️'
+            });
+        }
+
+        // Async confirm function for when we need user confirmation
+        function confirmAction(message, title = 'Confirm') {
+            return new Promise((resolve) => {
+                showNotification(message, {
+                    title: title,
+                    type: 'question',
+                    icon: '❓',
+                    confirmText: 'OK',
+                    cancelText: 'Cancel',
+                    onConfirm: () => resolve(true),
+                    onCancel: () => resolve(false)
+                });
+            });
+        }
+
+        // Override native alert to use custom notification
+        window.alert = function(message) {
+            showNotification(message, {
+                title: '',
+                type: 'info',
+                icon: 'ℹ️'
+            });
         };
 
         // ==================== FIREBASE & MSAL INITIALIZATION ====================
