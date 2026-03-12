@@ -5372,13 +5372,20 @@ Mergers & Acquisitions Team`
 
         async function addActivityLog(activity) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
-            if (!acquisition) return;
+            if (!acquisition) {
+                console.error('No acquisition found for currentAcquisitionId:', currentAcquisitionId);
+                return;
+            }
             const activityItem = {
                 ...activity,
                 acquisitionId: currentAcquisitionId,
                 timestamp: new Date().toISOString()
             };
             activities.unshift(activityItem);
+
+            console.log('Added activity:', activityItem);
+            console.log('Total activities:', activities.length);
+            console.log('Current acquisition ID:', currentAcquisitionId);
 
             // Save to Firebase
             await saveActivityToFirebase(activityItem);
@@ -5428,12 +5435,26 @@ Mergers & Acquisitions Team`
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
+            console.log('=== renderActivityLog ===');
+            console.log('Total activities in array:', activities.length);
+            console.log('Current acquisition ID:', currentAcquisitionId);
+            console.log('All activities:', activities);
+
             const acquisitionActivities = activities.filter(a => {
-                if (a.acquisitionId !== currentAcquisitionId) return false;
+                console.log(`Checking activity: type=${a.type}, acquisitionId=${a.acquisitionId}, currentId=${currentAcquisitionId}`);
+
+                if (a.acquisitionId !== currentAcquisitionId) {
+                    console.log('  -> Filtered out: wrong acquisition');
+                    return false;
+                }
 
                 // Exclude email activities (auto-synced from inbox)
-                if (a.type === 'email') return false;
+                if (a.type === 'email') {
+                    console.log('  -> Filtered out: email type');
+                    return false;
+                }
 
+                console.log('  -> Included');
                 // Show all activities regardless of due date
                 return true;
             }).sort((a, b) => {
@@ -5457,6 +5478,10 @@ Mergers & Acquisitions Team`
                 // Neither has due date - sort by timestamp (most recent first)
                 return new Date(b.timestamp) - new Date(a.timestamp);
             });
+
+            console.log('Filtered activities count:', acquisitionActivities.length);
+            console.log('Filtered activities:', acquisitionActivities);
+
             if (acquisitionActivities.length === 0) {
                 activityList.innerHTML = '<div class="empty-state"><div class="empty-state-text">No activities yet</div></div>';
                 return;
