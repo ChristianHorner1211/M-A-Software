@@ -3899,38 +3899,74 @@ Mergers & Acquisitions Team`
 
         // Called after sign-in — finds or creates the user's organization
         async function loadOrCreateOrg(user) {
+            // Use a deterministic orgId based on uid for reliable lookup
+            const defaultOrgId = 'org_' + user.uid;
+
             try {
-                // Check if user already has an org
-                const userDoc = await firestore.collection('users').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().orgId) {
-                    currentOrgId = userDoc.data().orgId;
-                    return true; // Org found, proceed to load data
+                // Step 1: Try to read user profile to find their orgId
+                let orgId = null;
+                try {
+                    const userDoc = await firestore.collection('users').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().orgId) {
+                        orgId = userDoc.data().orgId;
+                    }
+                } catch (e) {
+                    console.warn('Could not read user profile (rules may be pending deployment), using default orgId:', e.message);
                 }
 
-                // Check if old per-user data exists (migration case)
-                const oldAcqSnapshot = await firestore.collection('users').doc(user.uid).collection('acquisitions').limit(1).get();
-                if (!oldAcqSnapshot.empty) {
-                    // Migrate existing data into a new org automatically
-                    const orgId = 'org_' + user.uid;
-                    const orgName = user.displayName ? user.displayName + "'s Organization" : 'My Organization';
-                    await firestore.collection('organizations').doc(orgId).set({
-                        name: orgName,
-                        ownerId: user.uid,
-                        createdAt: new Date().toISOString(),
-                        members: [user.uid]
-                    });
-                    await firestore.collection('users').doc(user.uid).set({ orgId, email: user.email, name: user.displayName }, { merge: true });
+                // Step 2: If we have an orgId, verify the org exists
+                if (orgId) {
                     currentOrgId = orgId;
-                    await migrateUserDataToOrg(user.uid, orgId);
                     return true;
                 }
 
-                // Brand new user — show org onboarding
+                // Step 3: Check if a default org already exists for this user
+                try {
+                    const existingOrg = await firestore.collection('organizations').doc(defaultOrgId).get();
+                    if (existingOrg.exists) {
+                        currentOrgId = defaultOrgId;
+                        // Re-save user profile in case it was missing
+                        await firestore.collection('users').doc(user.uid).set(
+                            { orgId: defaultOrgId, email: user.email, name: user.displayName },
+                            { merge: true }
+                        );
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn('Could not check for existing org:', e.message);
+                }
+
+                // Step 4: Check if old per-user data exists (migration case)
+                try {
+                    const oldAcqSnapshot = await firestore.collection('users').doc(user.uid).collection('acquisitions').limit(1).get();
+                    if (!oldAcqSnapshot.empty) {
+                        const orgName = user.displayName ? user.displayName + "'s Organization" : 'My Organization';
+                        await firestore.collection('organizations').doc(defaultOrgId).set({
+                            name: orgName,
+                            ownerId: user.uid,
+                            createdAt: new Date().toISOString(),
+                            members: [user.uid]
+                        });
+                        await firestore.collection('users').doc(user.uid).set(
+                            { orgId: defaultOrgId, email: user.email, name: user.displayName },
+                            { merge: true }
+                        );
+                        currentOrgId = defaultOrgId;
+                        await migrateUserDataToOrg(user.uid, defaultOrgId);
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn('Could not check for old data to migrate:', e.message);
+                }
+
+                // Step 5: Brand new user — show org onboarding
                 showOrgOnboardingScreen();
                 return false;
+
             } catch (error) {
                 console.error('Error loading org:', error);
-                showNotification('Error setting up your organization. Please try again.', { title: 'Error', type: 'error' });
+                // Last resort: show org onboarding so user isn't stuck
+                showOrgOnboardingScreen();
                 return false;
             }
         }
@@ -3941,9 +3977,10 @@ Mergers & Acquisitions Team`
                 showSyncStatus('syncing', 'Migrating data...');
                 const batch = firestore.batch();
 
+                // Read from OLD user paths (source of migration)
                 const [acqSnap, actSnap] = await Promise.all([
-                    firestore.collection('organizations').doc(currentOrgId).collection('acquisitions').get(),
-                    firestore.collection('organizations').doc(currentOrgId).collection('activities').get()
+                    firestore.collection('users').doc(userId).collection('acquisitions').get(),
+                    firestore.collection('users').doc(userId).collection('activities').get()
                 ]);
 
                 acqSnap.docs.forEach(doc => {
