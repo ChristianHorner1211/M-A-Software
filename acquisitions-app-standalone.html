@@ -252,22 +252,20 @@
         }
 
         .search-suggestions {
-            position: absolute;
-            top: calc(100% + var(--space-2));
-            left: 0;
-            right: 0;
+            position: fixed;
             background: #FFFFFF !important;
             background-color: rgb(255, 255, 255) !important;
             border: 2px solid var(--gray-300);
             border-radius: var(--radius-xl);
             max-height: 500px;
             overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            z-index: 99999;
             opacity: 1 !important;
             backdrop-filter: none !important;
             isolation: isolate;
             -webkit-backdrop-filter: none !important;
+            pointer-events: auto;
         }
 
         /* Ensure solid background with pseudo-element */
@@ -282,6 +280,7 @@
             background-color: rgb(255, 255, 255);
             border-radius: var(--radius-xl);
             z-index: -1;
+            pointer-events: none;
         }
 
         .search-suggestion-item {
@@ -2442,7 +2441,6 @@
                 </div>
                 <div class="global-search-container">
                     <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
-                    <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
                 </div>
             </div>
             <div class="header-actions">
@@ -2719,6 +2717,9 @@
         </div> <!-- End of searchResultsPage -->
 
     </div> <!-- End of mainApp -->
+
+    <!-- Global Search Suggestions Dropdown (positioned outside main container for proper z-index layering) -->
+    <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
 
     <!-- Office Management Modal -->
     <div id="officeModal" class="office-modal">
@@ -10700,7 +10701,21 @@ Mergers & Acquisitions Team`
             searchInput.addEventListener('focus', (e) => {
                 const query = e.target.value.trim();
                 if (query.length >= 2 && currentSearchResults.length > 0) {
+                    positionSearchSuggestions();
                     suggestionsDiv.style.display = 'block';
+                }
+            });
+
+            // Reposition on window resize or scroll
+            window.addEventListener('resize', () => {
+                if (suggestionsDiv.style.display === 'block') {
+                    positionSearchSuggestions();
+                }
+            });
+
+            window.addEventListener('scroll', () => {
+                if (suggestionsDiv.style.display === 'block') {
+                    positionSearchSuggestions();
                 }
             });
 
@@ -10861,11 +10876,26 @@ Mergers & Acquisitions Team`
             return score;
         }
 
+        function positionSearchSuggestions() {
+            const searchInput = document.getElementById('globalSearchInput');
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+
+            if (!searchInput || !suggestionsDiv) return;
+
+            const rect = searchInput.getBoundingClientRect();
+            const gap = 8; // Gap between input and dropdown
+
+            suggestionsDiv.style.top = `${rect.bottom + gap}px`;
+            suggestionsDiv.style.left = `${rect.left}px`;
+            suggestionsDiv.style.width = `${rect.width}px`;
+        }
+
         function displaySearchSuggestions(results, query) {
             const suggestionsDiv = document.getElementById('searchSuggestions');
 
             if (results.length === 0) {
                 suggestionsDiv.innerHTML = '<div class="search-no-results">No results found</div>';
+                positionSearchSuggestions();
                 suggestionsDiv.style.display = 'block';
                 return;
             }
@@ -10876,6 +10906,7 @@ Mergers & Acquisitions Team`
             });
 
             suggestionsDiv.innerHTML = html;
+            positionSearchSuggestions();
             suggestionsDiv.style.display = 'block';
         }
 
