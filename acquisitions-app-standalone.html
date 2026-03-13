@@ -256,7 +256,8 @@
             top: calc(100% + var(--space-2));
             left: 0;
             right: 0;
-            background: #FFFFFF;
+            background: #FFFFFF !important;
+            background-color: rgb(255, 255, 255) !important;
             border: 2px solid var(--gray-300);
             border-radius: var(--radius-xl);
             max-height: 500px;
@@ -264,8 +265,23 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
             z-index: 9999;
             opacity: 1 !important;
-            backdrop-filter: none;
+            backdrop-filter: none !important;
             isolation: isolate;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* Ensure solid background with pseudo-element */
+        .search-suggestions::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #FFFFFF;
+            background-color: rgb(255, 255, 255);
+            border-radius: var(--radius-xl);
+            z-index: -1;
         }
 
         .search-suggestion-item {
@@ -274,11 +290,15 @@
             border-bottom: 1px solid var(--gray-100);
             transition: var(--transition-base);
             background: #FFFFFF !important;
+            background-color: rgb(255, 255, 255) !important;
             opacity: 1 !important;
+            position: relative;
+            z-index: 1;
         }
 
         .search-suggestion-item:hover {
             background: #F3F4F6 !important;
+            background-color: rgb(243, 244, 246) !important;
         }
 
         .search-suggestion-item:last-child {
@@ -288,25 +308,34 @@
         .suggestion-type {
             font-size: 11px;
             color: #6B7280 !important;
+            color: rgb(107, 114, 128) !important;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 0.5px;
             margin-bottom: var(--space-1);
             opacity: 1 !important;
+            position: relative;
+            z-index: 2;
         }
 
         .suggestion-title {
             font-weight: 600;
             color: #111827 !important;
+            color: rgb(17, 24, 39) !important;
             font-size: 15px;
             margin-bottom: var(--space-1);
             opacity: 1 !important;
+            position: relative;
+            z-index: 2;
         }
 
         .suggestion-subtitle {
             font-size: 13px;
             color: #4B5563 !important;
+            color: rgb(75, 85, 99) !important;
             opacity: 1 !important;
+            position: relative;
+            z-index: 2;
         }
 
         .suggestion-codes {
@@ -331,6 +360,11 @@
             text-align: center;
             color: var(--gray-500);
             font-size: 14px;
+            background: #FFFFFF !important;
+            background-color: rgb(255, 255, 255) !important;
+            opacity: 1 !important;
+            position: relative;
+            z-index: 2;
         }
 
         .btn, button {
