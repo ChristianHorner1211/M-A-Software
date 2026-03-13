@@ -3402,9 +3402,20 @@
         let replyContext = null;  // Store reply context for email threading
         let stateOffices = {};  // Store offices by state
         let currentSelectedState = null;  // Currently selected state for office management
+        // Hardcoded Firebase config — ensures every device connects to the same database automatically
+        const HARDCODED_FIREBASE_CONFIG = JSON.stringify({
+            apiKey: "AIzaSyDKljSQGT4lX5JAk3fgHSWlmUmbXeKmiDc",
+            authDomain: "carrier-management-73d0f.firebaseapp.com",
+            projectId: "carrier-management-73d0f",
+            storageBucket: "carrier-management-73d0f.firebasestorage.app",
+            messagingSenderId: "886881224236",
+            appId: "1:886881224236:web:8425f9d8b8d5a9f7773389",
+            measurementId: "G-JXYE6CFE9D"
+        });
+
         let appSettings = {
             firebase: {
-                config: null
+                config: HARDCODED_FIREBASE_CONFIG
             },
             msal: {
                 clientId: null
@@ -8610,10 +8621,11 @@ Mergers & Acquisitions Team`
                 try {
                     const parsed = JSON.parse(savedSettings);
                     // Deep merge to preserve nested objects
+                    // Always keep the hardcoded Firebase config — never let localStorage override it
                     appSettings = {
                         ...appSettings,
                         ...parsed,
-                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}) },
+                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}), config: HARDCODED_FIREBASE_CONFIG },
                         msal: { ...appSettings.msal, ...(parsed.msal || {}) },
                         outlook: { ...appSettings.outlook, ...(parsed.outlook || {}) }
                     };
