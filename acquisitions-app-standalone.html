@@ -3457,6 +3457,9 @@
         let stateOffices = {};  // Store offices by state
         let currentSelectedState = null;  // Currently selected state for office management
         // Hardcoded Firebase config — ensures every device connects to the same database automatically
+        // Hardcoded Microsoft client ID — same approach as Firebase config
+        const HARDCODED_MSAL_CLIENT_ID = 'd3e00fa7-b738-425b-9066-9e3360dedab9';
+
         const HARDCODED_FIREBASE_CONFIG = JSON.stringify({
             apiKey: "AIzaSyDKljSQGT4lX5JAk3fgHSWlmUmbXeKmiDc",
             authDomain: "carrier-management-73d0f.firebaseapp.com",
@@ -3472,7 +3475,7 @@
                 config: HARDCODED_FIREBASE_CONFIG
             },
             msal: {
-                clientId: null
+                clientId: HARDCODED_MSAL_CLIENT_ID
             },
             outlook: {
                 connected: false,
@@ -8887,7 +8890,7 @@ Mergers & Acquisitions Team`
                         ...appSettings,
                         ...parsed,
                         firebase: { ...appSettings.firebase, ...(parsed.firebase || {}), config: HARDCODED_FIREBASE_CONFIG },
-                        msal: { ...appSettings.msal, ...(parsed.msal || {}) },
+                        msal: { ...appSettings.msal, ...(parsed.msal || {}), clientId: HARDCODED_MSAL_CLIENT_ID },
                         outlook: { ...appSettings.outlook, ...(parsed.outlook || {}) }
                     };
                     console.log('Settings loaded from localStorage:', appSettings);
