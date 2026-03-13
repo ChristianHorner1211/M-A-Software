@@ -3762,7 +3762,7 @@ Mergers & Acquisitions Team`
                 // Clear invalid Firebase config
                 console.log('Clearing invalid Firebase config and using localStorage mode');
                 appSettings.firebase.config = '';
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
 
                 // Don't show alert on every page load - just log it
                 console.warn('Firebase not configured properly. Using localStorage mode. Go to Settings to configure Firebase.');
@@ -3975,7 +3975,7 @@ Mergers & Acquisitions Team`
                             statusElement.style.color = '#27ae60';
 
                             // Save settings to persist the change
-                            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                            saveAppSettings();
                         } else {
                             // Fallback to base64 if Firebase Storage not available
                             console.warn('Firebase Storage not available. Using base64 encoding (may not work in emails).');
@@ -3994,7 +3994,7 @@ Mergers & Acquisitions Team`
                                 statusElement.style.color = '#27ae60';
 
                                 // Save settings to persist the change
-                                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                                saveAppSettings();
                             };
                             reader.readAsDataURL(file);
                         }
@@ -4018,7 +4018,7 @@ Mergers & Acquisitions Team`
                                 statusElement.style.color = '#27ae60';
 
                                 // Save settings to persist the change
-                                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                                saveAppSettings();
                             };
                             reader.onerror = function() {
                                 statusElement.textContent = '❌ Upload failed';
@@ -4220,6 +4220,31 @@ Mergers & Acquisitions Team`
                     ...doc.data()
                 }));
                 console.log('Loaded activities from Firebase:', activities.length);
+
+                // Load stateOffices (Code Management locations) from Firebase
+                const stateOfficesDoc = await firestore.collection('users').doc(userId)
+                    .collection('settings').doc('stateOffices').get();
+                if (stateOfficesDoc.exists && stateOfficesDoc.data().data) {
+                    stateOffices = stateOfficesDoc.data().data;
+                    migrateStateOfficesData();
+                    localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+                    console.log('Loaded stateOffices from Firebase');
+                }
+
+                // Load appSettings from Firebase (email signature, logo, etc.)
+                const appSettingsDoc = await firestore.collection('users').doc(userId)
+                    .collection('settings').doc('appSettings').get();
+                if (appSettingsDoc.exists) {
+                    const cloudSettings = appSettingsDoc.data();
+                    appSettings = {
+                        ...appSettings,
+                        ...cloudSettings,
+                        firebase: { ...appSettings.firebase, config: HARDCODED_FIREBASE_CONFIG },
+                        outlook: appSettings.outlook // keep local outlook session (device-specific)
+                    };
+                    localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                    console.log('Loaded appSettings from Firebase');
+                }
 
                 // Update localStorage to match Firebase (not the other way around)
                 saveDataToLocalStorage();
@@ -4467,6 +4492,35 @@ Mergers & Acquisitions Team`
                         console.error('Failed to save even with limits:', e);
                     }
                 }
+            }
+        }
+
+        // Save stateOffices to localStorage AND Firebase
+        async function saveStateOffices() {
+            saveStateOffices();
+            if (!firestore || !currentUser) return;
+            try {
+                await firestore.collection('users').doc(currentUser.uid)
+                    .collection('settings').doc('stateOffices')
+                    .set({ data: stateOffices });
+            } catch (e) {
+                console.error('Error saving stateOffices to Firebase:', e);
+            }
+        }
+
+        // Save appSettings to localStorage AND Firebase (excludes device-specific tokens)
+        async function saveAppSettings() {
+            saveAppSettings();
+            if (!firestore || !currentUser) return;
+            try {
+                const { outlook, ...settingsToSync } = appSettings;
+                // Don't sync outlook access tokens — those are per-device by design
+                const safeOutlook = { connected: false, email: outlook?.email || null };
+                await firestore.collection('users').doc(currentUser.uid)
+                    .collection('settings').doc('appSettings')
+                    .set({ ...settingsToSync, outlook: safeOutlook });
+            } catch (e) {
+                console.error('Error saving appSettings to Firebase:', e);
             }
         }
 
@@ -8713,7 +8767,7 @@ Mergers & Acquisitions Team`
             }
 
             // Save to localStorage
-            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            saveAppSettings();
 
             alert('Settings saved successfully!\n\nPlease reload the page for configuration changes to take effect.');
         }
@@ -8742,7 +8796,7 @@ Mergers & Acquisitions Team`
             document.getElementById('signatureImageURL').value = '';
 
             // Save settings to persist the change
-            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            saveAppSettings();
         }
 
         function handleSignatureImageURL() {
@@ -8779,7 +8833,7 @@ Mergers & Acquisitions Team`
                 // Still save it so it persists across refreshes
                 appSettings.signatureImage = url;
                 appSettings.signatureImageStoragePath = null;
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 console.log('Invalid logo URL saved to localStorage (will persist):', url);
                 return;
             }
@@ -8787,7 +8841,7 @@ Mergers & Acquisitions Team`
             // Save immediately (already saved by autoSave, but ensure it's persisted)
             appSettings.signatureImage = url;
             appSettings.signatureImageStoragePath = null;
-            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            saveAppSettings();
 
             // Check if URL is accessible by trying to load the image
             if (statusElement) {
@@ -8830,7 +8884,7 @@ Mergers & Acquisitions Team`
             const emailSigField = document.getElementById('emailSignature');
             if (emailSigField) {
                 appSettings.emailSignature = emailSigField.value;
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 console.log('Email signature auto-saved to localStorage');
             }
         }
@@ -8857,7 +8911,7 @@ Mergers & Acquisitions Team`
                 // This ensures the value is never lost, even if user refreshes
                 appSettings.signatureImage = url;
                 appSettings.signatureImageStoragePath = null;
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 console.log('Logo URL auto-saved to localStorage:', url);
 
                 // Update status to show it's saved
@@ -8915,7 +8969,7 @@ Mergers & Acquisitions Team`
                     appSettings.outlook.connected = true;
                     appSettings.outlook.email = loginResponse.account.username;
                     appSettings.outlook.accessToken = loginResponse.accessToken;
-                    localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                    saveAppSettings();
 
                     updateOutlookConnectionUI();
                     alert('Outlook account connected successfully!\n\nYou can now send emails directly through your Outlook account.');
@@ -8931,7 +8985,7 @@ Mergers & Acquisitions Team`
                 appSettings.outlook.connected = false;
                 appSettings.outlook.email = null;
                 appSettings.outlook.accessToken = null;
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 updateOutlookConnectionUI();
                 alert('Outlook account disconnected');
             }
@@ -9832,7 +9886,7 @@ Mergers & Acquisitions Team`
                         // Import settings
                         if (importedData.settings) {
                             appSettings = { ...appSettings, ...importedData.settings };
-                            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                            saveAppSettings();
                         }
 
                         // Refresh UI
@@ -10062,7 +10116,7 @@ Mergers & Acquisitions Team`
             }
 
             stateOffices[currentStateCode].push(location);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
 
             // Update map visual
             const stateElement = document.querySelector(`.state[data-state="${currentStateCode}"]`);
@@ -10167,7 +10221,7 @@ Mergers & Acquisitions Team`
             }
 
             stateOffices[currentStateCode].push(location);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
 
             // Update map visual
             const stateElement = document.querySelector(`.state[data-state="${currentStateCode}"]`);
@@ -10214,7 +10268,7 @@ Mergers & Acquisitions Team`
                 location.address = newAddress.trim();
             }
 
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             openLocationDetail(currentLocationId);
             renderLocations();
         }
@@ -10225,7 +10279,7 @@ Mergers & Acquisitions Team`
             const index = stateOffices[currentStateCode].findIndex(loc => loc.id === currentLocationId);
             if (index > -1) {
                 stateOffices[currentStateCode].splice(index, 1);
-                localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+                saveStateOffices();
 
                 // Update map visual if no more locations
                 if (stateOffices[currentStateCode].length === 0) {
@@ -10388,7 +10442,7 @@ Mergers & Acquisitions Team`
                 notes: ''
             });
 
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             hideAddCarrierForm();
             renderCarriers(location);
             renderLocations(); // Update carrier count on location card
@@ -10401,7 +10455,7 @@ Mergers & Acquisitions Team`
             if (!location) return;
 
             location.carriers.splice(carrierIndex, 1);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             renderCarriers(location);
             renderLocations(); // Update carrier count on location card
         }
@@ -10423,7 +10477,7 @@ Mergers & Acquisitions Team`
             }
 
             location.carriers[carrierIndex].codes.push(code);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             input.value = '';
             renderCarriers(location);
         }
@@ -10433,7 +10487,7 @@ Mergers & Acquisitions Team`
             if (!location) return;
 
             location.carriers[carrierIndex].codes.splice(codeIndex, 1);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             renderCarriers(location);
         }
 
@@ -10460,7 +10514,7 @@ Mergers & Acquisitions Team`
                 phone: phone
             });
 
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             document.getElementById(`newRepName-${carrierIndex}`).value = '';
             document.getElementById(`newRepEmail-${carrierIndex}`).value = '';
             document.getElementById(`newRepPhone-${carrierIndex}`).value = '';
@@ -10472,7 +10526,7 @@ Mergers & Acquisitions Team`
             if (!location) return;
 
             location.carriers[carrierIndex].reps.splice(repIndex, 1);
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
             renderCarriers(location);
         }
 
@@ -10482,7 +10536,7 @@ Mergers & Acquisitions Team`
             if (!location) return;
 
             location.carriers[carrierIndex].notes = notes;
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
         }
 
         // Office Management Functions (kept for backward compatibility)
@@ -10560,7 +10614,7 @@ Mergers & Acquisitions Team`
             stateOffices[currentSelectedState].push(office);
 
             // Save to localStorage
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
 
             // Update map visual
             const stateElement = document.querySelector(`.state[data-state="${currentSelectedState}"]`);
@@ -10617,7 +10671,7 @@ Mergers & Acquisitions Team`
             stateOffices[stateCode].splice(index, 1);
 
             // Update localStorage
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            saveStateOffices();
 
             // Update map visual if no more offices
             if (stateOffices[stateCode].length === 0) {
@@ -10669,7 +10723,7 @@ Mergers & Acquisitions Team`
 
             // Save migrated data
             if (migrated) {
-                localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+                saveStateOffices();
                 console.log('State offices data migrated to new structure');
             }
         }
@@ -11318,14 +11372,14 @@ Mergers & Acquisitions Team`
                 }
 
                 // Save appSettings first before bulk data
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 console.log('appSettings saved before bulk data on beforeunload');
 
                 // Save all acquisitions and activities data
                 saveDataToLocalStorage();
 
                 // Force synchronous save to localStorage
-                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                saveAppSettings();
                 console.log('All settings saved before page unload');
             } catch (error) {
                 console.error('Error saving data on beforeunload:', error);
