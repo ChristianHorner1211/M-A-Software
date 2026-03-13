@@ -253,33 +253,50 @@
 
         .search-suggestions {
             position: fixed;
-            background: #FFFFFF !important;
-            background-color: rgb(255, 255, 255) !important;
-            border: 2px solid var(--gray-300);
-            border-radius: var(--radius-xl);
+            background: rgba(255, 255, 255, 1) !important;
+            background-color: rgba(255, 255, 255, 1) !important;
+            border: 2px solid #D1D5DB;
+            border-radius: 12px;
             max-height: 500px;
             overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-            z-index: 99999;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            z-index: 999999;
             opacity: 1 !important;
             backdrop-filter: none !important;
-            isolation: isolate;
             -webkit-backdrop-filter: none !important;
+            isolation: isolate;
             pointer-events: auto;
+            will-change: auto;
+            transform: translateZ(0);
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Ensure solid background with pseudo-element */
+        /* Triple-layer background guarantee for absolute solidity */
         .search-suggestions::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: rgba(255, 255, 255, 1);
+            background-color: rgba(255, 255, 255, 1);
+            border-radius: 12px;
+            z-index: -3;
+            pointer-events: none;
+        }
+
+        .search-suggestions::after {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: #FFFFFF;
-            background-color: rgb(255, 255, 255);
-            border-radius: var(--radius-xl);
-            z-index: -1;
+            background: rgba(255, 255, 255, 1);
+            background-color: rgba(255, 255, 255, 1);
+            border-radius: 12px;
+            z-index: -2;
             pointer-events: none;
         }
 
@@ -288,16 +305,16 @@
             cursor: pointer;
             border-bottom: 1px solid var(--gray-100);
             transition: var(--transition-base);
-            background: #FFFFFF !important;
-            background-color: rgb(255, 255, 255) !important;
+            background: rgba(255, 255, 255, 1) !important;
+            background-color: rgba(255, 255, 255, 1) !important;
             opacity: 1 !important;
             position: relative;
-            z-index: 1;
+            z-index: 10;
         }
 
         .search-suggestion-item:hover {
-            background: #F3F4F6 !important;
-            background-color: rgb(243, 244, 246) !important;
+            background: rgba(243, 244, 246, 1) !important;
+            background-color: rgba(243, 244, 246, 1) !important;
         }
 
         .search-suggestion-item:last-child {
@@ -306,35 +323,35 @@
 
         .suggestion-type {
             font-size: 11px;
-            color: #6B7280 !important;
-            color: rgb(107, 114, 128) !important;
+            color: rgba(107, 114, 128, 1) !important;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 0.5px;
             margin-bottom: var(--space-1);
             opacity: 1 !important;
             position: relative;
-            z-index: 2;
+            z-index: 20;
+            background: transparent !important;
         }
 
         .suggestion-title {
             font-weight: 600;
-            color: #111827 !important;
-            color: rgb(17, 24, 39) !important;
+            color: rgba(17, 24, 39, 1) !important;
             font-size: 15px;
             margin-bottom: var(--space-1);
             opacity: 1 !important;
             position: relative;
-            z-index: 2;
+            z-index: 20;
+            background: transparent !important;
         }
 
         .suggestion-subtitle {
             font-size: 13px;
-            color: #4B5563 !important;
-            color: rgb(75, 85, 99) !important;
+            color: rgba(75, 85, 99, 1) !important;
             opacity: 1 !important;
             position: relative;
-            z-index: 2;
+            z-index: 20;
+            background: transparent !important;
         }
 
         .suggestion-codes {
@@ -359,11 +376,11 @@
             text-align: center;
             color: var(--gray-500);
             font-size: 14px;
-            background: #FFFFFF !important;
-            background-color: rgb(255, 255, 255) !important;
+            background: rgba(255, 255, 255, 1) !important;
+            background-color: rgba(255, 255, 255, 1) !important;
             opacity: 1 !important;
             position: relative;
-            z-index: 2;
+            z-index: 10;
         }
 
         .btn, button {
