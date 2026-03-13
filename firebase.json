@@ -9,12 +9,7 @@
       "README.md",
       ".git/**"
     ],
-    "rewrites": [
-      {
-        "source": "/",
-        "destination": "/acquisitions-app-standalone.html"
-      }
-    ],
+    "rewrites": [],
     "headers": [
       {
         "source": "**",
