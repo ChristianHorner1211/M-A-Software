@@ -3438,6 +3438,7 @@
         let firebaseStorage = null;
         let currentUser = null;
         let msalInstance = null;
+        let intentionalSignOut = false; // Flag to force auth screen on explicit logout
 
         const availableCarriers = [
             { code: 'ACE-001', name: 'ACE Insurance Company' },
@@ -3728,7 +3729,14 @@ Mergers & Acquisitions Team`
                     } else {
                         currentUser = null;
 
-                        // Load from localStorage as fallback when not signed in
+                        // If user explicitly signed out, always show the auth screen
+                        if (intentionalSignOut) {
+                            intentionalSignOut = false;
+                            showAuthScreen();
+                            return;
+                        }
+
+                        // Load from localStorage as fallback when not signed in on initial load
                         console.log('Not signed in - loading from localStorage');
                         const hasLocalData = loadDataFromLocalStorage();
 
@@ -3816,9 +3824,15 @@ Mergers & Acquisitions Team`
                 cancelText: 'Cancel',
                 onConfirm: async () => {
                     try {
-                        await firebaseAuth.signOut();
-                        // onAuthStateChanged handler will update the UI
+                        intentionalSignOut = true;
+                        if (firebaseAuth) {
+                            await firebaseAuth.signOut();
+                        } else {
+                            // No Firebase auth — just clear local data and show auth screen
+                            showAuthScreen();
+                        }
                     } catch (error) {
+                        intentionalSignOut = false;
                         console.error('Sign-out error:', error);
                         showNotification('Sign-out failed: ' + error.message, { title: 'Error', type: 'error' });
                     }
