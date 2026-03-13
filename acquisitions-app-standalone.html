@@ -3449,7 +3449,8 @@
             <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
                 <h3 style="margin-top: 0;">Upload New File</h3>
                 <input type="file" id="fileUploadInput" multiple style="margin-bottom: 10px;">
-                <button class="btn btn-primary btn-small" onclick="uploadFiles()">Upload</button>
+                <button id="fileUploadBtn" class="btn btn-primary btn-small" onclick="uploadFiles()">Upload</button>
+                <div id="fileUploadStatus" style="display:none; margin-top: 12px; padding: 10px; border-radius: 4px; font-size: 0.9em;"></div>
             </div>
 
             <!-- Files List -->
@@ -6302,7 +6303,26 @@ Mergers & Acquisitions Team`
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
+        function setFileUploadStatus(message, type) {
+            // type: 'uploading' | 'success' | 'error'
+            const el = document.getElementById('fileUploadStatus');
+            if (!el) return;
+            const styles = {
+                uploading: 'background:#e8f0fe; color:#1a73e8; border:1px solid #c5d8f8;',
+                success:   'background:#e6f4ea; color:#1e8e3e; border:1px solid #b7dfbe;',
+                error:     'background:#fce8e6; color:#c5221f; border:1px solid #f5c6c4;'
+            };
+            el.style.cssText = (styles[type] || styles.uploading) + ' display:block; margin-top:12px; padding:10px; border-radius:4px; font-size:0.9em;';
+            el.textContent = message;
+        }
+
+        function clearFileUploadStatus() {
+            const el = document.getElementById('fileUploadStatus');
+            if (el) el.style.display = 'none';
+        }
+
         async function uploadFiles() {
+            const btn = document.getElementById('fileUploadBtn');
             try {
                 const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
                 if (!acquisition) {
@@ -6322,7 +6342,10 @@ Mergers & Acquisitions Team`
                     acquisition.files = [];
                 }
 
-                showStatus('Uploading files...');
+                // Disable button and show progress inside the modal
+                if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                setFileUploadStatus(`⏳ Uploading ${files.length > 1 ? files.length + ' files' : fileNames}… Please wait, large files may take a moment.`, 'uploading');
 
                 // Check if Firebase Storage is available
                 const useFirebaseStorage = firebaseStorage && currentUser;
@@ -6330,6 +6353,8 @@ Mergers & Acquisitions Team`
                 if (useFirebaseStorage) {
                     // Upload to Firebase Storage
                     try {
+                        let completed = 0;
+                        const total = files.length;
                         const uploadPromises = Array.from(files).map(async (file) => {
                             // Create a unique path for the file
                             const timestamp = Date.now();
@@ -6340,6 +6365,11 @@ Mergers & Acquisitions Team`
                             const storageRef = firebaseStorage.ref(filePath);
                             const snapshot = await storageRef.put(file);
                             const downloadURL = await snapshot.ref.getDownloadURL();
+
+                            completed++;
+                            if (total > 1) {
+                                setFileUploadStatus(`⏳ Uploading… ${completed}/${total} files done`, 'uploading');
+                            }
 
                             // Create file metadata with download URL
                             const fileData = {
@@ -6357,43 +6387,34 @@ Mergers & Acquisitions Team`
                         await Promise.all(uploadPromises);
                         displayFiles();
                         await saveAcquisitionToFirebase(acquisition);
-                        showStatus('Files uploaded successfully to cloud storage');
+                        setFileUploadStatus(`✅ ${total > 1 ? total + ' files' : fileNames} uploaded successfully.`, 'success');
                         fileInput.value = '';
+                        setTimeout(clearFileUploadStatus, 5000);
                     } catch (error) {
                         console.error('Error uploading to Firebase Storage:', error);
 
-                        // Check for common Firebase Storage errors
-                        let errorMessage = 'Error uploading to cloud storage: ';
+                        let errorMessage = 'Upload failed: ';
                         if (error.code === 'storage/unauthorized') {
-                            errorMessage += 'Unauthorized. Firebase Storage security rules may need to be updated.\n\n';
-                            errorMessage += 'Please update your Firebase Storage rules in Firebase Console:\n';
-                            errorMessage += 'Go to Storage > Rules and use:\n\n';
-                            errorMessage += 'rules_version = \'2\';\n';
-                            errorMessage += 'service firebase.storage {\n';
-                            errorMessage += '  match /b/{bucket}/o {\n';
-                            errorMessage += '    match /users/{userId}/{allPaths=**} {\n';
-                            errorMessage += '      allow read, write: if request.auth != null && request.auth.uid == userId;\n';
-                            errorMessage += '    }\n';
-                            errorMessage += '  }\n';
-                            errorMessage += '}\n\n';
-                            errorMessage += 'Falling back to local storage mode for now.';
+                            errorMessage += 'Permission denied. Make sure the Firebase Storage rules have been published (Storage → Rules in Firebase Console).';
                         } else if (error.code === 'storage/bucket-not-found') {
-                            errorMessage += 'Storage bucket not configured. Please add "storageBucket" to your Firebase config in Settings.\n\n';
-                            errorMessage += 'Falling back to local storage mode.';
+                            errorMessage += 'Storage bucket not found. Check the storageBucket value in your Firebase config.';
                         } else if (error.code === 'storage/quota-exceeded') {
-                            errorMessage += 'Storage quota exceeded. Please upgrade your Firebase plan.\n\n';
-                            errorMessage += 'Falling back to local storage mode.';
+                            errorMessage += 'Firebase Storage quota exceeded. Upgrade your Firebase plan.';
                         } else {
-                            errorMessage += error.message || 'Unknown error';
-                            errorMessage += '\n\nFalling back to local storage mode.';
+                            errorMessage += error.message || 'Unknown error. Check the browser console for details.';
                         }
 
-                        showError(errorMessage);
+                        setFileUploadStatus('❌ ' + errorMessage, 'error');
                         console.log('Attempting to upload to localStorage as fallback...');
 
                         // Fall back to localStorage mode with proper async handling
-                        await uploadToLocalStorage(files, acquisition);
-                        fileInput.value = '';
+                        try {
+                            await uploadToLocalStorage(files, acquisition);
+                            fileInput.value = '';
+                        } catch (lsError) {
+                            setFileUploadStatus('❌ ' + errorMessage + '\n\nLocal fallback also failed: ' + lsError.message, 'error');
+                        }
+                        if (btn) { btn.disabled = false; btn.textContent = 'Upload'; }
                         return;
                     }
                 } else {
@@ -6404,8 +6425,9 @@ Mergers & Acquisitions Team`
                 }
             } catch (error) {
                 console.error('Unexpected error in uploadFiles:', error);
-                showError('Error uploading files: ' + (error.message || 'Unknown error. Please check the browser console for details.'));
-                showStatus('Error uploading files');
+                setFileUploadStatus('❌ Error uploading files: ' + (error.message || 'Unknown error. Please check the browser console for details.'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Upload'; }
             }
         }
 
