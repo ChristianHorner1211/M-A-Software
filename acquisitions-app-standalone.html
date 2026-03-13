@@ -526,6 +526,70 @@
             box-shadow: var(--shadow-md);
         }
 
+        .tab {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tab-dropdown-chevron {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            border-radius: 3px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 1px 5px;
+            line-height: 1.4;
+            transition: var(--transition-base);
+        }
+
+        .tab-dropdown-chevron:hover {
+            background: rgba(255,255,255,0.45);
+        }
+
+        .tab-actions-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 195px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            z-index: 300;
+            overflow: hidden;
+        }
+
+        .tab-actions-menu.open {
+            display: block;
+        }
+
+        .tab-actions-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            font-size: 13px;
+            color: var(--gray-800);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .tab-actions-menu button:hover {
+            background: var(--gray-50);
+        }
+
+        .tab-actions-menu hr {
+            border: none;
+            border-top: 1px solid var(--gray-100);
+            margin: 4px 0;
+        }
+
         .content-area {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -534,7 +598,7 @@
 
         .section {
             background: white;
-            padding: var(--space-6);
+            padding: var(--space-4) var(--space-6) var(--space-6);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-lg);
             border: 1px solid var(--gray-200);
@@ -2590,22 +2654,6 @@
 
             <div class="content-area">
                 <div class="section carrier-section">
-                    <div class="section-header">
-                        <div>
-                            <div class="btn-group">
-                                <button class="active" onclick="setActiveButton(event); showAddCarrierModal()">+ Add Carrier</button>
-                                <button onclick="setActiveButton(event); showRemoveCarrierModal()">- Remove Carrier</button>
-                                <button onclick="setActiveButton(event); showImportCarriersModal()">📥 Import Carriers</button>
-                                <button onclick="setActiveButton(event); showBulkEmail()">✉ Bulk Email</button>
-                                <button onclick="setActiveButton(event); showFilesModal()">📁 Files</button>
-                                <button onclick="setActiveButton(event); showImportEmailModal()">📧 Import Email</button>
-                            </div>
-                        </div>
-                        <div class="status-legend">
-                            <span class="legend-item"><span class="status-indicator done"></span> Completed</span>
-                            <span class="legend-item"><span class="status-indicator outstanding"></span> Outstanding</span>
-                        </div>
-                    </div>
                     <div class="carriers-list" id="carriersList"></div>
                 </div>
 
@@ -4977,16 +5025,51 @@ Mergers & Acquisitions Team`
             const tabsContainer = document.getElementById('acquisitionTabs');
             tabsContainer.innerHTML = '';
             acquisitions.forEach(acq => {
-                const tab = document.createElement('button');
-                tab.className = 'tab';
-                tab.textContent = acq.name;
+                const isActive = acq.id === currentAcquisitionId;
+                const tab = document.createElement('div');
+                tab.className = `tab${isActive ? ' active' : ''}`;
                 tab.onclick = () => selectAcquisition(acq.id);
                 tab.oncontextmenu = (e) => showContextMenu(e, acq.id);
-                if (acq.id === currentAcquisitionId) {
-                    tab.classList.add('active');
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = acq.name;
+                tab.appendChild(nameSpan);
+
+                if (isActive) {
+                    const chevron = document.createElement('button');
+                    chevron.className = 'tab-dropdown-chevron';
+                    chevron.textContent = '▾';
+                    chevron.title = 'Actions';
+                    chevron.onclick = (e) => { e.stopPropagation(); toggleTabActionsMenu(); };
+                    tab.appendChild(chevron);
+
+                    const menu = document.createElement('div');
+                    menu.className = 'tab-actions-menu';
+                    menu.id = 'tabActionsMenu';
+                    menu.innerHTML = `
+                        <button onclick="closeTabActionsMenu(); showAddCarrierModal()">+ Add Carrier</button>
+                        <button onclick="closeTabActionsMenu(); showRemoveCarrierModal()">− Remove Carrier</button>
+                        <hr>
+                        <button onclick="closeTabActionsMenu(); showImportCarriersModal()">📥 Import Carriers</button>
+                        <button onclick="closeTabActionsMenu(); showBulkEmail()">✉ Bulk Email</button>
+                        <button onclick="closeTabActionsMenu(); showFilesModal()">📁 Files</button>
+                        <button onclick="closeTabActionsMenu(); showImportEmailModal()">📧 Import Email</button>
+                    `;
+                    tab.appendChild(menu);
                 }
+
                 tabsContainer.appendChild(tab);
             });
+        }
+
+        function toggleTabActionsMenu() {
+            const menu = document.getElementById('tabActionsMenu');
+            if (menu) menu.classList.toggle('open');
+        }
+
+        function closeTabActionsMenu() {
+            const menu = document.getElementById('tabActionsMenu');
+            if (menu) menu.classList.remove('open');
         }
 
         function showContextMenu(event, acquisitionId) {
@@ -11697,6 +11780,16 @@ Mergers & Acquisitions Team`
         document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
             setupGlobalSearch();
+        });
+
+        // Close tab actions menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('tabActionsMenu');
+            if (menu && menu.classList.contains('open')) {
+                if (!menu.parentElement.contains(e.target)) {
+                    menu.classList.remove('open');
+                }
+            }
         });
 
         // Close drawer with Escape key
