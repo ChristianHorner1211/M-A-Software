@@ -1353,6 +1353,26 @@
             margin-bottom: 30px;
         }
 
+        .microsoft-signin-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 24px;
+            background: #2f6fc6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .microsoft-signin-btn:hover {
+            background: #1e4fa8;
+        }
+
         .google-signin-btn {
             display: flex;
             align-items: center;
@@ -2432,7 +2452,16 @@
         <div class="auth-box">
             <h2>Acquisitions Management Platform</h2>
             <p>Sign in to access your data from anywhere</p>
-            <button class="google-signin-btn" onclick="signInWithGoogle()">
+            <button class="microsoft-signin-btn" onclick="signInWithMicrosoft()">
+                <svg class="microsoft-icon" viewBox="0 0 21 21" width="20" height="20">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                Sign in with Microsoft
+            </button>
+            <button class="google-signin-btn" onclick="signInWithGoogle()" style="margin-top: 12px;">
                 <svg class="google-icon" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -2446,6 +2475,30 @@
                     Continue without signing in (data saved locally only)
                 </a>
             </p>
+        </div>
+    </div>
+
+    <!-- Org Onboarding Screen -->
+    <div id="orgOnboardingScreen" class="auth-container" style="display: none;">
+        <div class="auth-box" style="max-width: 480px;">
+            <h2>Set Up Your Organization</h2>
+            <p>You're signing in for the first time. Create a new organization or join an existing one with an invite code.</p>
+            <div style="margin-top: 24px;">
+                <div style="margin-bottom: 16px;">
+                    <label style="display:block; font-weight:600; margin-bottom:6px; color:#2c3e50;">Organization Name</label>
+                    <input id="orgNameInput" type="text" placeholder="e.g. Horner Agency" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:15px; box-sizing:border-box;">
+                </div>
+                <button class="btn btn-primary" onclick="createOrganization()" style="width:100%; padding:12px;">
+                    Create New Organization
+                </button>
+            </div>
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #eee;">
+                <p style="font-size:14px; color:#7f8c8d; margin-bottom:12px;">Already have an invite code?</p>
+                <div style="display:flex; gap:8px;">
+                    <input id="inviteCodeInput" type="text" placeholder="Enter invite code" style="flex:1; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:15px;">
+                    <button class="btn btn-secondary" onclick="joinWithInviteCode()">Join</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2469,6 +2522,7 @@
                 </div>
                 <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
                 <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
+                <button class="btn btn-secondary" onclick="generateInviteCode()" title="Invite a team member to your organization">👥 Invite Member</button>
                 <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
             </div>
             <button class="hamburger-menu" onclick="toggleDrawer()" aria-label="Menu">
@@ -3437,6 +3491,7 @@
         let firestore = null;
         let firebaseStorage = null;
         let currentUser = null;
+        let currentOrgId = null; // Multi-tenancy: current organization ID
         let msalInstance = null;
         let intentionalSignOut = false; // Flag to force auth screen on explicit logout
 
@@ -3721,9 +3776,11 @@ Mergers & Acquisitions Team`
                 firebaseStorage = firebase.storage();
 
                 // Listen for auth state changes
-                firebaseAuth.onAuthStateChanged((user) => {
+                firebaseAuth.onAuthStateChanged(async (user) => {
                     if (user) {
                         currentUser = user;
+                        const orgReady = await loadOrCreateOrg(user);
+                        if (!orgReady) return; // Showing org onboarding — stop here
                         showMainApp();
                         loadDataFromFirebase();
                     } else {
@@ -3816,6 +3873,183 @@ Mergers & Acquisitions Team`
             }
         }
 
+        async function signInWithMicrosoft() {
+            if (!firebaseAuth) return;
+            try {
+                const provider = new firebase.auth.OAuthProvider('microsoft.com');
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await firebaseAuth.signInWithPopup(provider);
+                // onAuthStateChanged handles the rest
+            } catch (error) {
+                console.error('Microsoft sign-in error:', error);
+                showNotification('Microsoft sign-in failed: ' + error.message, { title: 'Error', type: 'error' });
+            }
+        }
+
+        // ==================== ORGANIZATION (MULTI-TENANCY) ====================
+
+        function showOrgOnboardingScreen() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('orgOnboardingScreen').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        // Called after sign-in — finds or creates the user's organization
+        async function loadOrCreateOrg(user) {
+            try {
+                // Check if user already has an org
+                const userDoc = await firestore.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().orgId) {
+                    currentOrgId = userDoc.data().orgId;
+                    return true; // Org found, proceed to load data
+                }
+
+                // Check if old per-user data exists (migration case)
+                const oldAcqSnapshot = await firestore.collection('users').doc(user.uid).collection('acquisitions').limit(1).get();
+                if (!oldAcqSnapshot.empty) {
+                    // Migrate existing data into a new org automatically
+                    const orgId = 'org_' + user.uid;
+                    const orgName = user.displayName ? user.displayName + "'s Organization" : 'My Organization';
+                    await firestore.collection('organizations').doc(orgId).set({
+                        name: orgName,
+                        ownerId: user.uid,
+                        createdAt: new Date().toISOString(),
+                        members: [user.uid]
+                    });
+                    await firestore.collection('users').doc(user.uid).set({ orgId, email: user.email, name: user.displayName }, { merge: true });
+                    currentOrgId = orgId;
+                    await migrateUserDataToOrg(user.uid, orgId);
+                    return true;
+                }
+
+                // Brand new user — show org onboarding
+                showOrgOnboardingScreen();
+                return false;
+            } catch (error) {
+                console.error('Error loading org:', error);
+                showNotification('Error setting up your organization. Please try again.', { title: 'Error', type: 'error' });
+                return false;
+            }
+        }
+
+        // Migrate old /users/{uid}/... data to /organizations/{orgId}/...
+        async function migrateUserDataToOrg(userId, orgId) {
+            try {
+                showSyncStatus('syncing', 'Migrating data...');
+                const batch = firestore.batch();
+
+                const [acqSnap, actSnap] = await Promise.all([
+                    firestore.collection('organizations').doc(currentOrgId).collection('acquisitions').get(),
+                    firestore.collection('organizations').doc(currentOrgId).collection('activities').get()
+                ]);
+
+                acqSnap.docs.forEach(doc => {
+                    batch.set(firestore.collection('organizations').doc(orgId).collection('acquisitions').doc(doc.id), doc.data());
+                });
+                actSnap.docs.forEach(doc => {
+                    batch.set(firestore.collection('organizations').doc(orgId).collection('activities').doc(doc.id), doc.data());
+                });
+
+                // Migrate settings
+                const [soDoc, asDoc] = await Promise.all([
+                    firestore.collection('organizations').doc(currentOrgId).collection('settings').doc('stateOffices').get(),
+                    firestore.collection('organizations').doc(currentOrgId).collection('settings').doc('appSettings').get()
+                ]);
+                if (soDoc.exists) batch.set(firestore.collection('organizations').doc(orgId).collection('settings').doc('stateOffices'), soDoc.data());
+                if (asDoc.exists) batch.set(firestore.collection('organizations').doc(orgId).collection('settings').doc('appSettings'), asDoc.data());
+
+                await batch.commit();
+                console.log('Data migration complete');
+                showSyncStatus('synced', 'Data migrated');
+                setTimeout(() => hideSyncStatus(), 3000);
+            } catch (error) {
+                console.error('Migration error:', error);
+            }
+        }
+
+        async function createOrganization() {
+            const name = document.getElementById('orgNameInput').value.trim();
+            if (!name) {
+                showNotification('Please enter an organization name.', { title: 'Required', type: 'warning' });
+                return;
+            }
+            try {
+                const orgId = 'org_' + currentUser.uid + '_' + Date.now();
+                await firestore.collection('organizations').doc(orgId).set({
+                    name,
+                    ownerId: currentUser.uid,
+                    createdAt: new Date().toISOString(),
+                    members: [currentUser.uid]
+                });
+                await firestore.collection('users').doc(currentUser.uid).set({
+                    orgId, email: currentUser.email, name: currentUser.displayName
+                }, { merge: true });
+                currentOrgId = orgId;
+                document.getElementById('orgOnboardingScreen').style.display = 'none';
+                showMainApp();
+                loadDataFromFirebase();
+            } catch (error) {
+                showNotification('Failed to create organization: ' + error.message, { title: 'Error', type: 'error' });
+            }
+        }
+
+        async function joinWithInviteCode() {
+            const code = document.getElementById('inviteCodeInput').value.trim().toUpperCase();
+            if (!code) {
+                showNotification('Please enter an invite code.', { title: 'Required', type: 'warning' });
+                return;
+            }
+            try {
+                // Look up invite code across all orgs
+                const inviteSnap = await firestore.collectionGroup('invites').where('code', '==', code).where('active', '==', true).limit(1).get();
+                if (inviteSnap.empty) {
+                    showNotification('Invalid or expired invite code.', { title: 'Invalid Code', type: 'error' });
+                    return;
+                }
+                const inviteDoc = inviteSnap.docs[0];
+                const orgId = inviteDoc.ref.parent.parent.id;
+
+                // Add user to org
+                await firestore.collection('organizations').doc(orgId).update({
+                    members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                });
+                await firestore.collection('users').doc(currentUser.uid).set({
+                    orgId, email: currentUser.email, name: currentUser.displayName
+                }, { merge: true });
+
+                // Deactivate single-use invite
+                await inviteDoc.ref.update({ active: false });
+
+                currentOrgId = orgId;
+                document.getElementById('orgOnboardingScreen').style.display = 'none';
+                showMainApp();
+                loadDataFromFirebase();
+            } catch (error) {
+                showNotification('Failed to join organization: ' + error.message, { title: 'Error', type: 'error' });
+            }
+        }
+
+        async function generateInviteCode() {
+            if (!currentOrgId || !currentUser) return;
+            try {
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                await firestore.collection('organizations').doc(currentOrgId)
+                    .collection('invites').add({
+                        code,
+                        createdBy: currentUser.uid,
+                        createdAt: new Date().toISOString(),
+                        active: true
+                    });
+                showNotification(
+                    'Share this code with your team member:\n\n' + code + '\n\nThe code expires after one use.',
+                    { title: 'Invite Code Generated', type: 'success', confirmText: 'Copy & Close',
+                      onConfirm: () => navigator.clipboard.writeText(code).catch(() => {}) }
+                );
+            } catch (error) {
+                showNotification('Failed to generate invite code: ' + error.message, { title: 'Error', type: 'error' });
+            }
+        }
+
         async function signOut() {
             showNotification('Are you sure you want to sign out?', {
                 title: 'Sign Out',
@@ -3842,7 +4076,9 @@ Mergers & Acquisitions Team`
 
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('orgOnboardingScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'none';
+            currentOrgId = null;
         }
 
         function showMainApp() {
@@ -4194,12 +4430,15 @@ Mergers & Acquisitions Team`
             try {
                 showSyncStatus('syncing', 'Loading data...');
 
-                const userId = currentUser.uid;
+                if (!currentOrgId) {
+                    console.error('No org ID — cannot load data');
+                    return;
+                }
 
                 // Firebase is the source of truth — load directly from Firestore
                 const acquisitionsSnapshot = await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('acquisitions')
                     .get();
 
@@ -4210,8 +4449,8 @@ Mergers & Acquisitions Team`
                 console.log('Loaded acquisitions from Firebase:', acquisitions.length);
 
                 const activitiesSnapshot = await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('activities')
                     .get();
 
@@ -4222,7 +4461,7 @@ Mergers & Acquisitions Team`
                 console.log('Loaded activities from Firebase:', activities.length);
 
                 // Load stateOffices (Code Management locations) from Firebase
-                const stateOfficesDoc = await firestore.collection('users').doc(userId)
+                const stateOfficesDoc = await firestore.collection('organizations').doc(currentOrgId)
                     .collection('settings').doc('stateOffices').get();
                 if (stateOfficesDoc.exists && stateOfficesDoc.data().data) {
                     stateOffices = stateOfficesDoc.data().data;
@@ -4232,7 +4471,7 @@ Mergers & Acquisitions Team`
                 }
 
                 // Load appSettings from Firebase (email signature, logo, etc.)
-                const appSettingsDoc = await firestore.collection('users').doc(userId)
+                const appSettingsDoc = await firestore.collection('organizations').doc(currentOrgId)
                     .collection('settings').doc('appSettings').get();
                 if (appSettingsDoc.exists) {
                     const cloudSettings = appSettingsDoc.data();
@@ -4286,8 +4525,8 @@ Mergers & Acquisitions Team`
             try {
                 const userId = currentUser.uid;
                 await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('acquisitions')
                     .doc(acquisition.id)
                     .set(acquisition);
@@ -4309,8 +4548,8 @@ Mergers & Acquisitions Team`
             try {
                 const userId = currentUser.uid;
                 await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('activities')
                     .doc(activity.timestamp)
                     .set(activity);
@@ -4335,9 +4574,9 @@ Mergers & Acquisitions Team`
                 try {
                     const userId = currentUser.uid;
                     await firestore
-                        .collection('users')
-                        .doc(userId)
-                        .collection('activities')
+                        .collection('organizations')
+                    .doc(currentOrgId)
+                    .collection('activities')
                         .doc(activityTimestamp)
                         .delete();
 
@@ -4359,16 +4598,16 @@ Mergers & Acquisitions Team`
             try {
                 const userId = currentUser.uid;
                 await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('acquisitions')
                     .doc(acquisitionId)
                     .delete();
 
                 // Delete associated activities
                 const activitiesSnapshot = await firestore
-                    .collection('users')
-                    .doc(userId)
+                    .collection('organizations')
+                    .doc(currentOrgId)
                     .collection('activities')
                     .where('acquisitionId', '==', acquisitionId)
                     .get();
@@ -4397,9 +4636,9 @@ Mergers & Acquisitions Team`
                 // Save all acquisitions
                 for (const acq of acquisitions) {
                     await firestore
-                        .collection('users')
-                        .doc(userId)
-                        .collection('acquisitions')
+                        .collection('organizations')
+                    .doc(currentOrgId)
+                    .collection('acquisitions')
                         .doc(acq.id)
                         .set(acq);
                 }
@@ -4407,9 +4646,9 @@ Mergers & Acquisitions Team`
                 // Save all activities
                 for (const act of activities) {
                     await firestore
-                        .collection('users')
-                        .doc(userId)
-                        .collection('activities')
+                        .collection('organizations')
+                    .doc(currentOrgId)
+                    .collection('activities')
                         .doc(act.timestamp)
                         .set(act);
                 }
@@ -4497,10 +4736,10 @@ Mergers & Acquisitions Team`
 
         // Save stateOffices to localStorage AND Firebase
         async function saveStateOffices() {
-            saveStateOffices();
-            if (!firestore || !currentUser) return;
+            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
+            if (!firestore || !currentUser || !currentOrgId) return;
             try {
-                await firestore.collection('users').doc(currentUser.uid)
+                await firestore.collection('organizations').doc(currentOrgId)
                     .collection('settings').doc('stateOffices')
                     .set({ data: stateOffices });
             } catch (e) {
@@ -4510,13 +4749,13 @@ Mergers & Acquisitions Team`
 
         // Save appSettings to localStorage AND Firebase (excludes device-specific tokens)
         async function saveAppSettings() {
-            saveAppSettings();
-            if (!firestore || !currentUser) return;
+            localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            if (!firestore || !currentUser || !currentOrgId) return;
             try {
                 const { outlook, ...settingsToSync } = appSettings;
                 // Don't sync outlook access tokens — those are per-device by design
                 const safeOutlook = { connected: false, email: outlook?.email || null };
-                await firestore.collection('users').doc(currentUser.uid)
+                await firestore.collection('organizations').doc(currentOrgId)
                     .collection('settings').doc('appSettings')
                     .set({ ...settingsToSync, outlook: safeOutlook });
             } catch (e) {
@@ -5713,9 +5952,9 @@ Mergers & Acquisitions Team`
                 if (firestore && currentUser) {
                     const userId = currentUser.uid;
                     await firestore
-                        .collection('users')
-                        .doc(userId)
-                        .collection('activities')
+                        .collection('organizations')
+                    .doc(currentOrgId)
+                    .collection('activities')
                         .doc(activityId)
                         .delete();
                     console.log('Deleted from Firestore');
@@ -9081,9 +9320,9 @@ Mergers & Acquisitions Team`
                     for (const email of syncedEmails) {
                         try {
                             // Query for matching documents in the user's activities subcollection
-                            const q = firestore.collection('users')
-                                .doc(userId)
-                                .collection('activities')
+                            const q = firestore.collection('organizations')
+                    .doc(currentOrgId)
+                    .collection('activities')
                                 .where('type', '==', 'email')
                                 .where('acquisitionId', '==', email.acquisitionId)
                                 .where('timestamp', '==', email.timestamp)
