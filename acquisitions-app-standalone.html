@@ -3402,9 +3402,20 @@
         let replyContext = null;  // Store reply context for email threading
         let stateOffices = {};  // Store offices by state
         let currentSelectedState = null;  // Currently selected state for office management
+        // Hardcoded Firebase config — ensures every device connects to the same database automatically
+        const HARDCODED_FIREBASE_CONFIG = JSON.stringify({
+            apiKey: "AIzaSyDKljSQGT4lX5JAk3fgHSWlmUmbXeKmiDc",
+            authDomain: "carrier-management-73d0f.firebaseapp.com",
+            projectId: "carrier-management-73d0f",
+            storageBucket: "carrier-management-73d0f.firebasestorage.app",
+            messagingSenderId: "886881224236",
+            appId: "1:886881224236:web:8425f9d8b8d5a9f7773389",
+            measurementId: "G-JXYE6CFE9D"
+        });
+
         let appSettings = {
             firebase: {
-                config: null
+                config: HARDCODED_FIREBASE_CONFIG
             },
             msal: {
                 clientId: null
@@ -3427,6 +3438,7 @@
         let firebaseStorage = null;
         let currentUser = null;
         let msalInstance = null;
+        let intentionalSignOut = false; // Flag to force auth screen on explicit logout
 
         const availableCarriers = [
             { code: 'ACE-001', name: 'ACE Insurance Company' },
@@ -3717,7 +3729,14 @@ Mergers & Acquisitions Team`
                     } else {
                         currentUser = null;
 
-                        // Load from localStorage as fallback when not signed in
+                        // If user explicitly signed out, always show the auth screen
+                        if (intentionalSignOut) {
+                            intentionalSignOut = false;
+                            showAuthScreen();
+                            return;
+                        }
+
+                        // Load from localStorage as fallback when not signed in on initial load
                         console.log('Not signed in - loading from localStorage');
                         const hasLocalData = loadDataFromLocalStorage();
 
@@ -3798,17 +3817,27 @@ Mergers & Acquisitions Team`
         }
 
         async function signOut() {
-            if (confirm('Are you sure you want to sign out?\n\nYour data will remain saved in localStorage.')) {
-                try {
-                    await firebaseAuth.signOut();
-                    // Don't clear local data - let it persist in localStorage
-                    // The onAuthStateChanged handler will reload from localStorage
-                    // UI will be updated by onAuthStateChanged
-                } catch (error) {
-                    console.error('Sign-out error:', error);
-                    alert('Sign-out failed: ' + error.message);
+            showNotification('Are you sure you want to sign out?', {
+                title: 'Sign Out',
+                type: 'question',
+                confirmText: 'Sign Out',
+                cancelText: 'Cancel',
+                onConfirm: async () => {
+                    try {
+                        intentionalSignOut = true;
+                        if (firebaseAuth) {
+                            await firebaseAuth.signOut();
+                        } else {
+                            // No Firebase auth — just clear local data and show auth screen
+                            showAuthScreen();
+                        }
+                    } catch (error) {
+                        intentionalSignOut = false;
+                        console.error('Sign-out error:', error);
+                        showNotification('Sign-out failed: ' + error.message, { title: 'Error', type: 'error' });
+                    }
                 }
-            }
+            });
         }
 
         function showAuthScreen() {
@@ -4167,12 +4196,7 @@ Mergers & Acquisitions Team`
 
                 const userId = currentUser.uid;
 
-                // First, load from localStorage to preserve any recent changes
-                const savedActivitiesLocal = localStorage.getItem('activities');
-                const localActivities = savedActivitiesLocal ? JSON.parse(savedActivitiesLocal) : [];
-                console.log('Loaded activities from localStorage:', localActivities.length);
-
-                // Load acquisitions from Firebase
+                // Firebase is the source of truth — load directly from Firestore
                 const acquisitionsSnapshot = await firestore
                     .collection('users')
                     .doc(userId)
@@ -4183,67 +4207,22 @@ Mergers & Acquisitions Team`
                     id: doc.id,
                     ...doc.data()
                 }));
+                console.log('Loaded acquisitions from Firebase:', acquisitions.length);
 
-                // Load activities from Firebase
                 const activitiesSnapshot = await firestore
                     .collection('users')
                     .doc(userId)
                     .collection('activities')
                     .get();
 
-                const firebaseActivities = activitiesSnapshot.docs.map(doc => ({
+                activities = activitiesSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                console.log('Loaded activities from Firebase:', firebaseActivities.length);
+                console.log('Loaded activities from Firebase:', activities.length);
 
-                // Merge activities from Firebase and localStorage, keeping unique items by timestamp
-                const activitiesMap = new Map();
-
-                // Add Firebase activities first
-                firebaseActivities.forEach(activity => {
-                    if (activity.timestamp) {
-                        activitiesMap.set(activity.timestamp, activity);
-                    }
-                });
-
-                // Add/override with localStorage activities (these might be newer)
-                localActivities.forEach(activity => {
-                    if (activity.timestamp) {
-                        // Ensure activity has an ID (use timestamp as ID if missing)
-                        if (!activity.id) {
-                            activity.id = activity.timestamp;
-                        }
-                        activitiesMap.set(activity.timestamp, activity);
-                    }
-                });
-
-                // Convert map back to array
-                activities = Array.from(activitiesMap.values());
-                console.log('Merged activities total:', activities.length);
-
-                // Don't auto-load sample data - user creates their own acquisitions
-
-                // Save merged data back to localStorage and Firebase
+                // Update localStorage to match Firebase (not the other way around)
                 saveDataToLocalStorage();
-
-                // Save any localStorage-only activities to Firebase
-                for (const activity of localActivities) {
-                    const existsInFirebase = firebaseActivities.some(fa => fa.timestamp === activity.timestamp);
-                    if (!existsInFirebase && activity.timestamp) {
-                        try {
-                            await firestore
-                                .collection('users')
-                                .doc(userId)
-                                .collection('activities')
-                                .doc(activity.timestamp)
-                                .set(activity);
-                            console.log('Synced local activity to Firebase:', activity.timestamp);
-                        } catch (err) {
-                            console.error('Error syncing activity to Firebase:', err);
-                        }
-                    }
-                }
 
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
@@ -8610,10 +8589,11 @@ Mergers & Acquisitions Team`
                 try {
                     const parsed = JSON.parse(savedSettings);
                     // Deep merge to preserve nested objects
+                    // Always keep the hardcoded Firebase config — never let localStorage override it
                     appSettings = {
                         ...appSettings,
                         ...parsed,
-                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}) },
+                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}), config: HARDCODED_FIREBASE_CONFIG },
                         msal: { ...appSettings.msal, ...(parsed.msal || {}) },
                         outlook: { ...appSettings.outlook, ...(parsed.outlook || {}) }
                     };
