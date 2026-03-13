@@ -3851,7 +3851,7 @@ Mergers & Acquisitions Team`
 
         async function signInWithGoogle() {
             if (!firebaseAuth) {
-                alert('Please configure Firebase in Settings first.\n\n1. Go to Settings\n2. Add your Firebase configuration\n3. Save and reload the page');
+                showWarning('Please configure Firebase in Settings first.\n\n1. Go to Settings\n2. Add your Firebase configuration\n3. Save and reload the page');
                 return;
             }
 
@@ -3861,7 +3861,7 @@ Mergers & Acquisitions Team`
                 // onAuthStateChanged will handle the rest
             } catch (error) {
                 console.error('Sign-in error:', error);
-                alert('Sign-in failed: ' + error.message);
+                showError('Sign-in failed: ' + error.message);
             }
         }
 
@@ -4227,14 +4227,14 @@ Mergers & Acquisitions Team`
 
                     // Validate file type
                     if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file');
+                        showWarning('Please select an image file');
                         return;
                     }
 
                     // Validate file size (max 2MB for Firebase Storage, 500KB for base64 fallback)
                     const maxSize = firebaseStorage && currentUser ? 2000000 : 500000;
                     if (file.size > maxSize) {
-                        alert(`Image file is too large. Please choose an image smaller than ${maxSize / 1000}KB.`);
+                        showWarning(`Image file is too large. Please choose an image smaller than ${maxSize / 1000}KB.`);
                         return;
                     }
 
@@ -4373,12 +4373,12 @@ Mergers & Acquisitions Team`
                                 errorMessage += 'Error: ' + error.message + '\n\n';
                                 errorMessage += 'Note: Local logo will work in the app but may not appear in sent emails.';
                             }
-                            alert(errorMessage);
+                            showError(errorMessage);
                         } catch (fallbackError) {
                             console.error('Fallback to base64 also failed:', fallbackError);
                             statusElement.textContent = '❌ Upload failed';
                             statusElement.style.color = '#e74c3c';
-                            alert('Failed to upload logo: ' + error.message);
+                            showError('Failed to upload logo: ' + error.message);
                         }
                     }
                 });
@@ -4464,20 +4464,20 @@ Mergers & Acquisitions Team`
             const body = document.getElementById('templateBody').value.trim();
 
             if (!name || !subject || !body) {
-                alert('Please fill in all fields');
+                showWarning('Please fill in all fields');
                 return;
             }
 
             if (currentEditingTemplateId) {
                 // Editing existing template
                 emailTemplates[currentEditingTemplateId] = { name, subject, body };
-                alert('Template updated successfully!');
+                showSuccess('Template updated successfully!');
             } else {
                 // Creating new template
                 const templateId = 'custom_' + Date.now();
                 emailTemplates[templateId] = { name, subject, body };
                 currentEditingTemplateId = templateId;
-                alert('Template created successfully!');
+                showSuccess('Template created successfully!');
             }
 
             saveTemplatesToLocalStorage();
@@ -4493,7 +4493,7 @@ Mergers & Acquisitions Team`
                 saveTemplatesToLocalStorage();
                 showTemplateEditorEmpty();
                 renderTemplateManagerList();
-                alert('Template deleted successfully!');
+                showSuccess('Template deleted successfully!');
             }
         }
 
@@ -4612,7 +4612,6 @@ Mergers & Acquisitions Team`
             if (!firestore || !currentUser) return;
 
             try {
-                const userId = currentUser.uid;
                 await firestore
                     .collection('organizations')
                     .doc(currentOrgId)
@@ -4635,7 +4634,6 @@ Mergers & Acquisitions Team`
             if (!firestore || !currentUser) return;
 
             try {
-                const userId = currentUser.uid;
                 await firestore
                     .collection('organizations')
                     .doc(currentOrgId)
@@ -4661,7 +4659,6 @@ Mergers & Acquisitions Team`
             // Delete from Firebase
             if (firestore && currentUser) {
                 try {
-                    const userId = currentUser.uid;
                     await firestore
                         .collection('organizations')
                     .doc(currentOrgId)
@@ -4685,7 +4682,6 @@ Mergers & Acquisitions Team`
             if (!firestore || !currentUser) return;
 
             try {
-                const userId = currentUser.uid;
                 await firestore
                     .collection('organizations')
                     .doc(currentOrgId)
@@ -4720,7 +4716,6 @@ Mergers & Acquisitions Team`
 
             try {
                 showSyncStatus('syncing', 'Syncing all data...');
-                const userId = currentUser.uid;
 
                 // Save all acquisitions
                 for (const acq of acquisitions) {
@@ -5445,7 +5440,7 @@ Mergers & Acquisitions Team`
         function showImportEmailModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -5528,7 +5523,7 @@ Mergers & Acquisitions Team`
             const carrierCode = document.getElementById('carrierSelectDropdown').value;
 
             if (!files || !acquisition || !carrierCode) {
-                alert('Missing required information');
+                showError('Missing required information');
                 return;
             }
 
@@ -5562,17 +5557,17 @@ Mergers & Acquisitions Team`
 
                 if (html || text) {
                     console.log('HTML/Text data detected');
-                    alert('Please drag the email file directly from Outlook, not the email content.\n\nTip: Try dragging the email to your desktop first to create a .msg or .eml file, then drag that file here.');
+                    showWarning('Please drag the email file directly from Outlook, not the email content.\n\nTip: Try dragging the email to your desktop first to create a .msg or .eml file, then drag that file here.');
                     return;
                 }
 
-                alert('No files detected. Please drag an email file (.msg or .eml) from Outlook.\n\nTip: You may need to drag the email to your desktop first, then drag the .msg/.eml file here.');
+                showWarning('No files detected. Please drag an email file (.msg or .eml) from Outlook.\n\nTip: You may need to drag the email to your desktop first, then drag the .msg/.eml file here.');
                 return;
             }
 
             const acquisition = acquisitionOverride || acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -5584,7 +5579,7 @@ Mergers & Acquisitions Team`
             if (!carrier) {
                 console.error('Carrier not found! Looking for code:', carrierCode, 'Type:', typeof carrierCode);
                 console.error('Available carrier codes:', acquisition.carriers.map(c => `${c.code} (${typeof c.code})`));
-                alert(`Carrier not found.\n\nLooking for: "${carrierCode}" (${typeof carrierCode})\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
+                showError(`Carrier not found.\n\nLooking for: "${carrierCode}" (${typeof carrierCode})\nAvailable: ${acquisition.carriers.map(c => c.code).join(', ')}\n\nPlease refresh the page and try again.`);
                 return;
             }
 
@@ -5660,9 +5655,9 @@ Mergers & Acquisitions Team`
             // Show summary
             if (files.length === 1) {
                 if (successCount > 0) {
-                    alert(`Email "${processedEmails[0]}" added successfully to ${carrier.name}!\n\nCheck the carrier's email history for reply/forward buttons.`);
+                    showSuccess(`Email "${processedEmails[0]}" added successfully to ${carrier.name}!\n\nCheck the carrier's email history for reply/forward buttons.`);
                 } else {
-                    alert(`Failed to process email. Please try a different format.`);
+                    showError(`Failed to process email. Please try a different format.`);
                 }
             } else {
                 // Multiple emails - show summary
@@ -5673,7 +5668,7 @@ Mergers & Acquisitions Team`
                 }
                 message += `\nCarrier: ${carrier.name}`;
                 message += `\n\nCheck the carrier's email history for reply/forward buttons.`;
-                alert(message);
+                showInfo(message);
             }
         }
 
@@ -6010,7 +6005,7 @@ Mergers & Acquisitions Team`
             console.log('Attempting to delete activity with ID:', activityId);
 
             if (!activityId) {
-                alert('Unable to delete email: Activity ID not found');
+                showError('Unable to delete email: Activity ID not found');
                 console.error('No activity ID provided');
                 return;
             }
@@ -6029,7 +6024,7 @@ Mergers & Acquisitions Team`
 
                 if (activityIndex === -1) {
                     console.error('Activity not found in array. Available activity IDs:', activities.map(a => a.id));
-                    alert('Email not found');
+                    showError('Email not found');
                     return;
                 }
 
@@ -6039,7 +6034,6 @@ Mergers & Acquisitions Team`
 
                 // Delete from Firestore
                 if (firestore && currentUser) {
-                    const userId = currentUser.uid;
                     await firestore
                         .collection('organizations')
                     .doc(currentOrgId)
@@ -6059,7 +6053,7 @@ Mergers & Acquisitions Team`
                 console.log('Email deleted successfully');
             } catch (error) {
                 console.error('Error deleting email:', error);
-                alert('Failed to delete email. Please try again.');
+                showError('Failed to delete email. Please try again.');
             }
         }
 
@@ -6208,11 +6202,11 @@ Mergers & Acquisitions Team`
         function showBulkEmail() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
             if (acquisition.carriers.length === 0) {
-                alert('No carriers available. Please add carriers first.');
+                showWarning('No carriers available. Please add carriers first.');
                 return;
             }
             // Open email compose modal - user can select multiple carriers via checkboxes
@@ -6223,7 +6217,7 @@ Mergers & Acquisitions Team`
         function showFilesModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -6288,7 +6282,7 @@ Mergers & Acquisitions Team`
             try {
                 const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
                 if (!acquisition) {
-                    alert('Please select an acquisition first');
+                    showWarning('Please select an acquisition first');
                     return;
                 }
 
@@ -6296,7 +6290,7 @@ Mergers & Acquisitions Team`
                 const files = fileInput.files;
 
                 if (files.length === 0) {
-                    alert('Please select at least one file to upload');
+                    showWarning('Please select at least one file to upload');
                     return;
                 }
 
@@ -6370,7 +6364,7 @@ Mergers & Acquisitions Team`
                             errorMessage += '\n\nFalling back to local storage mode.';
                         }
 
-                        alert(errorMessage);
+                        showError(errorMessage);
                         console.log('Attempting to upload to localStorage as fallback...');
 
                         // Fall back to localStorage mode with proper async handling
@@ -6386,7 +6380,7 @@ Mergers & Acquisitions Team`
                 }
             } catch (error) {
                 console.error('Unexpected error in uploadFiles:', error);
-                alert('Error uploading files: ' + (error.message || 'Unknown error. Please check the browser console for details.'));
+                showError('Error uploading files: ' + (error.message || 'Unknown error. Please check the browser console for details.'));
                 showStatus('Error uploading files');
             }
         }
@@ -6484,7 +6478,7 @@ Mergers & Acquisitions Team`
                 link.href = file.data;
             } else {
                 console.error('File has no URL or data:', file);
-                alert('Error: File data not found');
+                showError('Error: File data not found');
                 return;
             }
 
@@ -6524,7 +6518,7 @@ Mergers & Acquisitions Team`
         function showEmailCompose() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
             const modal = document.getElementById('emailTemplateModal');
@@ -6772,7 +6766,7 @@ Mergers & Acquisitions Team`
             });
 
             if (selectedCarriers.length === 0) {
-                alert('Please select at least one carrier');
+                showWarning('Please select at least one carrier');
                 return;
             }
 
@@ -6850,7 +6844,7 @@ Mergers & Acquisitions Team`
                         if (!createReplyResponse.ok) {
                             const errorData = await createReplyResponse.json();
                             console.error('Create reply failed:', errorData);
-                            alert('Failed to create reply: ' + (errorData.error?.message || 'Unknown error'));
+                            showError('Failed to create reply: ' + (errorData.error?.message || 'Unknown error'));
                             return;
                         }
 
@@ -6878,7 +6872,7 @@ Mergers & Acquisitions Team`
                         if (!updateResponse.ok) {
                             const errorData = await updateResponse.json();
                             console.error('Update reply failed:', errorData);
-                            alert('Failed to update reply: ' + (errorData.error?.message || 'Unknown error'));
+                            showError('Failed to update reply: ' + (errorData.error?.message || 'Unknown error'));
                             return;
                         }
 
@@ -6919,7 +6913,7 @@ Mergers & Acquisitions Team`
                                 messageId: replyDraft.id  // Store the new message ID
                             });
 
-                            alert('Reply sent successfully!');
+                            showSuccess('Reply sent successfully!');
 
                             // Clear form and reply context
                             document.getElementById('emailSubject').value = '';
@@ -6936,7 +6930,7 @@ Mergers & Acquisitions Team`
                         } else {
                             const errorData = await response.json();
                             console.error('Reply failed:', errorData);
-                            alert('Failed to send reply: ' + (errorData.error?.message || 'Unknown error'));
+                            showError('Failed to send reply: ' + (errorData.error?.message || 'Unknown error'));
                         }
 
                         return; // Exit early since we handled the reply
@@ -7112,11 +7106,11 @@ Mergers & Acquisitions Team`
                     if (failedCarriers.length > 0) {
                         message += `\n\nFailed to send to:\n${failedCarriers.join('\n')}`;
                     }
-                    alert(message);
+                    showInfo(message);
 
                 } catch (error) {
                     console.error('Email send error:', error);
-                    alert('Failed to send emails: ' + error.message + '\n\nEmails logged to activity but not sent.');
+                    showError('Failed to send emails: ' + error.message + '\n\nEmails logged to activity but not sent.');
 
                     // Log to activity anyway
                     for (const carrier of selectedCarriers) {
@@ -7163,7 +7157,7 @@ Mergers & Acquisitions Team`
                     });
                 }
 
-                alert(`Email logged to activity for ${selectedCarriers.length} carrier(s).\n\nConnect Outlook in Settings to send real emails.`);
+                showInfo(`Email logged to activity for ${selectedCarriers.length} carrier(s).\n\nConnect Outlook in Settings to send real emails.`);
             }
 
             // Clear attachments and reply context after sending
@@ -7179,7 +7173,7 @@ Mergers & Acquisitions Team`
         function showActivityModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
             editingActivityTimestamp = null;
@@ -7200,13 +7194,13 @@ Mergers & Acquisitions Team`
         function showAddActivityFromCarrier() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
             const carrier = acquisition.carriers.find(c => c.code === currentCarrierForContacts);
             if (!carrier) {
-                alert('Carrier not found');
+                showError('Carrier not found');
                 return;
             }
 
@@ -7228,7 +7222,7 @@ Mergers & Acquisitions Team`
         function showEditActivityModal(activityTimestamp) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -7457,7 +7451,7 @@ Mergers & Acquisitions Team`
         function showAddCarrierModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
             document.getElementById('addCarrierModal').style.display = 'block';
@@ -7466,12 +7460,12 @@ Mergers & Acquisitions Team`
         function showRemoveCarrierModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
             if (acquisition.carriers.length === 0) {
-                alert('No carriers to remove');
+                showInfo('No carriers to remove');
                 return;
             }
 
@@ -7523,7 +7517,7 @@ Mergers & Acquisitions Team`
             if (!acquisition) return;
 
             if (acquisition.carriers.length === 0) {
-                alert('No carriers to remove');
+                showInfo('No carriers to remove');
                 return;
             }
 
@@ -7538,7 +7532,7 @@ Mergers & Acquisitions Team`
                 renderCarriersList();
                 closeModal('removeCarrierModal');
 
-                alert(`Successfully removed all ${carrierCount} carriers`);
+                showSuccess(`Successfully removed all ${carrierCount} carriers`);
             }
         }
 
@@ -7546,7 +7540,7 @@ Mergers & Acquisitions Team`
         function showImportCarriersModal() {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
             document.getElementById('importCarriersModal').style.display = 'block';
@@ -7589,7 +7583,7 @@ Mergers & Acquisitions Team`
             const file = fileInput.files[0];
 
             if (!file) {
-                alert('Please select a file first');
+                showWarning('Please select a file first');
                 return;
             }
 
@@ -7597,7 +7591,7 @@ Mergers & Acquisitions Team`
                 const data = await parseExcelFile(file);
 
                 if (data.length === 0) {
-                    alert('The Excel file is empty');
+                    showInfo('The Excel file is empty');
                     return;
                 }
 
@@ -7608,7 +7602,7 @@ Mergers & Acquisitions Team`
                     (firstRow.hasOwnProperty('Name') || firstRow.hasOwnProperty('name'));
 
                 if (!hasRequiredColumns) {
-                    alert('Excel file must have "Code" and "Name" columns');
+                    showWarning('Excel file must have "Code" and "Name" columns');
                     return;
                 }
 
@@ -7636,7 +7630,7 @@ Mergers & Acquisitions Team`
                 previewDiv.style.display = 'block';
 
             } catch (error) {
-                alert('Error reading Excel file: ' + error.message);
+                showError('Error reading Excel file: ' + error.message);
             }
         }
 
@@ -7647,13 +7641,13 @@ Mergers & Acquisitions Team`
             const file = fileInput.files[0];
 
             if (!file) {
-                alert('Please select a file');
+                showWarning('Please select a file');
                 return;
             }
 
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -7661,7 +7655,7 @@ Mergers & Acquisitions Team`
                 const data = await parseExcelFile(file);
 
                 if (data.length === 0) {
-                    alert('The Excel file is empty');
+                    showInfo('The Excel file is empty');
                     return;
                 }
 
@@ -7687,7 +7681,7 @@ Mergers & Acquisitions Team`
                 }).filter(carrier => carrier.code && carrier.name); // Filter out invalid entries
 
                 if (importedCarriers.length === 0) {
-                    alert('No valid carriers found in the Excel file. Make sure it has "Code" and "Name" columns.');
+                    showInfo('No valid carriers found in the Excel file. Make sure it has "Code" and "Name" columns.');
                     return;
                 }
 
@@ -7705,13 +7699,13 @@ Mergers & Acquisitions Team`
                 await saveAcquisitionToFirebase(acquisition);
 
                 renderCarriersList();
-                alert(`Successfully imported ${addedCount} carriers to ${acquisition.name}!\n(${importedCarriers.length - addedCount} duplicates skipped)`);
+                showSuccess(`Successfully imported ${addedCount} carriers to ${acquisition.name}!\n(${importedCarriers.length - addedCount} duplicates skipped)`);
 
                 closeModal('importCarriersModal');
                 document.getElementById('importCarriersForm').reset();
 
             } catch (error) {
-                alert('Error importing carriers: ' + error.message);
+                showError('Error importing carriers: ' + error.message);
             }
         }
 
@@ -8375,7 +8369,7 @@ Mergers & Acquisitions Team`
             // Verify acquisition exists
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -8425,7 +8419,7 @@ Mergers & Acquisitions Team`
             // Verify acquisition exists
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -8471,7 +8465,7 @@ Mergers & Acquisitions Team`
             // Verify acquisition exists
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
             if (!acquisition) {
-                alert('Please select an acquisition first');
+                showWarning('Please select an acquisition first');
                 return;
             }
 
@@ -8576,7 +8570,7 @@ Mergers & Acquisitions Team`
 
         function downloadAttachment(attachment) {
             if (!attachment.contentBytes) {
-                alert('Attachment content not available');
+                showInfo('Attachment content not available');
                 return;
             }
 
@@ -8601,13 +8595,13 @@ Mergers & Acquisitions Team`
                 window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Error downloading attachment:', error);
-                alert('Failed to download attachment: ' + error.message);
+                showError('Failed to download attachment: ' + error.message);
             }
         }
 
         function viewPDFAttachment(attachment) {
             if (!attachment.contentBytes) {
-                alert('PDF content not available');
+                showInfo('PDF content not available');
                 return;
             }
 
@@ -8632,12 +8626,12 @@ Mergers & Acquisitions Team`
                     }, 1000);
                 } else {
                     // If popup was blocked, fallback to download
-                    alert('Popup blocked. Please allow popups to view PDFs, or use the download button instead.');
+                    showWarning('Popup blocked. Please allow popups to view PDFs, or use the download button instead.');
                     window.URL.revokeObjectURL(url);
                 }
             } catch (error) {
                 console.error('Error viewing PDF:', error);
-                alert('Failed to view PDF: ' + error.message);
+                showError('Failed to view PDF: ' + error.message);
             }
         }
 
@@ -8700,7 +8694,7 @@ Mergers & Acquisitions Team`
 
             // Check if carrier code already exists
             if (acquisition.carriers.find(c => c.code === code)) {
-                alert('A carrier with this code already exists in this acquisition');
+                showWarning('A carrier with this code already exists in this acquisition');
                 return;
             }
 
@@ -8791,7 +8785,7 @@ Mergers & Acquisitions Team`
 
                 // Validate PDF files only
                 if (file.type !== 'application/pdf') {
-                    alert(`${file.name} is not a PDF file. Only PDF files are allowed.`);
+                    showInfo(`${file.name} is not a PDF file. Only PDF files are allowed.`);
                     continue;
                 }
 
@@ -8884,7 +8878,7 @@ Mergers & Acquisitions Team`
                 URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Error downloading attachment:', error);
-                alert('Failed to download attachment');
+                showError('Failed to download attachment');
             }
         }
 
@@ -9077,13 +9071,13 @@ Mergers & Acquisitions Team`
                     const missingFields = requiredFields.filter(field => !config[field]);
 
                     if (missingFields.length > 0) {
-                        alert(`Invalid Firebase configuration. Missing required fields: ${missingFields.join(', ')}\n\nMake sure all keys are quoted with double quotes, like:\n{\n  "apiKey": "your-key",\n  "authDomain": "your-domain",\n  "projectId": "your-project",\n  "storageBucket": "your-bucket"\n}`);
+                        showError(`Invalid Firebase configuration. Missing required fields: ${missingFields.join(', ')}\n\nMake sure all keys are quoted with double quotes, like:\n{\n  "apiKey": "your-key",\n  "authDomain": "your-domain",\n  "projectId": "your-project",\n  "storageBucket": "your-bucket"\n}`);
                         return;
                     }
 
                     appSettings.firebase.config = firebaseConfig;
                 } catch (e) {
-                    alert('Invalid Firebase configuration JSON. Please check and try again.\n\nCommon issue: Make sure all keys are quoted with double quotes.\n\nCorrect format:\n{\n  "apiKey": "AIza...",\n  "authDomain": "project.firebaseapp.com",\n  "projectId": "project-id"\n}\n\nIncorrect format (missing quotes):\n{\n  apiKey: "AIza...",\n  authDomain: "project.firebaseapp.com"\n}');
+                    showError('Invalid Firebase configuration JSON. Please check and try again.\n\nCommon issue: Make sure all keys are quoted with double quotes.\n\nCorrect format:\n{\n  "apiKey": "AIza...",\n  "authDomain": "project.firebaseapp.com",\n  "projectId": "project-id"\n}\n\nIncorrect format (missing quotes):\n{\n  apiKey: "AIza...",\n  authDomain: "project.firebaseapp.com"\n}');
                     return;
                 }
             }
@@ -9097,7 +9091,7 @@ Mergers & Acquisitions Team`
             // Save to localStorage
             saveAppSettings();
 
-            alert('Settings saved successfully!\n\nPlease reload the page for configuration changes to take effect.');
+            showSuccess('Settings saved successfully!\n\nPlease reload the page for configuration changes to take effect.');
         }
 
         // Handle signature image upload
@@ -9282,7 +9276,7 @@ Mergers & Acquisitions Team`
 
         async function connectOutlook() {
             if (!msalInstance) {
-                alert('Please configure your Azure AD Client ID in Settings first.\n\n1. Go to Settings\n2. Add your Azure AD Client ID\n3. Save and reload the page');
+                showWarning('Please configure your Azure AD Client ID in Settings first.\n\n1. Go to Settings\n2. Add your Azure AD Client ID\n3. Save and reload the page');
                 return;
             }
 
@@ -9300,11 +9294,11 @@ Mergers & Acquisitions Team`
                     saveAppSettings();
 
                     updateOutlookConnectionUI();
-                    alert('Outlook account connected successfully!\n\nYou can now send emails directly through your Outlook account.');
+                    showSuccess('Outlook account connected successfully!\n\nYou can now send emails directly through your Outlook account.');
                 }
             } catch (error) {
                 console.error('Outlook connection error:', error);
-                alert('Failed to connect Outlook: ' + error.message);
+                showError('Failed to connect Outlook: ' + error.message);
             }
         }
 
@@ -9315,13 +9309,13 @@ Mergers & Acquisitions Team`
                 appSettings.outlook.accessToken = null;
                 saveAppSettings();
                 updateOutlookConnectionUI();
-                alert('Outlook account disconnected');
+                showSuccess('Outlook account disconnected');
             }
         }
 
         async function testOutlookConnection() {
             if (!appSettings.outlook.connected || !msalInstance) {
-                alert('Outlook is not connected');
+                showSuccess('Outlook is not connected');
                 return;
             }
 
@@ -9335,16 +9329,16 @@ Mergers & Acquisitions Team`
 
                 if (response.ok) {
                     const userData = await response.json();
-                    alert('Connection Test Successful!\n\n' +
+                    showSuccess('Connection Test Successful!\n\n' +
                         'Connected as: ' + userData.displayName + '\n' +
                         'Email: ' + userData.mail || userData.userPrincipalName + '\n\n' +
                         'Microsoft Graph API access confirmed.');
                 } else {
-                    alert('Connection test failed. Please reconnect your Outlook account.');
+                    showError('Connection test failed. Please reconnect your Outlook account.');
                 }
             } catch (error) {
                 console.error('Connection test error:', error);
-                alert('Connection test failed: ' + error.message);
+                showError('Connection test failed: ' + error.message);
             }
         }
 
@@ -9396,14 +9390,13 @@ Mergers & Acquisitions Team`
                 console.log('Found', syncedEmails.length, 'synced emails to clear');
 
                 if (syncedEmails.length === 0) {
-                    alert('No synced emails found to clear.');
+                    showSuccess('No synced emails found to clear.');
                     return;
                 }
 
                 // Delete from Firebase if connected (do this FIRST before removing from local array)
                 if (firestore && currentUser) {
                     console.log('Deleting from Firebase...');
-                    const userId = currentUser.uid;
                     let deletedCount = 0;
 
                     for (const email of syncedEmails) {
@@ -9451,11 +9444,11 @@ Mergers & Acquisitions Team`
                 // Refresh the UI
                 renderActivityLog();
 
-                alert(`Cleared ${syncedEmails.length} synced email(s) from your activity log.`);
+                showSuccess(`Cleared ${syncedEmails.length} synced email(s) from your activity log.`);
 
             } catch (error) {
                 console.error('Error clearing synced emails:', error);
-                alert('Failed to clear synced emails: ' + error.message);
+                showError('Failed to clear synced emails: ' + error.message);
             }
         }
 
@@ -9463,7 +9456,7 @@ Mergers & Acquisitions Team`
             if (confirm('This will reset the last sync date, allowing the next sync to look back 30 days instead of only since the last sync. Continue?')) {
                 appSettings.outlook.lastEmailSync = null;
                 saveSettings();
-                alert('Last sync date has been reset. The next sync will look back 30 days.');
+                showInfo('Last sync date has been reset. The next sync will look back 30 days.');
             }
         }
 
@@ -9620,7 +9613,7 @@ Mergers & Acquisitions Team`
 
                 if (carrierEmailMap.size === 0) {
                     console.warn('⚠️ WARNING: No carrier contacts found!');
-                    alert('⚠️ No carrier contacts configured!\n\nYou need to add email addresses to your carrier contacts before sync can work.\n\nClick on a carrier name to add contacts.');
+                    showInfo('⚠️ No carrier contacts configured!\n\nYou need to add email addresses to your carrier contacts before sync can work.\n\nClick on a carrier name to add contacts.');
                     if (syncBtn) {
                         syncBtn.textContent = originalText;
                         syncBtn.disabled = false;
@@ -9716,7 +9709,7 @@ Mergers & Acquisitions Team`
 
                 if (sentSubjects.size === 0 && sentConversationIds.size === 0) {
                     console.log('No emails sent through this app found');
-                    alert('No sent emails found.\n\nYou must send emails through this app first before syncing replies.\n\nCheck browser console (F12) for details.');
+                    showSuccess('No sent emails found.\n\nYou must send emails through this app first before syncing replies.\n\nCheck browser console (F12) for details.');
                     appSettings.outlook.lastEmailSync = new Date().toISOString();
                     saveSettings();
                     if (syncBtn) {
@@ -10154,11 +10147,11 @@ Mergers & Acquisitions Team`
                 }
 
                 alertMessage += `📋 Check browser console (F12) for detailed sync analysis.`;
-                alert(alertMessage);
+                showInfo(alertMessage);
 
             } catch (error) {
                 console.error('Email sync error:', error);
-                alert('Failed to sync emails: ' + error.message + '\n\nCheck browser console (F12) for details.');
+                showError('Failed to sync emails: ' + error.message + '\n\nCheck browser console (F12) for details.');
             } finally {
                 if (syncBtn) {
                     syncBtn.textContent = originalText;
@@ -10188,7 +10181,7 @@ Mergers & Acquisitions Team`
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            alert('Data exported successfully!');
+            showSuccess('Data exported successfully!');
         }
 
         function importData(event) {
@@ -10226,11 +10219,11 @@ Mergers & Acquisitions Team`
                             renderActivityLog();
                         }
 
-                        alert('Data imported successfully!');
+                        showSuccess('Data imported successfully!');
                         closeModal('settingsModal');
                     }
                 } catch (error) {
-                    alert('Error importing data: ' + error.message);
+                    showError('Error importing data: ' + error.message);
                 }
             };
             reader.readAsText(file);
@@ -10262,24 +10255,6 @@ Mergers & Acquisitions Team`
             }
         }
 
-        function skipSignIn() {
-            // Load from localStorage and show main app without authentication
-            console.log('Skipping sign in - using localStorage mode');
-            const hasLocalData = loadDataFromLocalStorage();
-
-            showMainApp();
-            renderAcquisitionTabs();
-            if (acquisitions.length > 0) {
-                selectAcquisition(acquisitions[0].id);
-            } else if (!hasLocalData) {
-                // No local data, load sample data
-                loadSampleData();
-                renderAcquisitionTabs();
-                if (acquisitions.length > 0) {
-                    selectAcquisition(acquisitions[0].id);
-                }
-            }
-        }
 
         // Page Navigation Functions
         function showPage(pageName) {
@@ -10428,7 +10403,7 @@ Mergers & Acquisitions Team`
             const address = document.getElementById('locationAddress').value.trim();
 
             if (!name) {
-                alert('Please enter a location name');
+                showWarning('Please enter a location name');
                 return;
             }
 
@@ -10496,7 +10471,7 @@ Mergers & Acquisitions Team`
         function importFromAcquisition(acquisitionId) {
             const acquisition = acquisitions.find(a => a.id === acquisitionId);
             if (!acquisition) {
-                alert('Acquisition not found');
+                showError('Acquisition not found');
                 return;
             }
 
@@ -10561,7 +10536,7 @@ Mergers & Acquisitions Team`
             renderLocations();
 
             // Show success message
-            alert(`Successfully imported "${acquisition.name}" to ${stateNames[currentStateCode]}!\n\n${carrierCount} carrier${carrierCount !== 1 ? 's' : ''} and ${contactCount} contact${contactCount !== 1 ? 's' : ''} have been added.`);
+            showSuccess(`Successfully imported "${acquisition.name}" to ${stateNames[currentStateCode]}!\n\n${carrierCount} carrier${carrierCount !== 1 ? 's' : ''} and ${contactCount} contact${contactCount !== 1 ? 's' : ''} have been added.`);
         }
 
         function openLocationDetail(locationId) {
@@ -10752,7 +10727,7 @@ Mergers & Acquisitions Team`
             const name = document.getElementById('newCarrierName').value.trim();
 
             if (!name) {
-                alert('Please enter a carrier name');
+                showWarning('Please enter a carrier name');
                 return;
             }
 
@@ -10793,7 +10768,7 @@ Mergers & Acquisitions Team`
             const code = input.value.trim();
 
             if (!code) {
-                alert('Please enter a code');
+                showWarning('Please enter a code');
                 return;
             }
 
@@ -10825,7 +10800,7 @@ Mergers & Acquisitions Team`
             const phone = document.getElementById(`newRepPhone-${carrierIndex}`).value.trim();
 
             if (!name) {
-                alert('Please enter at least a name for the representative');
+                showSuccess('Please enter at least a name for the representative');
                 return;
             }
 
@@ -10920,7 +10895,7 @@ Mergers & Acquisitions Team`
             const officeManager = document.getElementById('officeManager').value;
 
             if (!officeName || !officeAddress || !officeCity) {
-                alert('Please fill in at least Office Name, Address, and City');
+                showWarning('Please fill in at least Office Name, Address, and City');
                 return;
             }
 
@@ -10960,7 +10935,7 @@ Mergers & Acquisitions Team`
             document.getElementById('officePhone').value = '';
             document.getElementById('officeManager').value = '';
 
-            alert('Office saved successfully!');
+            showSuccess('Office saved successfully!');
         }
 
         function loadOfficesList(stateCode) {
