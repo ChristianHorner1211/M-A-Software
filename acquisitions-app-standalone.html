@@ -598,22 +598,36 @@
         .carriers-list {
             display: flex;
             flex-direction: column;
-            gap: var(--space-3);
+            gap: 0;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .carrier-item {
             display: flex;
             flex-direction: column;
-            border-radius: var(--radius-lg);
+            border-radius: 0;
             transition: var(--transition-base);
             overflow: hidden;
             background: white;
-            border: 1px solid var(--gray-200);
-            box-shadow: var(--shadow-sm);
+            border: none;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: none;
+        }
+
+        .carrier-item:last-child {
+            border-bottom: none;
+        }
+
+        .carrier-item:nth-child(even) {
+            background: var(--gray-50);
         }
 
         .carrier-item:hover {
-            box-shadow: var(--shadow-md);
+            background: var(--gray-100);
         }
 
         .carrier-header {
@@ -625,7 +639,7 @@
         }
 
         .carrier-header:hover {
-            background: var(--gray-50);
+            background: rgba(0, 0, 0, 0.03);
         }
 
         .carrier-toggle {
@@ -640,12 +654,12 @@
         }
 
         .carrier-item.done {
-            background: linear-gradient(to right, rgba(16, 185, 129, 0.05) 0%, white 20%);
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.10) 0%, rgba(16, 185, 129, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--success);
         }
 
         .carrier-item.outstanding {
-            background: linear-gradient(to right, rgba(239, 68, 68, 0.05) 0%, white 20%);
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.10) 0%, rgba(239, 68, 68, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--danger);
         }
 
@@ -678,18 +692,17 @@
         }
 
         .carrier-item.has-response {
-            background: linear-gradient(to right, rgba(79, 70, 229, 0.08) 0%, white 20%);
+            background: linear-gradient(to right, rgba(79, 70, 229, 0.10) 0%, rgba(79, 70, 229, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--primary);
-            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
         }
 
         .carrier-item.has-response.done {
-            background: linear-gradient(to right, rgba(16, 185, 129, 0.05) 0%, white 20%);
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.10) 0%, rgba(16, 185, 129, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--success);
         }
 
         .carrier-item.has-response.outstanding {
-            background: linear-gradient(to right, rgba(79, 70, 229, 0.08) 0%, white 20%);
+            background: linear-gradient(to right, rgba(79, 70, 229, 0.10) 0%, rgba(79, 70, 229, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--primary);
         }
 
