@@ -3925,7 +3925,64 @@ Mergers & Acquisitions Team`
                     console.warn('Could not check for existing org:', e.message);
                 }
 
-                // Step 4: Check if old per-user data exists (migration case)
+                // Step 4: Look for an existing org tied to this email address
+                // (handles cross-provider login — same email on Google + Microsoft)
+                try {
+                    const emailKey = user.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const emailIndexDoc = await firestore.collection('orgsByEmail').doc(emailKey).get();
+                    if (emailIndexDoc.exists && emailIndexDoc.data().orgId) {
+                        const foundOrgId = emailIndexDoc.data().orgId;
+                        // Add this provider's UID as a member of the existing org
+                        await firestore.collection('organizations').doc(foundOrgId).update({
+                            members: firebase.firestore.FieldValue.arrayUnion(user.uid)
+                        });
+                        await firestore.collection('users').doc(user.uid).set(
+                            { orgId: foundOrgId, email: user.email, name: user.displayName },
+                            { merge: true }
+                        );
+                        currentOrgId = foundOrgId;
+                        console.log('Found org via email index:', foundOrgId);
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn('Could not check email index:', e.message);
+                }
+
+                // Step 4b: Check if another user doc with same email has an org
+                // (fallback for orgs created before the email index existed)
+                try {
+                    const usersWithEmail = await firestore.collection('users')
+                        .where('email', '==', user.email)
+                        .limit(5)
+                        .get();
+                    for (const doc of usersWithEmail.docs) {
+                        if (doc.id !== user.uid && doc.data().orgId) {
+                            const foundOrgId = doc.data().orgId;
+                            // Verify the org exists
+                            const orgDoc = await firestore.collection('organizations').doc(foundOrgId).get();
+                            if (orgDoc.exists) {
+                                // Add this UID to the existing org
+                                await firestore.collection('organizations').doc(foundOrgId).update({
+                                    members: firebase.firestore.FieldValue.arrayUnion(user.uid)
+                                });
+                                await firestore.collection('users').doc(user.uid).set(
+                                    { orgId: foundOrgId, email: user.email, name: user.displayName },
+                                    { merge: true }
+                                );
+                                // Write to email index for next time
+                                const emailKey = user.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                                await firestore.collection('orgsByEmail').doc(emailKey).set({ orgId: foundOrgId });
+                                currentOrgId = foundOrgId;
+                                console.log('Found org via email cross-reference:', foundOrgId);
+                                return true;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not check users by email:', e.message);
+                }
+
+                // Step 5: Check if old per-user data exists (migration case)
                 try {
                     const oldAcqSnapshot = await firestore.collection('users').doc(user.uid).collection('acquisitions').limit(1).get();
                     if (!oldAcqSnapshot.empty) {
@@ -4013,6 +4070,9 @@ Mergers & Acquisitions Team`
                 await firestore.collection('users').doc(currentUser.uid).set({
                     orgId, email: currentUser.email, name: currentUser.displayName
                 }, { merge: true });
+                // Write email index so future logins with same email find this org
+                const emailKey = currentUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                await firestore.collection('orgsByEmail').doc(emailKey).set({ orgId });
                 currentOrgId = orgId;
                 document.getElementById('orgOnboardingScreen').style.display = 'none';
                 showMainApp();
