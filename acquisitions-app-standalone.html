@@ -96,6 +96,228 @@
             --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
+        /* ==================== DARK MODE ==================== */
+        body.dark-mode {
+            background: #212121;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .carriers-list,
+        body.dark-mode .carrier-item {
+            background: #2b2b2b;
+            border-color: #3d3d3d;
+        }
+
+        body.dark-mode .carrier-item:nth-child(even) {
+            background: #252525;
+        }
+
+        body.dark-mode .carrier-item:hover {
+            background: #333333;
+        }
+
+        body.dark-mode .carrier-item.done {
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 25%, transparent 50%);
+        }
+
+        body.dark-mode .carrier-item.outstanding {
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.04) 25%, transparent 50%);
+        }
+
+        body.dark-mode .carrier-item.has-response {
+            background: linear-gradient(to right, rgba(79, 70, 229, 0.15) 0%, rgba(79, 70, 229, 0.04) 25%, transparent 50%);
+        }
+
+        body.dark-mode .carrier-content {
+            background: rgba(30, 30, 30, 0.5);
+        }
+
+        body.dark-mode .carrier-name,
+        body.dark-mode .carrier-details-section h4,
+        body.dark-mode h1, body.dark-mode h2, body.dark-mode h3,
+        body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .carrier-code,
+        body.dark-mode .carrier-toggle {
+            color: #9e9e9e;
+        }
+
+        body.dark-mode .modal-content {
+            background: #2b2b2b;
+            border-color: #3d3d3d;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .modal-content h2,
+        body.dark-mode .modal-content h3 {
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .form-group label {
+            color: #c8c8c8;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select,
+        body.dark-mode .form-group textarea {
+            background: #383838;
+            border-color: #4a4a4a;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .form-group input::placeholder,
+        body.dark-mode .form-group textarea::placeholder {
+            color: #6a6a6a;
+        }
+
+        body.dark-mode .form-group input:focus,
+        body.dark-mode .form-group select:focus,
+        body.dark-mode .form-group textarea:focus {
+            background: #3f3f3f;
+            border-color: #5a5a8a;
+        }
+
+        body.dark-mode .header-nav-search-container {
+            background: rgba(40, 40, 40, 0.97);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .nav-buttons {
+            background: #383838;
+        }
+
+        body.dark-mode .nav-btn,
+        body.dark-mode .nav-buttons button {
+            color: #b0b0b0;
+        }
+
+        body.dark-mode .nav-btn:hover,
+        body.dark-mode .nav-buttons button:hover {
+            background: #4a4a4a;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .nav-btn.active,
+        body.dark-mode .nav-buttons button.active {
+            background: #2b2b2b;
+            color: #c8c8ff;
+        }
+
+        body.dark-mode .global-search-input {
+            background: #383838;
+            border-color: #4a4a4a;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode .content-area,
+        body.dark-mode .drawer-content {
+            background: #212121;
+        }
+
+        body.dark-mode table th {
+            background: #2b2b2b;
+            color: #b0b0b0;
+            border-color: #3d3d3d;
+        }
+
+        body.dark-mode table td {
+            border-color: #3d3d3d;
+            color: #e8e8e8;
+        }
+
+        body.dark-mode table tr:nth-child(even) {
+            background: #252525;
+        }
+
+        body.dark-mode table tr:hover {
+            background: #333333;
+        }
+
+        body.dark-mode .close {
+            color: #9e9e9e;
+        }
+
+        body.dark-mode .close:hover {
+            color: #e8e8e8;
+            background: #3d3d3d;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-track {
+            background: #2b2b2b;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
+            border-color: #2b2b2b;
+        }
+
+        body.dark-mode [style*="background: #f8f9fa"],
+        body.dark-mode [style*="background:#f8f9fa"] {
+            background: #333333 !important;
+        }
+
+        /* Dark mode toggle switch */
+        .dark-mode-toggle-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+        }
+
+        .dark-mode-toggle-wrap span {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        body.dark-mode .dark-mode-toggle-wrap span {
+            color: #c8c8c8;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #ccc;
+            border-radius: 26px;
+            transition: 0.25s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.25s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: #3C3B6E;
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -3355,6 +3577,17 @@
         <div class="modal-content large">
             <span class="close" onclick="closeModal('settingsModal')">&times;</span>
             <h2>Settings</h2>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="font-size: 18px; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e8eef3; padding-bottom: 10px;">Appearance</h3>
+                <div class="dark-mode-toggle-wrap">
+                    <span>Dark Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="applyDarkMode(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
 
             <div style="margin-bottom: 30px;">
                 <h3 style="font-size: 18px; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e8eef3; padding-bottom: 10px;">Cloud Storage Configuration</h3>
@@ -9111,6 +9344,8 @@ Mergers & Acquisitions Team`
             document.getElementById('settingsModal').style.display = 'block';
             loadSettings();
             updateOutlookConnectionUI();
+            const toggle = document.getElementById('darkModeToggle');
+            if (toggle) toggle.checked = localStorage.getItem('darkMode') === '1';
         }
 
         function loadSettings() {
@@ -11790,7 +12025,18 @@ Mergers & Acquisitions Team`
             showPage('acquisitions');
         }
 
+        function applyDarkMode(enabled) {
+            document.body.classList.toggle('dark-mode', enabled);
+            localStorage.setItem('darkMode', enabled ? '1' : '0');
+            const toggle = document.getElementById('darkModeToggle');
+            if (toggle) toggle.checked = enabled;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Restore dark mode preference
+            if (localStorage.getItem('darkMode') === '1') {
+                applyDarkMode(true);
+            }
             initializeApp();
             setupGlobalSearch();
         });
