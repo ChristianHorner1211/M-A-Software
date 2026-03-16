@@ -3179,12 +3179,23 @@
         .stat-outstanding { color: #ef4444; }
         .stat-label { font-size: 11px; color: rgba(255,255,255,0.3); }
 
-        /* Acquisitions page as body area */
+        /* Body area — flex:1 container below topbar+stats, holds all pages */
+        .body-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* Acquisitions page fills body-area as a flex row */
         #acquisitionsPage.active {
             display: flex !important;
             flex: 1;
             overflow: hidden;
             min-height: 0;
+            height: 100%;
         }
 
         /* List Panel */
@@ -3546,6 +3557,28 @@
         body:not(.dark-mode) .carrier-delete-btn { color: #94a3b8; }
         body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(99,102,241,0.15); }
 
+        /* Explicit light mode backgrounds for new layout elements */
+        body:not(.dark-mode) .app-shell { background: #f4f5f7; }
+        body:not(.dark-mode) .main-wrapper { background: #f4f5f7; }
+        body:not(.dark-mode) .topbar { background: white; border-bottom: 1px solid #e2e8f0; }
+        body:not(.dark-mode) .stats-row { background: white; border-bottom: 1px solid #e2e8f0; }
+        body:not(.dark-mode) .list-panel { background: #f4f5f7; color: #0f172a; }
+        body:not(.dark-mode) .list-header { background: white; border-bottom: 1px solid #e2e8f0; }
+        body:not(.dark-mode) .carriers-list { background: white !important; }
+        body:not(.dark-mode) .body-area { background: #f4f5f7; }
+
+        /* ==================== DARK MODE FOR NEW LAYOUT ELEMENTS ==================== */
+        body.dark-mode .app-shell { background: #0a0c14; }
+        body.dark-mode .main-wrapper { background: #0a0c14; overflow: hidden; }
+        body.dark-mode .body-area { background: #0a0c14; }
+        body.dark-mode .topbar { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+        body.dark-mode .stats-row { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+        body.dark-mode .list-panel { background: #0a0c14; color: rgba(255,255,255,0.9); }
+        body.dark-mode .list-header { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+        body.dark-mode .carriers-list { background: #0a0c14 !important; }
+        body.dark-mode .carrier-name { color: rgba(255,255,255,0.9) !important; }
+        body.dark-mode .carrier-code { color: rgba(255,255,255,0.3) !important; }
+
     </style>
 </head>
 <body>
@@ -3693,6 +3726,9 @@
                     <div class="stat-label">Emails sent</div>
                 </div>
             </div>
+
+            <!-- Body Area: holds all page containers below topbar + stats -->
+            <div class="body-area">
 
             <!-- Acquisitions Page -->
             <div id="acquisitionsPage" class="page-container active">
@@ -3919,6 +3955,7 @@
             </div>
         </div> <!-- End of searchResultsPage -->
 
+            </div><!-- end body-area -->
         </div><!-- end main-wrapper -->
     </div><!-- end app-shell / mainApp -->
 
