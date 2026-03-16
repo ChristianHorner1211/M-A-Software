@@ -8140,6 +8140,14 @@ Mergers & Acquisitions Team`
             await saveAcquisitionToFirebase(acquisition);
 
             renderCarriersList();
+
+            // Re-apply active filter so toggled row shows/hides immediately
+            const activeFilter = document.querySelector('.filter-tab.active');
+            if (activeFilter) {
+                const filterValue = activeFilter.getAttribute('onclick')
+                    .match(/setCarrierFilter\('(\w+)'/)[1];
+                setCarrierFilter(filterValue, activeFilter);
+            }
         }
 
         function emailCarrier(carrierCode) {
@@ -13990,11 +13998,26 @@ Mergers & Acquisitions Team`
         // Carrier filter
         let currentCarrierFilter = 'all';
 
-        function setCarrierFilter(filter, btn) {
+        function setCarrierFilter(filter, clickedTab) {
             currentCarrierFilter = filter;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            applyCarrierFilter();
+            // Update active tab styling
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            // Filter carrier rows
+            const carriers = document.querySelectorAll('.carrier-item');
+            carriers.forEach(carrier => {
+                if (filter === 'all') {
+                    carrier.style.display = 'flex';
+                } else if (filter === 'outstanding') {
+                    carrier.style.display = carrier.classList.contains('outstanding') ? 'flex' : 'none';
+                } else if (filter === 'done') {
+                    carrier.style.display = carrier.classList.contains('done') ? 'flex' : 'none';
+                }
+            });
         }
 
         function applyCarrierFilter() {
