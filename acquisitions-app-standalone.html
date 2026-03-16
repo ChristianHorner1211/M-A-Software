@@ -124,7 +124,7 @@
         }
 
         body.dark-mode .carrier-item.has-response {
-            background: linear-gradient(to right, rgba(79, 70, 229, 0.12) 0%, rgba(79, 70, 229, 0.02) 25%, transparent 50%);
+            background: linear-gradient(to right, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.02) 25%, transparent 50%);
         }
 
         body.dark-mode .carrier-content {
@@ -351,7 +351,7 @@
         }
 
         body.dark-mode #activityModal button[type="submit"] {
-            background: #4f46e5;
+            background: #1d4ed8;
             color: white;
             width: 100%;
             border: none;
@@ -396,12 +396,12 @@
 
         body.dark-mode .carrier-details .btn-success {
             background: transparent;
-            border: 1px solid #4f46e5;
-            color: #818cf8;
+            border: 1px solid #1d4ed8;
+            color: #60a5fa;
         }
 
         body.dark-mode .carrier-details .btn-success:hover {
-            background: rgba(79, 70, 229, 0.12);
+            background: rgba(37, 99, 235, 0.12);
         }
 
         /* 6. Activity log panel */
@@ -481,7 +481,7 @@
         }
 
         .toggle-switch input:checked + .toggle-slider {
-            background: #6366f1;
+            background: #2563eb;
         }
 
         .toggle-switch input:checked + .toggle-slider::before {
@@ -657,7 +657,7 @@
 
         .global-search-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
             background: white;
         }
 
@@ -772,13 +772,13 @@
         }
 
         .suggestion-code-tag {
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(67, 56, 202, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
             color: var(--primary-dark);
             padding: var(--space-1) var(--space-3);
             border-radius: var(--radius-md);
             font-size: 12px;
             font-weight: 600;
-            border: 1px solid rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
         .search-no-results {
@@ -1204,7 +1204,7 @@
         }
 
         .carrier-item.has-response {
-            background: linear-gradient(to right, rgba(79, 70, 229, 0.10) 0%, rgba(79, 70, 229, 0.02) 25%, transparent 50%);
+            background: linear-gradient(to right, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--primary);
         }
 
@@ -1214,7 +1214,7 @@
         }
 
         .carrier-item.has-response.outstanding {
-            background: linear-gradient(to right, rgba(79, 70, 229, 0.10) 0%, rgba(79, 70, 229, 0.02) 25%, transparent 50%);
+            background: linear-gradient(to right, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--primary);
         }
 
@@ -1506,7 +1506,7 @@
             outline: none;
             border-color: var(--primary);
             background: white;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .full-width {
@@ -2347,9 +2347,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 28px;
-            flex-shrink: 0;
+            padding: 14px 28px;
             border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
         }
         body.dark-mode .state-detail-header {
             background: #0a0c14;
@@ -2362,26 +2362,29 @@
         .state-detail-title,
         .state-detail-header h2,
         .state-detail-header .state-name {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 500;
             color: rgba(255,255,255,0.9);
-            margin-bottom: 0;
+            margin: 0;
         }
 
         .back-button,
         button[class*="back"] {
-            background: rgba(255,255,255,0.06);
+            font-weight: 400;
+            font-size: 13px;
+            background: rgba(255,255,255,0.05);
             border: 0.5px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.55);
             border-radius: 8px;
             padding: 7px 14px;
-            font-size: 13px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .back-button:hover,
         button[class*="back"]:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
         }
 
         .locations-grid {
@@ -2409,16 +2412,17 @@
         }
 
         .location-card {
-            background: #1a1d27;
-            border: 0.5px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 18px 20px;
+            background: #16192a;
+            border: 0.5px solid rgba(255,255,255,0.07);
             cursor: pointer;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, background 0.15s;
         }
 
         .location-card:hover {
-            border-color: rgba(255,255,255,0.16);
+            background: #1c2035;
+            border-color: rgba(255,255,255,0.14);
         }
 
         body:not(.dark-mode) .location-card {
@@ -2429,18 +2433,19 @@
         .location-card-header,
         .location-card h3,
         .location-card .location-name {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             color: rgba(255,255,255,0.9);
-            margin-bottom: 6px;
+            margin: 0 0 6px 0;
         }
 
         .location-card-address,
-        .location-card .location-address {
+        .location-card .location-address,
+        .location-card p {
             font-size: 12px;
-            color: rgba(255,255,255,0.35);
-            margin-bottom: 12px;
+            color: rgba(255,255,255,0.3);
             line-height: 1.5;
+            margin: 0 0 12px 0;
         }
 
         .location-card-stats {
@@ -2455,13 +2460,16 @@
             margin: 12px 0;
         }
 
-        .location-card .carrier-count {
+        .location-card .carrier-count,
+        .location-card p:last-child {
             font-size: 12px;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.35);
+            margin: 0;
         }
 
-        .location-card .carrier-count strong {
-            color: rgba(255,255,255,0.8);
+        .location-card .carrier-count strong,
+        .location-card p:last-child strong {
+            color: rgba(255,255,255,0.75);
             font-weight: 500;
         }
 
@@ -2489,53 +2497,53 @@
         }
 
         .add-location-card {
+            border-radius: 10px;
+            border: 0.5px dashed rgba(255,255,255,0.12);
             background: transparent;
-            border: 0.5px dashed rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 8px;
             cursor: pointer;
-            min-height: 120px;
+            min-height: 130px;
             transition: border-color 0.15s, background 0.15s;
         }
 
         .add-location-card:hover {
-            border-color: rgba(99,102,241,0.5);
-            background: rgba(99,102,241,0.05);
+            border-color: rgba(37,99,235,0.4);
+            background: rgba(37,99,235,0.04);
         }
 
         .add-location-icon {
-            font-size: 24px;
-            color: rgba(255,255,255,0.3);
+            font-size: 20px;
+            color: rgba(255,255,255,0.2);
         }
 
         .add-location-text {
-            font-size: 13px;
-            color: rgba(255,255,255,0.3);
+            font-size: 12px;
+            color: rgba(255,255,255,0.25);
         }
 
-        /* Fix 6: New from Acquisitions button */
         .btn-from-acquisitions {
-            background: rgba(255,255,255,0.05);
+            background: transparent;
             border: 0.5px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.55);
             border-radius: 8px;
             padding: 7px 14px;
             font-size: 13px;
+            font-weight: 400;
             cursor: pointer;
         }
         .btn-from-acquisitions:hover {
-            background: rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
         }
 
         /* Fix 7: + Add Location button in state detail header */
         .state-detail-header .btn-primary,
         .state-detail-header .btn.btn-primary {
-            background: #6366f1;
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
@@ -2546,7 +2554,7 @@
         }
         .state-detail-header .btn-primary:hover,
         .state-detail-header .btn.btn-primary:hover {
-            background: #4f46e5;
+            background: #1d4ed8;
         }
 
         .empty-state {
@@ -3155,9 +3163,9 @@
             background: rgba(255,255,255,0.04);
         }
         .sidebar-nav-item.active {
-            background: rgba(99,102,241,0.15);
+            background: rgba(37,99,235,0.15);
             color: white;
-            border-left-color: #6366f1;
+            border-left-color: #2563eb;
             padding-left: 9px;
         }
         /* Dark mode toggle button */
@@ -3208,8 +3216,8 @@
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: rgba(99,102,241,0.3);
-            color: #818cf8;
+            background: rgba(37,99,235,0.3);
+            color: #60a5fa;
             font-size: 11px;
             font-weight: 500;
             display: flex;
@@ -3325,7 +3333,7 @@
             justify-content: space-between;
         }
         .campaign-switcher #acquisitionTabs .tab.active {
-            background: rgba(99,102,241,0.15) !important;
+            background: rgba(37,99,235,0.15) !important;
             color: white !important;
         }
         .campaign-switcher #acquisitionTabs .tab:hover {
@@ -3353,7 +3361,7 @@
         }
         .topbar .global-search-input::placeholder { color: rgba(255,255,255,0.3); }
         .topbar .global-search-input:focus {
-            border-color: rgba(99,102,241,0.5);
+            border-color: rgba(37,99,235,0.5);
             background: rgba(255,255,255,0.08);
             box-shadow: none;
         }
@@ -3361,7 +3369,7 @@
         /* Add Carrier dropdown */
         .add-carrier-wrap { position: relative; }
         .btn-add-carrier {
-            background: #6366f1;
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
@@ -3373,7 +3381,7 @@
             transition: background 150ms;
             white-space: nowrap;
         }
-        .btn-add-carrier:hover { background: #5558e8; }
+        .btn-add-carrier:hover { background: #1d4ed8; }
         .add-carrier-menu {
             position: absolute;
             top: calc(100% + 6px);
@@ -3645,9 +3653,9 @@
         /* Email button */
         .carrier-actions button.email-btn,
         .carrier-actions button:nth-of-type(2) {
-            background: rgba(99,102,241,0.15);
-            border: 0.5px solid rgba(99,102,241,0.3);
-            color: #818cf8;
+            background: rgba(37,99,235,0.15);
+            border: 0.5px solid rgba(37,99,235,0.3);
+            color: #60a5fa;
             border-radius: 6px;
             padding: 5px 10px;
             font-size: 12px;
@@ -3709,7 +3717,7 @@
         .activity-add-btn {
             background: transparent;
             border: none;
-            color: #818cf8;
+            color: #60a5fa;
             font-size: 12px;
             font-family: inherit;
             cursor: pointer;
@@ -3717,7 +3725,7 @@
             border-radius: 4px;
             transition: background 120ms;
         }
-        .activity-add-btn:hover { background: rgba(99,102,241,0.1); }
+        .activity-add-btn:hover { background: rgba(37,99,235,0.1); }
         .activity-list {
             flex: 1;
             overflow-y: auto;
@@ -3731,7 +3739,7 @@
             padding: 10px 12px !important;
             background: rgba(255,255,255,0.03) !important;
             border-radius: 8px !important;
-            border-left: 3px solid #6366f1 !important;
+            border-left: 3px solid #2563eb !important;
             box-shadow: none !important;
             transition: background 120ms !important;
         }
@@ -3757,7 +3765,7 @@
             color: #0f172a;
         }
         body:not(.dark-mode) .topbar .global-search-input::placeholder { color: #94a3b8; }
-        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #6366f1; }
+        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #2563eb; }
         body:not(.dark-mode) .stats-row { background: white; border-bottom-color: #e2e8f0; }
         body:not(.dark-mode) .stat-item { border-right-color: #e2e8f0; }
         body:not(.dark-mode) .stat-value { color: #0f172a; }
@@ -3798,9 +3806,9 @@
             color: #94a3b8 !important;
         }
         body:not(.dark-mode) .carrier-actions .btn-group button:last-child {
-            background: rgba(99,102,241,0.08) !important;
-            border-color: rgba(99,102,241,0.25) !important;
-            color: #6366f1 !important;
+            background: rgba(37,99,235,0.08) !important;
+            border-color: rgba(37,99,235,0.25) !important;
+            color: #2563eb !important;
         }
         body:not(.dark-mode) .add-carrier-menu { background: white; border-color: #e2e8f0; }
         body:not(.dark-mode) .add-carrier-menu-item { color: #374151; }
@@ -3812,7 +3820,7 @@
         body:not(.dark-mode) .activity-empty-state { color: #94a3b8; }
         body:not(.dark-mode) .activity-item {
             background: #f8fafc !important;
-            border-left-color: #6366f1 !important;
+            border-left-color: #2563eb !important;
         }
         body:not(.dark-mode) .activity-item:hover { background: #f1f5f9 !important; }
         body:not(.dark-mode) .activity-type { color: #374151 !important; }
@@ -3820,12 +3828,12 @@
         body:not(.dark-mode) .activity-contact,
         body:not(.dark-mode) .activity-notes { color: #64748b !important; }
         body:not(.dark-mode) .carrier-delete-btn { color: #94a3b8; }
-        body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(99,102,241,0.15); color: white; }
+        body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(37,99,235,0.15); color: white; }
         body:not(.dark-mode) .sidebar-darkmode-btn { color: rgba(255,255,255,0.6); }
         body:not(.dark-mode) .campaign-switcher summary { color: #64748b; }
         body:not(.dark-mode) .campaign-switcher #acquisitionTabs { background: white; border-color: #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
         body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab { color: #374151 !important; }
-        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab.active { background: rgba(99,102,241,0.08) !important; color: #4f46e5 !important; }
+        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab.active { background: rgba(37,99,235,0.08) !important; color: #1d4ed8 !important; }
         body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab:hover { background: #f4f5f7 !important; color: #0f172a !important; }
 
         /* ==================== LIGHT MODE BACKGROUNDS ==================== */
@@ -3852,7 +3860,7 @@
             color: #0f172a;
         }
         body:not(.dark-mode) .topbar .global-search-input::placeholder { color: #94a3b8; }
-        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #6366f1; }
+        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #2563eb; }
 
         /* ==================== DARK MODE FOR NEW LAYOUT ELEMENTS ==================== */
         body.dark-mode .app-shell { background: #0a0c14; }
@@ -3886,7 +3894,7 @@
             color: rgba(255,255,255,0.6);
         }
         body.dark-mode .custom-notification-btn-primary {
-            background: #6366f1;
+            background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
@@ -4269,15 +4277,13 @@
         <!-- State Detail Page -->
         <div id="stateDetailPage" class="state-detail-page">
             <div class="state-detail-header">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <button class="back-button" onclick="backToMap()">← Back to Map</button>
-                        <h1 class="state-detail-title" id="stateDetailTitle" style="display: inline; margin-left: 15px;">State Details</h1>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
-                        <button class="btn-from-acquisitions" onclick="showImportFromAcquisitionModal()">New from Acquisitions</button>
-                    </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="back-button" onclick="backToMap()">← Back to Map</button>
+                    <h1 class="state-detail-title" id="stateDetailTitle">State Details</h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
+                    <button class="btn-from-acquisitions" onclick="showImportFromAcquisitionModal()">New from Acquisitions</button>
                 </div>
             </div>
 
