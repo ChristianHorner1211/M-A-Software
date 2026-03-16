@@ -2984,7 +2984,7 @@
 
         /* App Shell */
         .app-shell {
-            display: flex;
+            display: flex !important;  /* overrides showMainApp() inline style="display:block" */
             width: 100%;
             height: 100vh;
             overflow: hidden;
@@ -3088,7 +3088,7 @@
         .main-wrapper {
             flex: 1;
             height: 100vh;
-            display: flex;
+            display: flex !important;
             flex-direction: column;
             overflow: hidden;
             min-width: 0;
