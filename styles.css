@@ -355,13 +355,11 @@ header h1 {
 }
 
 .modal-content {
-    background: white;
     margin: 5% auto;
-    padding: 30px;
-    border-radius: 8px;
+    border-radius: 12px;
     width: 90%;
     max-width: 600px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    padding: 28px 32px;
     animation: slideDown 0.3s ease;
 }
 
@@ -378,6 +376,100 @@ header h1 {
 
 .modal-content.large {
     max-width: 900px;
+}
+
+/* ── Modal: Light Mode ── */
+
+/* Light mode modal */
+body:not(.dark-mode) .modal-content,
+body:not(.dark-mode) .office-modal-content {
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+/* ALL form inputs in ALL modals — light mode */
+body:not(.dark-mode) .modal-content input,
+body:not(.dark-mode) .modal-content textarea,
+body:not(.dark-mode) .modal-content select,
+body:not(.dark-mode) .modal-content .form-control,
+body:not(.dark-mode) .office-modal-content input,
+body:not(.dark-mode) .office-modal-content textarea,
+body:not(.dark-mode) .office-modal-content select {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: #0f172a;
+  width: 100%;
+  font-family: inherit;
+  outline: none;
+}
+
+body:not(.dark-mode) .modal-content input:focus,
+body:not(.dark-mode) .modal-content textarea:focus,
+body:not(.dark-mode) .modal-content select:focus,
+body:not(.dark-mode) .office-modal-content input:focus {
+  border-color: #2563eb;
+  background: white;
+}
+
+body:not(.dark-mode) .modal-content input::placeholder,
+body:not(.dark-mode) .modal-content textarea::placeholder,
+body:not(.dark-mode) .office-modal-content input::placeholder {
+  color: #94a3b8;
+}
+
+/* Labels — light mode */
+body:not(.dark-mode) .modal-content label,
+body:not(.dark-mode) .office-modal-content label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+
+/* Headings — light mode */
+body:not(.dark-mode) .modal-content h2,
+body:not(.dark-mode) .office-modal-content h2 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0 0 20px 0;
+}
+
+/* Primary buttons inside modals — light mode */
+body:not(.dark-mode) .modal-content .btn-primary,
+body:not(.dark-mode) .office-modal-content .btn-primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Close button — light mode */
+body:not(.dark-mode) .modal-content .close,
+body:not(.dark-mode) .office-modal-content .close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+  background: none;
+  border: none;
 }
 
 .close {
@@ -642,10 +734,12 @@ body.dark-mode .office-modal {
   background: rgba(0,0,0,0.75);
 }
 
+/* Dark mode modal */
 body.dark-mode .modal-content,
 body.dark-mode .office-modal-content {
-  background: #13162a;
+  background: #13162a !important;
   border: 0.5px solid rgba(255,255,255,0.1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   color: rgba(255,255,255,0.9);
 }
 
@@ -654,40 +748,46 @@ body.dark-mode .modal-content.medium {
   background: #13162a !important;
 }
 
+/* Headings — dark mode */
 body.dark-mode .modal-content h2,
 body.dark-mode .modal-content h3,
 body.dark-mode .office-modal-content h2 {
-  color: rgba(255,255,255,0.9);
+  font-size: 18px;
   font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  margin: 0 0 20px 0;
 }
 
+/* Labels — dark mode */
 body.dark-mode .modal-content label,
 body.dark-mode .office-modal-content label {
-  color: rgba(255,255,255,0.4);
+  display: block;
   font-size: 11px;
   font-weight: 500;
+  color: rgba(255,255,255,0.4);
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  margin-bottom: 6px;
+  margin-top: 16px;
 }
 
-body.dark-mode .modal-content input[type="text"],
-body.dark-mode .modal-content input[type="date"],
-body.dark-mode .modal-content input[type="email"],
-body.dark-mode .modal-content input[type="number"],
-body.dark-mode .modal-content input[type="password"],
+/* ALL form inputs in ALL modals — dark mode */
+body.dark-mode .modal-content input,
 body.dark-mode .modal-content textarea,
 body.dark-mode .modal-content select,
-body.dark-mode .office-modal-content input[type="text"],
-body.dark-mode .office-modal-content input[type="date"],
-body.dark-mode .office-modal-content textarea,
-body.dark-mode .office-modal-content select,
 body.dark-mode .modal-content .form-control,
-body.dark-mode .office-modal-content .form-control {
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.1);
+body.dark-mode .office-modal-content input,
+body.dark-mode .office-modal-content textarea,
+body.dark-mode .office-modal-content select {
+  background: rgba(255,255,255,0.05) !important;
+  border: 0.5px solid rgba(255,255,255,0.1) !important;
   border-radius: 8px;
-  color: rgba(255,255,255,0.9);
+  padding: 9px 12px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.9) !important;
+  width: 100%;
   font-family: inherit;
+  outline: none;
 }
 
 body.dark-mode .modal-content input::placeholder,
@@ -699,20 +799,14 @@ body.dark-mode .office-modal-content textarea::placeholder {
 
 body.dark-mode .modal-content input:focus,
 body.dark-mode .modal-content textarea:focus,
-body.dark-mode .modal-content select:focus,
-body.dark-mode .office-modal-content input:focus,
-body.dark-mode .office-modal-content textarea:focus {
-  border-color: rgba(37,99,235,0.5);
-  background: rgba(255,255,255,0.07);
-  outline: none;
+body.dark-mode .office-modal-content input:focus {
+  border-color: rgba(37,99,235,0.5) !important;
+  background: rgba(255,255,255,0.07) !important;
 }
 
+body.dark-mode .modal-content input[type="date"],
 body.dark-mode .modal-content select,
 body.dark-mode .office-modal-content select {
-  color-scheme: dark;
-}
-
-body.dark-mode .modal-content input[type="date"] {
   color-scheme: dark;
 }
 
