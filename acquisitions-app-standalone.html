@@ -2252,19 +2252,31 @@
             z-index: 1500;
         }
 
-        /* Code Management Page Styles */        .map-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
+        /* Code Management Page Styles */
+        .map-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 24px 32px;
         }
 
         .map-title {
-            font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        .map-container svg {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .us-map {
@@ -2330,119 +2342,211 @@
             color: #2c3e50;
         }
 
-        /* State Detail Page Styles */        .state-detail-header {
+        /* State Detail Page Styles */
+        .state-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px;
+            flex-shrink: 0;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+        }
+        body.dark-mode .state-detail-header {
+            background: #0a0c14;
+        }
+        body:not(.dark-mode) .state-detail-header {
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        .state-detail-title {
-            font-size: 28px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
-
-        .back-button {
-            background: #95a5a6;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
+        .state-detail-title,
+        .state-detail-header h2,
+        .state-detail-header .state-name {
+            font-size: 20px;
             font-weight: 500;
-            transition: all 0.3s ease;
-            margin-right: 10px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 0;
         }
 
-        .back-button:hover {
-            background: #7f8c8d;
+        .back-button,
+        button[class*="back"] {
+            background: rgba(255,255,255,0.06);
+            border: 0.5px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .back-button:hover,
+        button[class*="back"]:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         .locations-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            align-content: start;
+        }
+
+        #stateDetailPage {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #stateDetailPage.active {
+            display: flex;
+        }
+
+        #locationsContainer {
+            padding: 24px 28px;
+            overflow-y: auto;
+            flex: 1;
         }
 
         .location-card {
-            background: white;
-            padding: var(--space-5);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-md);
+            background: #1a1d27;
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
             cursor: pointer;
-            transition: var(--transition-base);
-            border-left: 4px solid var(--primary);
-            border: 1px solid var(--gray-200);
+            transition: border-color 0.15s;
         }
 
         .location-card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-3px);
-            border-color: var(--primary);
+            border-color: rgba(255,255,255,0.16);
         }
 
-        .location-card-header {
-            font-size: 19px;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: var(--space-3);
-            letter-spacing: -0.5px;
+        body:not(.dark-mode) .location-card {
+            background: white;
+            border: 1px solid #e2e8f0;
         }
 
-        .location-card-address {
-            color: var(--gray-600);
-            font-size: 14px;
-            margin-bottom: var(--space-3);
+        .location-card-header,
+        .location-card h3,
+        .location-card .location-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 6px;
+        }
+
+        .location-card-address,
+        .location-card .location-address {
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 12px;
+            line-height: 1.5;
         }
 
         .location-card-stats {
-            display: flex;
-            gap: var(--space-4);
-            margin-top: var(--space-3);
-            padding-top: var(--space-3);
-            border-top: 2px solid var(--gray-100);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 0.5px solid rgba(255,255,255,0.06);
+        }
+        .location-card hr,
+        .location-card .divider {
+            border: none;
+            border-top: 0.5px solid rgba(255,255,255,0.06);
+            margin: 12px 0;
+        }
+
+        .location-card .carrier-count {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .location-card .carrier-count strong {
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
         }
 
         .location-stat {
             font-size: 13px;
-            color: var(--gray-600);
+            color: rgba(255,255,255,0.4);
         }
 
         .location-stat strong {
-            color: var(--primary);
-            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+        }
+
+        body:not(.dark-mode) .location-card h3,
+        body:not(.dark-mode) .location-card-header,
+        body:not(.dark-mode) .location-card .location-name {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .location-card-address,
+        body:not(.dark-mode) .location-card .location-address {
+            color: #94a3b8;
+        }
+        body:not(.dark-mode) .location-card .carrier-count {
+            color: #64748b;
         }
 
         .add-location-card {
-            background: var(--gray-50);
-            border: 2px dashed var(--primary);
+            background: transparent;
+            border: 0.5px dashed rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
+            gap: 8px;
             cursor: pointer;
-            transition: var(--transition-base);
+            min-height: 120px;
+            transition: border-color 0.15s, background 0.15s;
         }
 
         .add-location-card:hover {
-            background: var(--gray-100);
-            border-color: var(--primary-dark);
+            border-color: rgba(99,102,241,0.5);
+            background: rgba(99,102,241,0.05);
         }
 
         .add-location-icon {
-            font-size: 48px;
-            color: #3498db;
-            margin-bottom: 10px;
+            font-size: 24px;
+            color: rgba(255,255,255,0.3);
         }
 
         .add-location-text {
-            color: #3498db;
-            font-weight: 600;
-            font-size: 16px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* Fix 6: New from Acquisitions button */
+        .btn-from-acquisitions {
+            background: rgba(255,255,255,0.05);
+            border: 0.5px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-from-acquisitions:hover {
+            background: rgba(255,255,255,0.09);
+        }
+
+        /* Fix 7: + Add Location button in state detail header */
+        .state-detail-header .btn-primary,
+        .state-detail-header .btn.btn-primary {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .state-detail-header .btn-primary:hover,
+        .state-detail-header .btn.btn-primary:hover {
+            background: #4f46e5;
         }
 
         .empty-state {
@@ -2959,14 +3063,13 @@
         .content-area { display: block; }
 
         /* ==================== PAGE VISIBILITY ==================== */
-        .page-container { display: none; }
-        .page-container.active { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+        .page-container { display: none !important; }
+        .page-container.active { display: flex !important; flex: 1; min-height: 0; overflow: hidden; }
         .state-detail-page { display: none; }
         .state-detail-page.active { display: flex; flex: 1; min-height: 0; overflow: hidden; }
         #acquisitionsPage.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
         #codeManagementPage.active {
             flex-direction: column;
-            overflow-y: auto;
         }
         #stateDetailPage.active,
         #searchResultsPage.active { display: flex !important; flex: 1; overflow: hidden; }
@@ -3353,25 +3456,19 @@
         }
 
         /* Code Management + state detail pages */
-        #codeManagementPage, #stateDetailPage {
+        #codeManagementPage {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #stateDetailPage {
             flex: 1;
             flex-direction: column;
             overflow: hidden;
             min-height: 0;
         }
-        #codeManagementPage .map-container {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            background: transparent;
-            margin-top: 0;
-            border-radius: 0;
-            box-shadow: none;
-        }
-        #codeManagementPage .map-title { flex-shrink: 0; }
-        #codeManagementPage .us-map { flex: 1; width: 100%; height: auto; min-height: 0; max-width: 100%; margin: 0; }
 
         /* List Panel */
         .list-panel {
@@ -3881,17 +3978,17 @@
             <div class="sidebar-nav">
                 <div class="sidebar-section-label">WORKSPACE</div>
                 <button class="sidebar-nav-item active" id="navAcquisitions"
-                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display='';">
+                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display=''; document.querySelector('.topbar-subtitle').style.display='flex';">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
                     Acquisitions
                 </button>
                 <button class="sidebar-nav-item" id="navCodeManagement"
-                    onclick="showPage('codeManagement'); document.getElementById('topbarTitle').textContent='Code Management'; document.getElementById('statsRow').style.display='none';">
+                    onclick="showPage('codeManagement'); document.getElementById('topbarTitle').textContent='Code Management'; document.getElementById('statsRow').style.display='none'; document.querySelector('.topbar-subtitle').style.display='none';">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
                     Code Management
                 </button>
                 <button class="sidebar-nav-item" id="navActivityLog"
-                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display=''; setTimeout(function(){ var p=document.getElementById('activityPanel'); if(p) p.scrollIntoView({behavior:'smooth'}); },100);">
+                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display=''; document.querySelector('.topbar-subtitle').style.display='flex'; setTimeout(function(){ var p=document.getElementById('activityPanel'); if(p) p.scrollIntoView({behavior:'smooth'}); },100);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
                     Activity Log
                 </button>
@@ -4179,7 +4276,7 @@
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
-                        <button class="btn btn-success" onclick="showImportFromAcquisitionModal()">📦 New from Acquisitions</button>
+                        <button class="btn-from-acquisitions" onclick="showImportFromAcquisitionModal()">New from Acquisitions</button>
                     </div>
                 </div>
             </div>
