@@ -2307,24 +2307,115 @@
 
 
         .office-modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
         }
-
+        .office-modal.active,
+        .office-modal[style*="flex"],
+        .office-modal[style*="block"] {
+          display: flex !important;
+        }
         .office-modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          background: #13162a;
+          border: 0.5px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          padding: 28px 32px;
+          width: 100%;
+          max-width: 480px;
+          position: relative;
+        }
+        body:not(.dark-mode) .office-modal-content {
+          background: white;
+          border: 1px solid #e2e8f0;
+        }
+        #officeModalTitle {
+          font-size: 18px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.9);
+          margin: 0 0 24px 0;
+        }
+        body:not(.dark-mode) #officeModalTitle {
+          color: #0f172a;
+        }
+        .office-modal-content .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 16px;
+        }
+        .office-modal-content label {
+          font-size: 11px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+        }
+        body:not(.dark-mode) .office-modal-content label {
+          color: #64748b;
+        }
+        .office-modal-content .form-control {
+          background: rgba(255,255,255,0.05);
+          border: 0.5px solid rgba(255,255,255,0.1);
+          border-radius: 8px;
+          padding: 9px 12px;
+          font-size: 14px;
+          color: rgba(255,255,255,0.9);
+          width: 100%;
+          outline: none;
+          font-family: inherit;
+          transition: border-color 0.15s;
+        }
+        .office-modal-content .form-control:focus {
+          border-color: rgba(37,99,235,0.5);
+          background: rgba(255,255,255,0.07);
+        }
+        .office-modal-content .form-control::placeholder {
+          color: rgba(255,255,255,0.2);
+        }
+        body:not(.dark-mode) .office-modal-content .form-control {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #0f172a;
+        }
+        body:not(.dark-mode) .office-modal-content .form-control::placeholder {
+          color: #94a3b8;
+        }
+        .office-modal-content .btn.btn-primary {
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          width: 100%;
+          margin-top: 8px;
+          font-family: inherit;
+          transition: background 0.15s;
+        }
+        .office-modal-content .btn.btn-primary:hover {
+          background: #1d4ed8;
+        }
+        .office-modal-content .close {
+          position: absolute;
+          top: 16px;
+          right: 20px;
+          font-size: 20px;
+          color: rgba(255,255,255,0.3);
+          cursor: pointer;
+          background: none;
+          border: none;
+          line-height: 1;
+          padding: 4px;
+        }
+        .office-modal-content .close:hover {
+          color: rgba(255,255,255,0.7);
         }
 
         .office-info {
@@ -12600,19 +12691,10 @@ Mergers & Acquisitions Team`
             const location = stateOffices[currentStateCode].find(loc => loc.id === currentLocationId);
             if (!location) return;
 
-            const newName = prompt('Enter new location name:', location.name);
-            if (newName && newName.trim()) {
-                location.name = newName.trim();
-            }
-
-            const newAddress = prompt('Enter new address:', location.address || '');
-            if (newAddress !== null) {
-                location.address = newAddress.trim();
-            }
-
-            saveStateOffices();
-            openLocationDetail(currentLocationId);
-            renderLocations();
+            document.getElementById('officeName').value = location.name || '';
+            document.getElementById('officeAddress').value = location.address || '';
+            document.getElementById('officeModalTitle').textContent = 'Edit Location Info';
+            document.getElementById('officeModal').style.display = 'flex';
         }
 
         function deleteLocation() {
