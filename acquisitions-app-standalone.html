@@ -3560,80 +3560,221 @@
         }
         .topbar-left { display: flex; flex-direction: column; justify-content: center; }
         .topbar-title { font-size: 18px; font-weight: 500; color: white; line-height: 1.2; }
-        .topbar-subtitle { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; display: flex; align-items: center; gap: 0; }
+        .topbar-subtitle {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.35);
+          margin-top: 3px;
+        }
+        .topbar-subtitle > span {
+          opacity: 0.4;
+        }
         .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
         /* Campaign switcher — wraps #acquisitionTabs as a dropdown */
         .campaign-switcher {
             position: relative;
-            display: inline-flex;
-            align-items: center;
         }
         .campaign-switcher summary {
             list-style: none;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-size: 12px;
-            color: rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.4);
             user-select: none;
             outline: none;
-            white-space: nowrap;
         }
         .campaign-switcher summary::-webkit-details-marker { display: none; }
-        .campaign-switcher summary:hover { color: rgba(255,255,255,0.6); }
-        .campaign-switcher[open] summary { color: rgba(255,255,255,0.7); }
         .campaign-switcher-chevron {
-            display: inline-block;
-            margin-left: 3px;
             font-size: 10px;
             opacity: 0.5;
         }
+        .campaign-switcher[open] summary { color: rgba(255,255,255,0.7); }
         /* The dropdown panel that appears when open */
-        .campaign-switcher #acquisitionTabs {
+        .campaign-switcher .tabs {
             position: absolute;
             top: calc(100% + 8px);
-            left: -12px;
-            min-width: 200px;
-            background: #1a1d27;
+            left: 0;
+            background: #1a1d2e;
             border: 0.5px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            z-index: 9999;
-            overflow: hidden;
-            display: none; /* hidden; shown when details[open] */
+            border-radius: 10px;
+            padding: 6px;
+            min-width: 200px;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            display: none;
             flex-direction: column;
-            padding: 4px;
         }
-        .campaign-switcher[open] #acquisitionTabs { display: flex; }
-        /* Override the old horizontal tab styling in this context */
-        .campaign-switcher #acquisitionTabs .tab {
-            background: transparent !important;
-            border: none !important;
-            border-radius: 6px !important;
-            color: rgba(255,255,255,0.6) !important;
-            font-size: 13px !important;
-            font-weight: 400 !important;
-            padding: 8px 12px !important;
-            text-align: left;
-            width: 100%;
-            box-sizing: border-box;
-            border-bottom: none !important;
-            white-space: nowrap;
-            cursor: pointer;
+        .campaign-switcher[open] .tabs { display: flex; }
+        /* Each tab in the dropdown */
+        .campaign-switcher .tabs .tab {
             display: flex !important;
             align-items: center;
-            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+            transition: background 0.1s;
+            box-sizing: border-box;
+            font-weight: 400 !important;
+            border-bottom: none !important;
         }
-        .campaign-switcher #acquisitionTabs .tab.active {
-            background: rgba(37,99,235,0.15) !important;
-            color: white !important;
+        .campaign-switcher .tabs .tab:hover {
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.9);
         }
-        .campaign-switcher #acquisitionTabs .tab:hover {
-            background: rgba(255,255,255,0.05) !important;
-            color: rgba(255,255,255,0.9) !important;
+        .campaign-switcher .tabs .tab.active {
+            background: rgba(37,99,235,0.15);
+            color: white;
+            font-weight: 500 !important;
         }
-        /* Hide the tab-dropdown-chevron and tab-actions-menu inside campaign switcher */
+        /* Hide per-tab menus inside campaign switcher */
         .campaign-switcher .tab-dropdown-chevron { display: none !important; }
         .campaign-switcher .tab-actions-menu { display: none !important; }
+        /* Divider and new-acquisition button inside dropdown */
+        .campaign-divider {
+            border: none;
+            border-top: 0.5px solid rgba(255,255,255,0.06);
+            margin: 4px 0;
+        }
+        .campaign-new-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            color: #60a5fa;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: background 0.1s;
+        }
+        .campaign-new-btn:hover {
+            background: rgba(37,99,235,0.1);
+        }
+
+        /* New Acquisition Modal — dark theme */
+        #newAcquisitionModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #newAcquisitionModal .modal-content,
+        #newAcquisitionModal > div {
+            background: #13162a;
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 28px 32px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            margin: 0;
+        }
+        body:not(.dark-mode) #newAcquisitionModal .modal-content,
+        body:not(.dark-mode) #newAcquisitionModal > div {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        #newAcquisitionModal h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9);
+            margin: 0 0 24px 0;
+        }
+        #newAcquisitionModal label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+        #newAcquisitionModal input[type="text"],
+        #newAcquisitionModal input[type="date"] {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
+        }
+        #newAcquisitionModal input[type="text"]:focus,
+        #newAcquisitionModal input[type="date"]:focus {
+            border-color: rgba(37,99,235,0.5);
+            background: rgba(255,255,255,0.07);
+        }
+        #newAcquisitionModal input[type="date"] {
+            color-scheme: dark;
+        }
+        body:not(.dark-mode) #newAcquisitionModal input {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+        #newAcquisitionModal .btn-primary,
+        #newAcquisitionModal button[type="submit"] {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 24px;
+            font-family: inherit;
+        }
+        #newAcquisitionModal .btn-primary:hover,
+        #newAcquisitionModal button[type="submit"]:hover {
+            background: #1d4ed8;
+        }
+        #newAcquisitionModal .close,
+        #newAcquisitionModal [onclick*="close"] {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 20px;
+            color: rgba(255,255,255,0.3);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px;
+            float: none;
+            line-height: 1;
+            width: auto;
+            height: auto;
+            border-radius: 0;
+        }
+        #newAcquisitionModal .close:hover {
+            color: rgba(255,255,255,0.7);
+            background: none;
+        }
 
         /* Topbar search override */
         .topbar .global-search-container { position: relative; flex: none; }
@@ -4122,10 +4263,11 @@
         body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(37,99,235,0.15); color: white; }
         body:not(.dark-mode) .sidebar-darkmode-btn { color: rgba(255,255,255,0.6); }
         body:not(.dark-mode) .campaign-switcher summary { color: #64748b; }
-        body:not(.dark-mode) .campaign-switcher #acquisitionTabs { background: white; border-color: #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab { color: #374151 !important; }
-        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab.active { background: rgba(37,99,235,0.08) !important; color: #1d4ed8 !important; }
-        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab:hover { background: #f4f5f7 !important; color: #0f172a !important; }
+        body:not(.dark-mode) .campaign-switcher .tabs { background: white; border-color: #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        body:not(.dark-mode) .campaign-switcher .tabs .tab { color: #374151 !important; }
+        body:not(.dark-mode) .campaign-switcher .tabs .tab.active { background: rgba(37,99,235,0.08) !important; color: #1d4ed8 !important; }
+        body:not(.dark-mode) .campaign-switcher .tabs .tab:hover { background: #f4f5f7 !important; color: #0f172a !important; }
+        body:not(.dark-mode) .campaign-new-btn { color: #2563eb; }
 
         /* ==================== LIGHT MODE BACKGROUNDS ==================== */
         body:not(.dark-mode) .app-shell { background: #f4f5f7; }
@@ -4323,7 +4465,7 @@
                 <div class="topbar-left">
                     <div class="topbar-title" id="topbarTitle">Acquisitions</div>
                     <div class="topbar-subtitle">
-                        Campaign<span id="topbarCampaignSep"> ·&nbsp;</span><details class="campaign-switcher" id="campaignSwitcher">
+                        <span>Campaign</span><span id="topbarCampaignSep">·</span><details class="campaign-switcher" id="campaignSwitcher">
                             <summary><span id="topbarOrgName"></span><span class="campaign-switcher-chevron">▾</span></summary>
                             <div class="tabs" id="acquisitionTabs"></div>
                         </details>
@@ -6848,6 +6990,16 @@ Mergers & Acquisitions Team`
 
                 tabsContainer.appendChild(tab);
             });
+
+            // Add divider and "+ New Acquisition" button at bottom of dropdown
+            const divider = document.createElement('hr');
+            divider.className = 'campaign-divider';
+            tabsContainer.appendChild(divider);
+            const newBtn = document.createElement('button');
+            newBtn.className = 'campaign-new-btn';
+            newBtn.textContent = '+ New Acquisition';
+            newBtn.onclick = () => { document.querySelector('#newAcquisitionModal').style.display = 'flex'; };
+            tabsContainer.appendChild(newBtn);
         }
 
         function toggleTabActionsMenu() {
