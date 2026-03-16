@@ -98,7 +98,7 @@
 
         /* ==================== DARK MODE ==================== */
         body.dark-mode {
-            background: #212121;
+            background: #0d0f1a;
             color: #e8e8e8;
         }
 
@@ -207,9 +207,12 @@
             color: #e8e8e8;
         }
 
-        body.dark-mode .content-area,
+        body.dark-mode .content-area {
+            background: transparent;
+        }
+
         body.dark-mode .drawer-content {
-            background: #212121;
+            background: #1a1d27;
         }
 
         body.dark-mode table th {
@@ -252,6 +255,161 @@
         body.dark-mode [style*="background: #f8f9fa"],
         body.dark-mode [style*="background:#f8f9fa"] {
             background: #333333 !important;
+        }
+
+        /* ==================== DARK MODE: COMPREHENSIVE FIX ==================== */
+
+        /* 1. Main content panel — sections (.section) */
+        body.dark-mode .section {
+            background: #1a1d27;
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark-mode .section-header {
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark-mode .section-header h2,
+        body.dark-mode .section-header h3 {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .section p,
+        body.dark-mode .section li {
+            color: #cbd5e1;
+        }
+
+        /* 2. Location cards */
+        body.dark-mode .location-card {
+            background: #222638;
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .location-card:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark-mode .location-card-header {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .location-card-address {
+            color: #6b7280;
+        }
+
+        body.dark-mode .location-card-stats {
+            border-top-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark-mode .location-stat {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .location-stat strong {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .add-location-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* 3. Add Activity modal */
+        body.dark-mode #activityModal .modal-content {
+            background: #1e2235;
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode #activityModal .form-group label {
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        body.dark-mode #activityModal .form-group input,
+        body.dark-mode #activityModal .form-group select,
+        body.dark-mode #activityModal .form-group textarea {
+            background: #2a2d3e;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+        }
+
+        body.dark-mode #activityModal .form-group input::placeholder,
+        body.dark-mode #activityModal .form-group textarea::placeholder {
+            color: #4b5563;
+        }
+
+        body.dark-mode #activityModal button[type="submit"] {
+            background: #4f46e5;
+            color: white;
+            width: 100%;
+            border: none;
+            font-weight: 600;
+        }
+
+        body.dark-mode #activityModal button[type="submit"]:hover {
+            background: #4338ca;
+        }
+
+        /* 4. "New from Acquisitions" / btn-success in dark mode — ghost style */
+        body.dark-mode .btn-success {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        body.dark-mode .btn-success:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 5. Expanded carrier row inner panel */
+        body.dark-mode .carrier-content {
+            background: #222638;
+        }
+
+        body.dark-mode .carrier-details-section h4 {
+            color: #6b7280;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+        }
+
+        body.dark-mode .carrier-details .btn-success {
+            background: transparent;
+            border: 1px solid #4f46e5;
+            color: #818cf8;
+        }
+
+        body.dark-mode .carrier-details .btn-success:hover {
+            background: rgba(79, 70, 229, 0.12);
+        }
+
+        /* 6. Activity log panel */
+        body.dark-mode .activity-section {
+            background: #1a1d27;
+        }
+
+        body.dark-mode .activity-list .empty-state,
+        body.dark-mode .empty-state {
+            background: transparent;
+        }
+
+        body.dark-mode .empty-state-text {
+            color: #6b7280;
+        }
+
+        body.dark-mode .empty-state-icon {
+            color: #374151;
+        }
+
+        body.dark-mode .activity-list:empty::after,
+        body.dark-mode #activityList:has(.empty-state) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Dark mode toggle switch */
