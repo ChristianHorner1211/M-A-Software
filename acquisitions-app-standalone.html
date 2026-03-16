@@ -2252,16 +2252,7 @@
             z-index: 1500;
         }
 
-        /* Code Management Page Styles */
-        .page-container {
-            display: none;
-        }
-
-        .page-container.active {
-            display: block;
-        }
-
-        .map-container {
+        /* Code Management Page Styles */        .map-container {
             background: white;
             padding: 30px;
             border-radius: 8px;
@@ -2339,16 +2330,7 @@
             color: #2c3e50;
         }
 
-        /* State Detail Page Styles */
-        .state-detail-page {
-            display: none;
-        }
-
-        .state-detail-page.active {
-            display: block;
-        }
-
-        .state-detail-header {
+        /* State Detail Page Styles */        .state-detail-header {
             background: white;
             padding: 30px;
             border-radius: 8px;
@@ -2979,6 +2961,8 @@
         /* ==================== PAGE VISIBILITY ==================== */
         .page-container { display: none; }
         .page-container.active { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+        .state-detail-page { display: none; }
+        .state-detail-page.active { display: flex; flex: 1; min-height: 0; overflow: hidden; }
         #acquisitionsPage.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
         #codeManagementPage.active {
             flex-direction: column;
