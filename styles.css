@@ -383,7 +383,7 @@ header h1 {
 /* Light mode modal */
 body:not(.dark-mode) .modal-content,
 body:not(.dark-mode) .office-modal-content {
-  background: white;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   box-shadow: 0 20px 60px rgba(0,0,0,0.12);
 }
@@ -833,4 +833,112 @@ body.dark-mode .office-modal-content .close {
 body.dark-mode .modal-content .close:hover,
 body.dark-mode .office-modal-content .close:hover {
   color: rgba(255,255,255,0.7);
+}
+
+/* Light mode — modal box */
+body:not(.dark-mode) .modal-content {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+/* Dark mode — modal box */
+body.dark-mode .modal-content {
+  background: #13162a !important;
+  border: 0.5px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+/* Light mode — all inputs inside .modal-content */
+body:not(.dark-mode) .modal-content input[type="text"],
+body:not(.dark-mode) .modal-content input[type="date"],
+body:not(.dark-mode) .modal-content input[type="email"],
+body:not(.dark-mode) .modal-content input[type="number"],
+body:not(.dark-mode) .modal-content textarea,
+body:not(.dark-mode) .modal-content select,
+body:not(.dark-mode) .modal-content .form-control {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+body:not(.dark-mode) .modal-content input:focus,
+body:not(.dark-mode) .modal-content textarea:focus,
+body:not(.dark-mode) .modal-content select:focus,
+body:not(.dark-mode) .modal-content .form-control:focus {
+  border-color: #2563eb !important;
+  background: #ffffff !important;
+}
+body:not(.dark-mode) .modal-content input::placeholder,
+body:not(.dark-mode) .modal-content textarea::placeholder,
+body:not(.dark-mode) .modal-content .form-control::placeholder {
+  color: #94a3b8 !important;
+}
+/* Light mode — labels */
+body:not(.dark-mode) .modal-content label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+}
+/* Light mode — headings */
+body:not(.dark-mode) .modal-content h2 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  margin-bottom: 20px !important;
+}
+/* Dark mode — all inputs inside .modal-content */
+body.dark-mode .modal-content input[type="text"],
+body.dark-mode .modal-content input[type="date"],
+body.dark-mode .modal-content input[type="email"],
+body.dark-mode .modal-content input[type="number"],
+body.dark-mode .modal-content textarea,
+body.dark-mode .modal-content select,
+body.dark-mode .modal-content .form-control {
+  background: rgba(255,255,255,0.05) !important;
+  border: 0.5px solid rgba(255,255,255,0.1) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  color: rgba(255,255,255,0.9) !important;
+  width: 100% !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+body.dark-mode .modal-content input:focus,
+body.dark-mode .modal-content textarea:focus,
+body.dark-mode .modal-content .form-control:focus {
+  border-color: rgba(37,99,235,0.5) !important;
+  background: rgba(255,255,255,0.07) !important;
+}
+body.dark-mode .modal-content input::placeholder,
+body.dark-mode .modal-content textarea::placeholder,
+body.dark-mode .modal-content .form-control::placeholder {
+  color: rgba(255,255,255,0.2) !important;
+}
+body.dark-mode .modal-content input[type="date"],
+body.dark-mode .modal-content select {
+  color-scheme: dark;
+}
+/* Dark mode — labels */
+body.dark-mode .modal-content label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: rgba(255,255,255,0.4) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+}
+/* Form groups — spacing */
+.modal-content .form-group {
+  margin-bottom: 16px !important;
 }
