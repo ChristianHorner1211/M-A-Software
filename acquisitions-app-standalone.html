@@ -2954,6 +2954,598 @@
                 opacity: 1;
             }
         }
+
+        /* ==================== APP SHELL LAYOUT ==================== */
+
+        /* Suppress old layout rules */
+        .container { max-width: none; margin: 0; padding: 0; }
+        header { display: none !important; }
+        .drawer, .drawer-overlay, .hamburger-menu { display: none !important; }
+        .tabs-container { display: none !important; }
+        .content-area { display: block; }
+
+        /* Page visibility */
+        .page-container { display: none; }
+        #acquisitionsPage.page-container.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
+        #codeManagementPage.page-container.active,
+        #stateDetailPage.page-container.active,
+        #searchResultsPage.page-container.active { display: block !important; flex: 1; overflow-y: auto; }
+
+        /* App Shell */
+        .app-shell {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: #0a0c14;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            background: #0f1120;
+            border-right: 0.5px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar-logo {
+            padding: 20px;
+            font-size: 20px;
+            font-style: italic;
+            font-family: 'Cormorant Garamond', 'Palatino Linotype', Georgia, serif;
+            color: white;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+        .sidebar-section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.1em;
+            padding: 0 8px;
+            margin-bottom: 6px;
+            margin-top: 8px;
+        }
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            height: 40px;
+            padding: 0 12px;
+            border: none;
+            border-left: 3px solid transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            color: rgba(255,255,255,0.45);
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            transition: all 150ms ease;
+            margin-bottom: 2px;
+            box-sizing: border-box;
+        }
+        .sidebar-nav-item:hover {
+            color: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.04);
+        }
+        .sidebar-nav-item.active {
+            background: rgba(99,102,241,0.15);
+            color: white;
+            border-left-color: #6366f1;
+            padding-left: 9px;
+        }
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 0.5px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .sidebar-org-pill {
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .sidebar-org-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar-rep-name {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main Wrapper */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            height: 60px;
+            flex-shrink: 0;
+            background: #0a0c14;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            gap: 16px;
+            z-index: 10;
+        }
+        .topbar-left { display: flex; flex-direction: column; justify-content: center; }
+        .topbar-title { font-size: 18px; font-weight: 500; color: white; line-height: 1.2; }
+        .topbar-subtitle { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        /* Topbar search override */
+        .topbar .global-search-container { position: relative; flex: none; }
+        .topbar .global-search-input {
+            width: 220px;
+            padding: 7px 14px;
+            background: rgba(255,255,255,0.06);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            outline: none;
+            font-family: inherit;
+            transition: border-color 150ms;
+            box-shadow: none;
+        }
+        .topbar .global-search-input::placeholder { color: rgba(255,255,255,0.3); }
+        .topbar .global-search-input:focus {
+            border-color: rgba(99,102,241,0.5);
+            background: rgba(255,255,255,0.08);
+            box-shadow: none;
+        }
+
+        /* Add Carrier dropdown */
+        .add-carrier-wrap { position: relative; }
+        .btn-add-carrier {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 150ms;
+            white-space: nowrap;
+        }
+        .btn-add-carrier:hover { background: #5558e8; }
+        .add-carrier-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 190px;
+            background: #1a1d27;
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .add-carrier-menu-item {
+            padding: 10px 14px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            transition: background 120ms;
+        }
+        .add-carrier-menu-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .add-carrier-menu-item.danger { color: #ef4444; }
+        .add-carrier-menu-item.danger:hover { background: rgba(239,68,68,0.08); }
+        .add-carrier-menu-divider { height: 0.5px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            flex-shrink: 0;
+            background: #0a0c14;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+        }
+        .stat-item {
+            flex: 1;
+            padding: 16px 24px;
+            border-right: 0.5px solid rgba(255,255,255,0.06);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-value { font-size: 22px; font-weight: 500; color: white; line-height: 1.1; margin-bottom: 3px; }
+        .stat-done { color: #22c55e; }
+        .stat-outstanding { color: #ef4444; }
+        .stat-label { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+        /* Acquisitions page as body area */
+        #acquisitionsPage.active {
+            display: flex !important;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* List Panel */
+        .list-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            border-right: 0.5px solid rgba(255,255,255,0.06);
+        }
+
+        /* List Header */
+        .list-header {
+            height: 44px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.04);
+            background: #0a0c14;
+        }
+        .filter-tabs { display: flex; gap: 4px; }
+        .filter-tab {
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            font-family: inherit;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 120ms;
+        }
+        .filter-tab:hover { color: rgba(255,255,255,0.7); }
+        .filter-tab.active { background: rgba(255,255,255,0.08); color: white; }
+        .list-header-actions { display: flex; gap: 6px; }
+        .btn-ghost-sm {
+            border: 0.5px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            background: transparent;
+            font-size: 12px;
+            font-family: inherit;
+            color: rgba(255,255,255,0.6);
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 120ms;
+        }
+        .btn-ghost-sm:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.9); }
+
+        /* Acquisition tabs — compact bar */
+        #acquisitionTabs {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            background: #0f1120;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            padding: 0 24px;
+            flex-shrink: 0;
+            scrollbar-width: none;
+            gap: 0;
+        }
+        #acquisitionTabs::-webkit-scrollbar { display: none; }
+        #acquisitionTabs .tab {
+            background: transparent !important;
+            border-radius: 0 !important;
+            color: rgba(255,255,255,0.4) !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 10px 14px !important;
+            border-bottom: 2px solid transparent !important;
+            border-left: none !important;
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-shadow: none !important;
+        }
+        #acquisitionTabs .tab.active {
+            color: white !important;
+            border-bottom-color: #6366f1 !important;
+        }
+        #acquisitionTabs .tab:hover {
+            color: rgba(255,255,255,0.8) !important;
+            background: rgba(255,255,255,0.03) !important;
+        }
+
+        /* Carriers list */
+        .carriers-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #0a0c14 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        /* Carrier item — new flat row design */
+        .carrier-item {
+            position: relative;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            height: 56px !important;
+            padding: 0 24px !important;
+            background: transparent !important;
+            border-bottom: 0.5px solid rgba(255,255,255,0.04) !important;
+            border-left: none !important;
+            border-top: none !important;
+            border-right: none !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+            transition: background 120ms !important;
+            cursor: default;
+        }
+        .carrier-item:last-child { border-bottom: none !important; }
+        .carrier-item:hover { background: rgba(255,255,255,0.02) !important; }
+
+        /* Status bar via pseudo-element */
+        .carrier-item::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 28px;
+            border-radius: 2px;
+            background: transparent;
+            transition: background 150ms;
+        }
+        .carrier-item.done::before { background: #22c55e !important; }
+        .carrier-item.outstanding::before { background: #ef4444 !important; }
+
+        /* Remove border-left from dark mode carrier rules since we use ::before now */
+        body.dark-mode .carrier-item.done,
+        body.dark-mode .carrier-item.outstanding { border-left: none !important; }
+
+        /* Carrier header — make it take full row width */
+        .carrier-header {
+            display: flex !important;
+            align-items: center !important;
+            flex: 1 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            min-width: 0;
+        }
+        .carrier-header:hover { background: transparent !important; }
+        .carrier-toggle { display: none !important; }
+        .carrier-info { flex: 1; min-width: 0; }
+        .carrier-name {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            color: rgba(255,255,255,0.9) !important;
+            margin-bottom: 0 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .carrier-code {
+            font-size: 11px !important;
+            color: rgba(255,255,255,0.3) !important;
+            font-weight: 400 !important;
+            margin-top: 1px;
+        }
+
+        /* Carrier action buttons */
+        .carrier-actions { display: flex !important; align-items: center !important; gap: 6px !important; }
+        .carrier-actions .btn-group {
+            display: flex;
+            gap: 6px;
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+        .carrier-actions .btn-group button {
+            height: auto !important;
+            padding: 5px 10px !important;
+            font-size: 12px !important;
+            font-weight: 400 !important;
+            border-radius: 6px !important;
+            border: 0.5px solid rgba(255,255,255,0.1) !important;
+            background: transparent !important;
+            color: rgba(255,255,255,0.5) !important;
+            box-shadow: none !important;
+            transform: none !important;
+            transition: all 120ms !important;
+        }
+        .carrier-actions .btn-group button:hover {
+            border-color: rgba(255,255,255,0.25) !important;
+            color: rgba(255,255,255,0.8) !important;
+            transform: none !important;
+            background: transparent !important;
+        }
+        /* Done state - first button */
+        .carrier-item.done .carrier-actions .btn-group button:first-child {
+            border-color: #22c55e !important;
+            color: #22c55e !important;
+        }
+        /* Email button */
+        .carrier-actions .btn-group button:last-child {
+            background: rgba(99,102,241,0.15) !important;
+            border: 0.5px solid rgba(99,102,241,0.3) !important;
+            color: #818cf8 !important;
+            font-weight: 400 !important;
+        }
+        .carrier-actions .btn-group button:last-child:hover {
+            background: rgba(99,102,241,0.25) !important;
+            color: #818cf8 !important;
+            transform: none !important;
+        }
+
+        /* Trash button injected by JS observer */
+        .carrier-delete-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.2);
+            font-size: 14px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 120ms, color 120ms, background 120ms;
+            flex-shrink: 0;
+            padding: 0;
+            margin-left: 4px;
+        }
+        .carrier-item:hover .carrier-delete-btn { opacity: 1; }
+        .carrier-delete-btn:hover { color: #ef4444 !important; background: rgba(239,68,68,0.1); }
+
+        /* Collapse carrier content - new layout uses panel for activity */
+        .carrier-content { display: none !important; }
+
+        /* Activity Panel */
+        .activity-panel {
+            width: 280px;
+            flex-shrink: 0;
+            background: #0f1120;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .activity-panel-header {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .activity-panel-title { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .activity-add-btn {
+            background: transparent;
+            border: none;
+            color: #818cf8;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 120ms;
+        }
+        .activity-add-btn:hover { background: rgba(99,102,241,0.1); }
+        .activity-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            max-height: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+        .activity-item {
+            padding: 10px 12px !important;
+            background: rgba(255,255,255,0.03) !important;
+            border-radius: 8px !important;
+            border-left: 3px solid #6366f1 !important;
+            box-shadow: none !important;
+            transition: background 120ms !important;
+        }
+        .activity-item:hover {
+            background: rgba(255,255,255,0.06) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .activity-type { color: rgba(255,255,255,0.8) !important; }
+        .activity-date { color: rgba(255,255,255,0.3) !important; }
+        .activity-contact, .activity-notes { color: rgba(255,255,255,0.5) !important; }
+
+        /* ==================== LIGHT MODE OVERRIDES ==================== */
+        body:not(.dark-mode) .app-shell { background: #f4f5f7; }
+        body:not(.dark-mode) .sidebar { background: #1e2140; }
+        body:not(.dark-mode) .main-wrapper { background: #f4f5f7; }
+        body:not(.dark-mode) .topbar { background: white; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .topbar-title { color: #0f172a; }
+        body:not(.dark-mode) .topbar-subtitle { color: #64748b; }
+        body:not(.dark-mode) .topbar .global-search-input {
+            background: #f4f5f7;
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .topbar .global-search-input::placeholder { color: #94a3b8; }
+        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #6366f1; }
+        body:not(.dark-mode) .stats-row { background: white; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .stat-item { border-right-color: #e2e8f0; }
+        body:not(.dark-mode) .stat-value { color: #0f172a; }
+        body:not(.dark-mode) .stat-label { color: #64748b; }
+        body:not(.dark-mode) .list-header { background: white; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .list-panel { border-right-color: #e2e8f0; }
+        body:not(.dark-mode) .filter-tab { color: #64748b; }
+        body:not(.dark-mode) .filter-tab.active { background: #f1f5f9; color: #0f172a; }
+        body:not(.dark-mode) .btn-ghost-sm { border-color: #e2e8f0; color: #64748b; }
+        body:not(.dark-mode) .btn-ghost-sm:hover { border-color: #94a3b8; color: #0f172a; }
+        body:not(.dark-mode) #acquisitionTabs { background: #f8fafc; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) #acquisitionTabs .tab { color: #64748b !important; }
+        body:not(.dark-mode) #acquisitionTabs .tab.active { color: #0f172a !important; }
+        body:not(.dark-mode) .carriers-list { background: white !important; }
+        body:not(.dark-mode) .carrier-item {
+            background: white !important;
+            border-bottom-color: #e2e8f0 !important;
+        }
+        body:not(.dark-mode) .carrier-item:hover { background: #f8fafc !important; }
+        body:not(.dark-mode) .carrier-name { color: #0f172a !important; }
+        body:not(.dark-mode) .carrier-code { color: #64748b !important; }
+        body:not(.dark-mode) .carrier-actions .btn-group button {
+            border-color: #e2e8f0 !important;
+            color: #64748b !important;
+            background: transparent !important;
+        }
+        body:not(.dark-mode) .carrier-item.done .carrier-actions .btn-group button:first-child {
+            border-color: #22c55e !important;
+            color: #22c55e !important;
+        }
+        body:not(.dark-mode) .carrier-actions .btn-group button:last-child {
+            background: rgba(99,102,241,0.08) !important;
+            border-color: rgba(99,102,241,0.25) !important;
+            color: #6366f1 !important;
+        }
+        body:not(.dark-mode) .add-carrier-menu { background: white; border-color: #e2e8f0; }
+        body:not(.dark-mode) .add-carrier-menu-item { color: #374151; }
+        body:not(.dark-mode) .add-carrier-menu-item:hover { background: #f4f5f7; color: #0f172a; }
+        body:not(.dark-mode) .add-carrier-menu-divider { background: #e2e8f0; }
+        body:not(.dark-mode) .activity-panel { background: #f8fafc; }
+        body:not(.dark-mode) .activity-panel-header { border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .activity-panel-title { color: #374151; }
+        body:not(.dark-mode) .activity-item {
+            background: white !important;
+            border-left-color: #6366f1 !important;
+        }
+        body:not(.dark-mode) .activity-item:hover { background: #f1f5f9 !important; }
+        body:not(.dark-mode) .activity-type { color: #374151 !important; }
+        body:not(.dark-mode) .activity-date { color: #94a3b8 !important; }
+        body:not(.dark-mode) .activity-contact,
+        body:not(.dark-mode) .activity-notes { color: #64748b !important; }
+        body:not(.dark-mode) .carrier-delete-btn { color: #94a3b8; }
+        body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(99,102,241,0.15); }
+
     </style>
 </head>
 <body>
@@ -3019,106 +3611,119 @@
     </div>
 
     <!-- Main App -->
-    <div id="mainApp" class="container" style="display: none;">
-        <header>
-            <div class="header-brand" style="display: flex; align-items: center; flex-shrink: 0;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 120" height="44" style="display:block;">
-                  <defs>
-                    <style>@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&amp;display=swap');</style>
-                  </defs>
-                  <g transform="skewX(-8)">
-                    <text
-                      x="330"
-                      y="90"
-                      text-anchor="middle"
-                      font-family="'Cormorant Garamond', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif"
-                      font-size="90"
-                      font-style="italic"
-                      font-weight="600"
-                      fill="white"
-                      letter-spacing="0"
-                    >Carrier Canvas</text>
-                  </g>
-                </svg>
-            </div>
-            <div class="header-nav-search-container">
-                <div class="nav-buttons btn-group">
-                    <button class="active" id="navAcquisitions" onclick="setActiveButton(event); showPage('acquisitions')">Acquisitions</button>
-                    <button id="navCodeManagement" onclick="setActiveButton(event); showPage('codeManagement')">Code Management</button>
-                </div>
-                <div class="global-search-container">
-                    <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
-                </div>
-            </div>
-            <div class="header-actions">
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <img id="userAvatar" class="user-avatar" src="" alt="User">
-                    <span id="userName"></span>
-                    <button class="signout-btn" onclick="signOut()">Sign Out</button>
-                </div>
-                <button class="btn btn-primary" onclick="showNewAcquisitionModal()">+ New Acquisition</button>
-                <button class="btn btn-secondary" onclick="showTemplateManager()">📝 Manage Templates</button>
-                <button class="btn btn-secondary" onclick="generateInviteCode()" title="Invite a team member to your organization">👥 Invite Member</button>
-                <button class="btn btn-secondary" onclick="showSettingsModal()">⚙ Settings</button>
-            </div>
-            <button class="hamburger-menu" onclick="toggleDrawer()" aria-label="Menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </header>
+    <div id="mainApp" class="app-shell" style="display: none;">
 
-        <!-- Drawer Overlay -->
-        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
-
-        <!-- Drawer -->
-        <div class="drawer" id="drawer">
-            <div class="drawer-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <svg width="24" height="24" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="32" height="32" rx="6" fill="#2563eb"/>
-                        <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="20" fill="white" font-family="serif" font-weight="bold">C</text>
-                    </svg>
-                    <h2 style="margin: 0;">Carrier Canvas</h2>
-                </div>
-                <button class="drawer-close" onclick="toggleDrawer()" aria-label="Close menu">&times;</button>
+        <!-- Hidden legacy elements required by existing JS -->
+        <div style="display:none;">
+            <div id="userInfo" class="user-info">
+                <img id="userAvatar" class="user-avatar" src="" alt="User">
+                <span id="userName"></span>
             </div>
-            <div class="drawer-content">
-                <div id="drawerUserInfo" class="drawer-user-info" style="display: none;">
-                    <img id="drawerUserAvatar" class="user-avatar" src="" alt="User">
-                    <span id="drawerUserName"></span>
-                </div>
-                <div class="drawer-actions">
-                    <button class="btn btn-primary" onclick="showNewAcquisitionModal(); toggleDrawer();">+ New Acquisition</button>
-                    <button class="btn btn-secondary" onclick="showTemplateManager(); toggleDrawer();">📝 Manage Templates</button>
-                    <button class="btn btn-secondary" onclick="showSettingsModal(); toggleDrawer();">⚙ Settings</button>
-                    <button class="signout-btn" onclick="signOut(); toggleDrawer();" style="margin-top: 20px; width: 100%;">Sign Out</button>
-                </div>
+            <div id="drawerUserInfo" class="drawer-user-info">
+                <img id="drawerUserAvatar" class="user-avatar" src="" alt="User">
+                <span id="drawerUserName"></span>
             </div>
         </div>
 
-        <!-- Acquisitions Page -->
-        <div id="acquisitionsPage" class="page-container active">
-            <main>
-                <div class="tabs-container">
-                <div class="tabs" id="acquisitionTabs"></div>
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-logo">Carrier Canvas</div>
+            <div class="sidebar-nav">
+                <div class="sidebar-section-label">WORKSPACE</div>
+                <button class="sidebar-nav-item active" id="navAcquisitions" onclick="showPage('acquisitions')">
+                    Acquisitions
+                </button>
+                <button class="sidebar-nav-item" id="navCodeManagement" onclick="showPage('codeManagement')">
+                    Code Management
+                </button>
+                <button class="sidebar-nav-item" onclick="document.getElementById('activityPanel') && document.getElementById('activityPanel').scrollIntoView({behavior:'smooth'})">
+                    Activity Log
+                </button>
+            </div>
+            <div class="sidebar-footer">
+                <div class="sidebar-org-pill">
+                    <div class="sidebar-org-name" id="sidebarOrgName">Carrier Canvas</div>
+                    <div class="sidebar-rep-name" id="sidebarRepName">—</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="topbar-title">Acquisitions</div>
+                    <div class="topbar-subtitle">Campaign · <span id="topbarOrgName">—</span></div>
+                </div>
+                <div class="topbar-right">
+                    <div class="global-search-container">
+                        <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search carriers, reps, locations, codes..." autocomplete="off">
+                    </div>
+                    <div class="add-carrier-wrap">
+                        <button class="btn-add-carrier" onclick="toggleAddCarrierDropdown(event)">+ Add Carrier</button>
+                        <div class="add-carrier-menu" id="addCarrierMenu" style="display:none;">
+                            <div class="add-carrier-menu-item" onclick="showAddCarrierModal(); closeAddCarrierDropdown()">Add carrier manually</div>
+                            <div class="add-carrier-menu-item" onclick="showImportCarriersModal(); closeAddCarrierDropdown()">Import carriers</div>
+                            <div class="add-carrier-menu-item" onclick="showImportEmailModal(); closeAddCarrierDropdown()">Import email</div>
+                            <div class="add-carrier-menu-divider"></div>
+                            <div class="add-carrier-menu-item danger" onclick="removeAllCarriers(); closeAddCarrierDropdown()">Remove all carriers</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="content-area">
-                <div class="section carrier-section">
+            <!-- Stats Row -->
+            <div class="stats-row" id="statsRow">
+                <div class="stat-item">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Total carriers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value stat-done" id="statDone">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value stat-outstanding" id="statOutstanding">0</div>
+                    <div class="stat-label">Outstanding</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statEmails">0</div>
+                    <div class="stat-label">Emails sent</div>
+                </div>
+            </div>
+
+            <!-- Acquisitions Page -->
+            <div id="acquisitionsPage" class="page-container active">
+                <div class="list-panel">
+                    <!-- List Header -->
+                    <div class="list-header">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" onclick="setCarrierFilter('all', this)">All</button>
+                            <button class="filter-tab" onclick="setCarrierFilter('outstanding', this)">Outstanding</button>
+                            <button class="filter-tab" onclick="setCarrierFilter('done', this)">Done</button>
+                        </div>
+                        <div class="list-header-actions">
+                            <button class="btn-ghost-sm" onclick="showBulkEmail()">Bulk Email</button>
+                            <button class="btn-ghost-sm" onclick="showImportCarriersModal()">Import</button>
+                        </div>
+                    </div>
+                    <!-- Acquisition tabs -->
+                    <div class="tabs" id="acquisitionTabs"></div>
+                    <!-- Carriers -->
                     <div class="carriers-list" id="carriersList"></div>
                 </div>
 
-                <div class="section activity-section">
-                    <div class="section-header">
-                        <h3>Activity Log</h3>
-                        <button class="btn btn-small" onclick="showActivityModal()">+ Add Activity</button>
+                <!-- Activity Panel -->
+                <div class="activity-panel" id="activityPanel">
+                    <div class="activity-panel-header">
+                        <span class="activity-panel-title">Activity</span>
+                        <button class="activity-add-btn" onclick="showActivityModal()">+ Add</button>
                     </div>
                     <div class="activity-list" id="activityList"></div>
                 </div>
-            </div>
-            </main>
-        </div> <!-- End of acquisitionsPage -->
+            </div> <!-- End of acquisitionsPage -->
 
         <!-- Code Management Page -->
         <div id="codeManagementPage" class="page-container">
@@ -3314,7 +3919,8 @@
             </div>
         </div> <!-- End of searchResultsPage -->
 
-    </div> <!-- End of mainApp -->
+        </div><!-- end main-wrapper -->
+    </div><!-- end app-shell / mainApp -->
 
     <!-- Global Search Suggestions Dropdown (positioned outside main container for proper z-index layering) -->
     <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
@@ -12316,6 +12922,132 @@ Mergers & Acquisitions Team`
                 console.error('Error saving data on beforeunload:', error);
             }
             // Note: Don't show confirmation dialog as it's annoying for users
+        });
+    </script>
+
+    <!-- ==================== NEW LAYOUT UTILITIES ==================== -->
+    <script>
+        // Carrier filter
+        let currentCarrierFilter = 'all';
+
+        function setCarrierFilter(filter, btn) {
+            currentCarrierFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            applyCarrierFilter();
+        }
+
+        function applyCarrierFilter() {
+            document.querySelectorAll('#carriersList .carrier-item').forEach(item => {
+                if (currentCarrierFilter === 'all') {
+                    item.style.display = '';
+                } else if (currentCarrierFilter === 'done') {
+                    item.style.display = item.classList.contains('done') ? '' : 'none';
+                } else if (currentCarrierFilter === 'outstanding') {
+                    item.style.display = item.classList.contains('outstanding') ? '' : 'none';
+                }
+            });
+        }
+
+        function updateStats() {
+            const list = document.getElementById('carriersList');
+            if (!list) return;
+            const all = list.querySelectorAll('.carrier-item').length;
+            const done = list.querySelectorAll('.carrier-item.done').length;
+            const outstanding = list.querySelectorAll('.carrier-item.outstanding').length;
+            const emailCount = (window.activities || []).filter(a =>
+                a.type === 'email' || a.type === 'Email'
+            ).length;
+            const s = document.getElementById('statTotal');
+            const sd = document.getElementById('statDone');
+            const so = document.getElementById('statOutstanding');
+            const se = document.getElementById('statEmails');
+            if (s) s.textContent = all;
+            if (sd) sd.textContent = done;
+            if (so) so.textContent = outstanding;
+            if (se) se.textContent = emailCount;
+        }
+
+        // Inject trash button into each carrier item that doesn't have one
+        function injectCarrierDeleteButtons() {
+            document.querySelectorAll('#carriersList .carrier-item').forEach(item => {
+                if (item.querySelector('.carrier-delete-btn')) return;
+                const actions = item.querySelector('.carrier-actions');
+                if (!actions) return;
+                const code = (() => {
+                    const codeEl = item.querySelector('.carrier-code');
+                    if (!codeEl) return null;
+                    const m = codeEl.textContent.match(/Code:\s*([^\s|]+)/);
+                    return m ? m[1] : null;
+                })();
+                if (!code) return;
+                const btn = document.createElement('button');
+                btn.className = 'carrier-delete-btn';
+                btn.title = 'Remove carrier';
+                btn.textContent = '🗑';
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (typeof removeCarrier === 'function') removeCarrier(code);
+                });
+                actions.appendChild(btn);
+            });
+        }
+
+        // MutationObserver on carriersList
+        const _layoutObserver = new MutationObserver(() => {
+            updateStats();
+            applyCarrierFilter();
+            injectCarrierDeleteButtons();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cl = document.getElementById('carriersList');
+            if (cl) {
+                _layoutObserver.observe(cl, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
+        });
+
+        // Add Carrier dropdown
+        function toggleAddCarrierDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('addCarrierMenu');
+            if (!menu) return;
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeAddCarrierDropdown() {
+            const menu = document.getElementById('addCarrierMenu');
+            if (menu) menu.style.display = 'none';
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.add-carrier-wrap')) closeAddCarrierDropdown();
+        });
+
+        // Update topbar/sidebar from current acquisition
+        function updateTopbarInfo() {
+            const acq = (window.acquisitions || []).find(a => a.id === window.currentAcquisitionId);
+            const nameEl = document.getElementById('topbarOrgName');
+            const orgEl = document.getElementById('sidebarOrgName');
+            const repEl = document.getElementById('sidebarRepName');
+            if (nameEl && acq) nameEl.textContent = acq.name;
+            if (orgEl && acq) orgEl.textContent = acq.name;
+            if (repEl && window.currentUser) {
+                repEl.textContent = window.currentUser.displayName || window.currentUser.email || '';
+            }
+        }
+
+        // Watch acquisition tabs for changes to update topbar
+        const _tabsLayoutObserver = new MutationObserver(updateTopbarInfo);
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.getElementById('acquisitionTabs');
+            if (tabs) _tabsLayoutObserver.observe(tabs, { childList: true, subtree: true });
+            updateStats();
         });
     </script>
 </body>
