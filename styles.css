@@ -634,3 +634,109 @@ header h1 {
         width: 100%;
     }
 }
+
+/* ── Dark Mode: Modal Overrides ── */
+
+body.dark-mode .modal,
+body.dark-mode .office-modal {
+  background: rgba(0,0,0,0.75);
+}
+
+body.dark-mode .modal-content,
+body.dark-mode .office-modal-content {
+  background: #13162a;
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+
+body.dark-mode .modal-content.large,
+body.dark-mode .modal-content.medium {
+  background: #13162a !important;
+}
+
+body.dark-mode .modal-content h2,
+body.dark-mode .modal-content h3,
+body.dark-mode .office-modal-content h2 {
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+
+body.dark-mode .modal-content label,
+body.dark-mode .office-modal-content label {
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+body.dark-mode .modal-content input[type="text"],
+body.dark-mode .modal-content input[type="date"],
+body.dark-mode .modal-content input[type="email"],
+body.dark-mode .modal-content input[type="number"],
+body.dark-mode .modal-content input[type="password"],
+body.dark-mode .modal-content textarea,
+body.dark-mode .modal-content select,
+body.dark-mode .office-modal-content input[type="text"],
+body.dark-mode .office-modal-content input[type="date"],
+body.dark-mode .office-modal-content textarea,
+body.dark-mode .office-modal-content select,
+body.dark-mode .modal-content .form-control,
+body.dark-mode .office-modal-content .form-control {
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.9);
+  font-family: inherit;
+}
+
+body.dark-mode .modal-content input::placeholder,
+body.dark-mode .modal-content textarea::placeholder,
+body.dark-mode .office-modal-content input::placeholder,
+body.dark-mode .office-modal-content textarea::placeholder {
+  color: rgba(255,255,255,0.2);
+}
+
+body.dark-mode .modal-content input:focus,
+body.dark-mode .modal-content textarea:focus,
+body.dark-mode .modal-content select:focus,
+body.dark-mode .office-modal-content input:focus,
+body.dark-mode .office-modal-content textarea:focus {
+  border-color: rgba(37,99,235,0.5);
+  background: rgba(255,255,255,0.07);
+  outline: none;
+}
+
+body.dark-mode .modal-content select,
+body.dark-mode .office-modal-content select {
+  color-scheme: dark;
+}
+
+body.dark-mode .modal-content input[type="date"] {
+  color-scheme: dark;
+}
+
+body.dark-mode .modal-content .btn-secondary,
+body.dark-mode .modal-content .btn:not(.btn-primary):not(.btn-danger),
+body.dark-mode .office-modal-content .btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+
+body.dark-mode .modal-content .btn-secondary:hover,
+body.dark-mode .office-modal-content .btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+body.dark-mode .modal-content .close,
+body.dark-mode .office-modal-content .close {
+  color: rgba(255,255,255,0.3);
+  background: none;
+  border: none;
+}
+
+body.dark-mode .modal-content .close:hover,
+body.dark-mode .office-modal-content .close:hover {
+  color: rgba(255,255,255,0.7);
+}
