@@ -502,6 +502,8 @@
             overflow: hidden;
         }
 
+        html { height: 100%; overflow: hidden; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--background-alt);
@@ -2975,14 +2977,14 @@
         .tabs-container { display: none !important; }
         .content-area { display: block; }
 
-        /* Page visibility */
-        .page-container { display: none; }
+        /* ==================== PAGE VISIBILITY ==================== */
+        .page-container { display: none !important; }
         #acquisitionsPage.page-container.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
         #codeManagementPage.page-container.active,
         #stateDetailPage.page-container.active,
-        #searchResultsPage.page-container.active { display: block !important; flex: 1; overflow-y: auto; }
+        #searchResultsPage.page-container.active { display: flex !important; flex: 1; overflow: hidden; }
 
-        /* App Shell */
+        /* ==================== APP SHELL ==================== */
         .app-shell {
             display: flex !important;  /* overrides showMainApp() inline style="display:block" */
             width: 100%;
@@ -2991,7 +2993,7 @@
             background: #0a0c14;
         }
 
-        /* Sidebar */
+        /* ==================== SIDEBAR ==================== */
         .sidebar {
             width: 220px;
             height: 100vh;
@@ -3000,7 +3002,7 @@
             border-right: 0.5px solid rgba(255,255,255,0.06);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
         }
         .sidebar-logo {
             padding: 20px;
@@ -3015,8 +3017,19 @@
         }
         .sidebar-nav {
             flex: 1;
-            padding: 16px 12px;
+            padding: 8px 12px;
             overflow-y: auto;
+            min-height: 0;
+        }
+        .sidebar-nav-bottom {
+            flex: 0 0 auto;
+            padding: 4px 12px 8px;
+        }
+        .sidebar-nav-divider {
+            height: 0.5px;
+            background: rgba(255,255,255,0.06);
+            margin: 4px 12px;
+            flex-shrink: 0;
         }
         .sidebar-section-label {
             font-size: 10px;
@@ -3057,6 +3070,37 @@
             border-left-color: #6366f1;
             padding-left: 9px;
         }
+        /* Dark mode toggle button */
+        .sidebar-darkmode-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 6px auto 4px;
+        }
+        .sidebar-darkmode-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            cursor: pointer;
+            font-size: 0; /* hide any text, use ::before */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 150ms;
+            color: rgba(255,255,255,0.6);
+        }
+        .sidebar-darkmode-btn::before { content: '☽'; font-size: 14px; }
+        body.dark-mode .sidebar-darkmode-btn::before { content: '☀'; font-size: 14px; }
+        .sidebar-darkmode-btn:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-darkmode-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 3px;
+        }
+
+        /* Sidebar footer + org pill */
         .sidebar-footer {
             padding: 12px;
             border-top: 0.5px solid rgba(255,255,255,0.06);
@@ -3065,13 +3109,31 @@
         .sidebar-org-pill {
             background: rgba(255,255,255,0.04);
             border-radius: 8px;
-            padding: 10px 12px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .sidebar-org-name {
-            font-size: 12px;
+        .sidebar-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(99,102,241,0.3);
+            color: #818cf8;
+            font-size: 11px;
             font-weight: 500;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            letter-spacing: 0.02em;
+        }
+        .sidebar-org-info { flex: 1; min-width: 0; }
+        .sidebar-org-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 1px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -3109,8 +3171,80 @@
         }
         .topbar-left { display: flex; flex-direction: column; justify-content: center; }
         .topbar-title { font-size: 18px; font-weight: 500; color: white; line-height: 1.2; }
-        .topbar-subtitle { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+        .topbar-subtitle { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; display: flex; align-items: center; gap: 0; }
         .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        /* Campaign switcher — wraps #acquisitionTabs as a dropdown */
+        .campaign-switcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .campaign-switcher summary {
+            list-style: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+            user-select: none;
+            outline: none;
+            white-space: nowrap;
+        }
+        .campaign-switcher summary::-webkit-details-marker { display: none; }
+        .campaign-switcher summary:hover { color: rgba(255,255,255,0.6); }
+        .campaign-switcher[open] summary { color: rgba(255,255,255,0.7); }
+        .campaign-switcher-chevron {
+            display: inline-block;
+            margin-left: 3px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+        /* The dropdown panel that appears when open */
+        .campaign-switcher #acquisitionTabs {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: -12px;
+            min-width: 200px;
+            background: #1a1d27;
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            overflow: hidden;
+            display: none; /* hidden; shown when details[open] */
+            flex-direction: column;
+            padding: 4px;
+        }
+        .campaign-switcher[open] #acquisitionTabs { display: flex; }
+        /* Override the old horizontal tab styling in this context */
+        .campaign-switcher #acquisitionTabs .tab {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 6px !important;
+            color: rgba(255,255,255,0.6) !important;
+            font-size: 13px !important;
+            font-weight: 400 !important;
+            padding: 8px 12px !important;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            border-bottom: none !important;
+            white-space: nowrap;
+            cursor: pointer;
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .campaign-switcher #acquisitionTabs .tab.active {
+            background: rgba(99,102,241,0.15) !important;
+            color: white !important;
+        }
+        .campaign-switcher #acquisitionTabs .tab:hover {
+            background: rgba(255,255,255,0.05) !important;
+            color: rgba(255,255,255,0.9) !important;
+        }
+        /* Hide the tab-dropdown-chevron and tab-actions-menu inside campaign switcher */
+        .campaign-switcher .tab-dropdown-chevron { display: none !important; }
+        .campaign-switcher .tab-actions-menu { display: none !important; }
 
         /* Topbar search override */
         .topbar .global-search-container { position: relative; flex: none; }
@@ -3197,7 +3331,6 @@
         .body-area {
             flex: 1;
             display: flex;
-            flex-direction: column;
             overflow: hidden;
             min-height: 0;
             position: relative;
@@ -3216,6 +3349,28 @@
             overflow: hidden;
             min-height: 0;
         }
+
+        /* Code Management + state detail pages */
+        #codeManagementPage, #stateDetailPage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+        #codeManagementPage .map-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            background: transparent;
+            margin-top: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        #codeManagementPage .map-title { flex-shrink: 0; }
+        #codeManagementPage .us-map { flex: 1; width: 100%; height: auto; min-height: 0; max-width: 100%; margin: 0; }
 
         /* List Panel */
         .list-panel {
@@ -3268,39 +3423,8 @@
         .btn-ghost-sm:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.9); }
 
         /* Acquisition tabs — compact bar */
-        #acquisitionTabs {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            background: #0f1120;
-            border-bottom: 0.5px solid rgba(255,255,255,0.06);
-            padding: 0 24px;
-            flex-shrink: 0;
-            scrollbar-width: none;
-            gap: 0;
-        }
-        #acquisitionTabs::-webkit-scrollbar { display: none; }
-        #acquisitionTabs .tab {
-            background: transparent !important;
-            border-radius: 0 !important;
-            color: rgba(255,255,255,0.4) !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
-            padding: 10px 14px !important;
-            border-bottom: 2px solid transparent !important;
-            border-left: none !important;
-            white-space: nowrap;
-            flex-shrink: 0;
-            box-shadow: none !important;
-        }
-        #acquisitionTabs .tab.active {
-            color: white !important;
-            border-bottom-color: #6366f1 !important;
-        }
-        #acquisitionTabs .tab:hover {
-            color: rgba(255,255,255,0.8) !important;
-            background: rgba(255,255,255,0.03) !important;
-        }
+        /* #acquisitionTabs now lives inside .campaign-switcher — see campaign-switcher CSS above */
+        #acquisitionTabs { gap: 2px; }
 
         /* Carriers list */
         .carriers-list {
@@ -3312,46 +3436,42 @@
             box-shadow: none !important;
         }
 
-        /* Carrier item — new flat row design */
+        /* Carrier item — flat row with left status border */
         .carrier-item {
             position: relative;
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
             height: 56px !important;
-            padding: 0 24px !important;
+            padding: 0 24px 0 20px !important;
             background: transparent !important;
             border-bottom: 0.5px solid rgba(255,255,255,0.04) !important;
-            border-left: none !important;
+            border-left: 3px solid transparent !important;
             border-top: none !important;
             border-right: none !important;
             border-radius: 0 !important;
             overflow: visible !important;
-            transition: background 120ms !important;
+            transition: background 120ms, border-left-color 120ms !important;
             cursor: default;
         }
         .carrier-item:last-child { border-bottom: none !important; }
+        /* No alternating backgrounds */
+        .carrier-item:nth-child(even),
+        .carrier-item:nth-child(odd) { background: transparent !important; }
         .carrier-item:hover { background: rgba(255,255,255,0.02) !important; }
+        /* Status left border */
+        .carrier-item.done { border-left-color: #22c55e !important; }
+        .carrier-item.outstanding { border-left-color: #ef4444 !important; }
 
-        /* Status bar via pseudo-element */
-        .carrier-item::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 3px;
-            height: 28px;
-            border-radius: 2px;
-            background: transparent;
-            transition: background 150ms;
+        /* Done button = ghost green; outstanding "Mark Done" = muted */
+        .carrier-item.done .carrier-actions .btn-group button:first-child {
+            border-color: rgba(34,197,94,0.5) !important;
+            color: #22c55e !important;
         }
-        .carrier-item.done::before { background: #22c55e !important; }
-        .carrier-item.outstanding::before { background: #ef4444 !important; }
-
-        /* Remove border-left from dark mode carrier rules since we use ::before now */
-        body.dark-mode .carrier-item.done,
-        body.dark-mode .carrier-item.outstanding { border-left: none !important; }
+        .carrier-item.outstanding .carrier-actions .btn-group button:first-child {
+            border-color: rgba(255,255,255,0.08) !important;
+            color: rgba(255,255,255,0.35) !important;
+        }
 
         /* Carrier header — make it take full row width */
         .carrier-header {
@@ -3409,11 +3529,7 @@
             transform: none !important;
             background: transparent !important;
         }
-        /* Done state - first button */
-        .carrier-item.done .carrier-actions .btn-group button:first-child {
-            border-color: #22c55e !important;
-            color: #22c55e !important;
-        }
+        /* Done state handled in carrier-item section above */
         /* Email button */
         .carrier-actions .btn-group button:last-child {
             background: rgba(99,102,241,0.15) !important;
@@ -3459,8 +3575,23 @@
             background: #0f1120;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
         }
+        /* Empty state */
+        .activity-empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 24px;
+            color: rgba(255,255,255,0.25);
+            font-size: 12px;
+            text-align: center;
+        }
+        .activity-empty-state svg { opacity: 0.3; }
+        .activity-list:not(:empty) ~ .activity-empty-state { display: none; }
         .activity-panel-header {
             height: 44px;
             display: flex;
@@ -3541,6 +3672,11 @@
             background: white !important;
             border-bottom-color: #e2e8f0 !important;
         }
+        body:not(.dark-mode) .carrier-item { background: white !important; border-bottom-color: #f1f5f9 !important; border-left-color: transparent !important; }
+        body:not(.dark-mode) .carrier-item.done { border-left-color: #22c55e !important; }
+        body:not(.dark-mode) .carrier-item.outstanding { border-left-color: #ef4444 !important; }
+        body:not(.dark-mode) .carrier-item:nth-child(even),
+        body:not(.dark-mode) .carrier-item:nth-child(odd) { background: white !important; }
         body:not(.dark-mode) .carrier-item:hover { background: #f8fafc !important; }
         body:not(.dark-mode) .carrier-name { color: #0f172a !important; }
         body:not(.dark-mode) .carrier-code { color: #64748b !important; }
@@ -3550,8 +3686,12 @@
             background: transparent !important;
         }
         body:not(.dark-mode) .carrier-item.done .carrier-actions .btn-group button:first-child {
-            border-color: #22c55e !important;
+            border-color: rgba(34,197,94,0.5) !important;
             color: #22c55e !important;
+        }
+        body:not(.dark-mode) .carrier-item.outstanding .carrier-actions .btn-group button:first-child {
+            border-color: #e2e8f0 !important;
+            color: #94a3b8 !important;
         }
         body:not(.dark-mode) .carrier-actions .btn-group button:last-child {
             background: rgba(99,102,241,0.08) !important;
@@ -3562,11 +3702,12 @@
         body:not(.dark-mode) .add-carrier-menu-item { color: #374151; }
         body:not(.dark-mode) .add-carrier-menu-item:hover { background: #f4f5f7; color: #0f172a; }
         body:not(.dark-mode) .add-carrier-menu-divider { background: #e2e8f0; }
-        body:not(.dark-mode) .activity-panel { background: #f8fafc; }
+        body:not(.dark-mode) .activity-panel { background: white; border-left: 1px solid #e2e8f0; }
         body:not(.dark-mode) .activity-panel-header { border-bottom-color: #e2e8f0; }
         body:not(.dark-mode) .activity-panel-title { color: #374151; }
+        body:not(.dark-mode) .activity-empty-state { color: #94a3b8; }
         body:not(.dark-mode) .activity-item {
-            background: white !important;
+            background: #f8fafc !important;
             border-left-color: #6366f1 !important;
         }
         body:not(.dark-mode) .activity-item:hover { background: #f1f5f9 !important; }
@@ -3575,29 +3716,57 @@
         body:not(.dark-mode) .activity-contact,
         body:not(.dark-mode) .activity-notes { color: #64748b !important; }
         body:not(.dark-mode) .carrier-delete-btn { color: #94a3b8; }
-        body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(99,102,241,0.15); }
+        body:not(.dark-mode) .sidebar-nav-item.active { background: rgba(99,102,241,0.15); color: white; }
+        body:not(.dark-mode) .sidebar-darkmode-btn { color: rgba(255,255,255,0.6); }
+        body:not(.dark-mode) .campaign-switcher summary { color: #64748b; }
+        body:not(.dark-mode) .campaign-switcher #acquisitionTabs { background: white; border-color: #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab { color: #374151 !important; }
+        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab.active { background: rgba(99,102,241,0.08) !important; color: #4f46e5 !important; }
+        body:not(.dark-mode) .campaign-switcher #acquisitionTabs .tab:hover { background: #f4f5f7 !important; color: #0f172a !important; }
 
-        /* Explicit light mode backgrounds for new layout elements */
+        /* ==================== LIGHT MODE BACKGROUNDS ==================== */
         body:not(.dark-mode) .app-shell { background: #f4f5f7; }
         body:not(.dark-mode) .main-wrapper { background: #f4f5f7; }
         body:not(.dark-mode) .topbar { background: white; border-bottom: 1px solid #e2e8f0; }
+        body:not(.dark-mode) .topbar-title { color: #0f172a; }
+        body:not(.dark-mode) .topbar-subtitle { color: #64748b; }
         body:not(.dark-mode) .stats-row { background: white; border-bottom: 1px solid #e2e8f0; }
-        body:not(.dark-mode) .list-panel { background: #f4f5f7; color: #0f172a; }
+        body:not(.dark-mode) .stat-value { color: #0f172a; }
+        body:not(.dark-mode) .stat-label { color: #64748b; }
+        body:not(.dark-mode) .stat-item { border-right-color: #e2e8f0; }
+        body:not(.dark-mode) .list-panel { background: white; color: #0f172a; border-right-color: #e2e8f0; }
         body:not(.dark-mode) .list-header { background: white; border-bottom: 1px solid #e2e8f0; }
         body:not(.dark-mode) .carriers-list { background: white !important; }
         body:not(.dark-mode) .body-area { background: #f4f5f7; }
+        body:not(.dark-mode) .filter-tab { color: #64748b; }
+        body:not(.dark-mode) .filter-tab.active { background: #f1f5f9; color: #0f172a; }
+        body:not(.dark-mode) .btn-ghost-sm { border-color: #e2e8f0; color: #64748b; }
+        body:not(.dark-mode) .btn-ghost-sm:hover { border-color: #94a3b8; color: #0f172a; }
+        body:not(.dark-mode) .topbar .global-search-input {
+            background: #f4f5f7;
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .topbar .global-search-input::placeholder { color: #94a3b8; }
+        body:not(.dark-mode) .topbar .global-search-input:focus { background: white; border-color: #6366f1; }
 
         /* ==================== DARK MODE FOR NEW LAYOUT ELEMENTS ==================== */
         body.dark-mode .app-shell { background: #0a0c14; }
-        body.dark-mode .main-wrapper { background: #0a0c14; overflow: hidden; }
+        body.dark-mode .main-wrapper { background: #0a0c14; }
         body.dark-mode .body-area { background: #0a0c14; }
         body.dark-mode .topbar { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+        body.dark-mode .topbar .page-title, body.dark-mode .topbar-title { color: white; }
+        body.dark-mode .topbar .page-subtitle, body.dark-mode .topbar-subtitle { color: rgba(255,255,255,0.35); }
         body.dark-mode .stats-row { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
         body.dark-mode .list-panel { background: #0a0c14; color: rgba(255,255,255,0.9); }
         body.dark-mode .list-header { background: #0a0c14; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
         body.dark-mode .carriers-list { background: #0a0c14 !important; }
+        body.dark-mode .carrier-item { border-bottom-color: rgba(255,255,255,0.04) !important; }
+        body.dark-mode .carrier-item:nth-child(even),
+        body.dark-mode .carrier-item:nth-child(odd) { background: transparent !important; }
         body.dark-mode .carrier-name { color: rgba(255,255,255,0.9) !important; }
         body.dark-mode .carrier-code { color: rgba(255,255,255,0.3) !important; }
+        body.dark-mode .activity-panel { background: #0f1120; border-left: 0.5px solid rgba(255,255,255,0.06); }
 
     </style>
 </head>
@@ -3683,20 +3852,41 @@
             <div class="sidebar-logo">Carrier Canvas</div>
             <div class="sidebar-nav">
                 <div class="sidebar-section-label">WORKSPACE</div>
-                <button class="sidebar-nav-item active" id="navAcquisitions" onclick="showPage('acquisitions')">
+                <button class="sidebar-nav-item active" id="navAcquisitions"
+                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display='';">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
                     Acquisitions
                 </button>
-                <button class="sidebar-nav-item" id="navCodeManagement" onclick="showPage('codeManagement')">
+                <button class="sidebar-nav-item" id="navCodeManagement"
+                    onclick="showPage('codeManagement'); document.getElementById('topbarTitle').textContent='Code Management'; document.getElementById('statsRow').style.display='none';">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
                     Code Management
                 </button>
-                <button class="sidebar-nav-item" onclick="document.getElementById('activityPanel') && document.getElementById('activityPanel').scrollIntoView({behavior:'smooth'})">
+                <button class="sidebar-nav-item" id="navActivityLog"
+                    onclick="showPage('acquisitions'); document.getElementById('topbarTitle').textContent='Acquisitions'; document.getElementById('statsRow').style.display=''; setTimeout(function(){ var p=document.getElementById('activityPanel'); if(p) p.scrollIntoView({behavior:'smooth'}); },100);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
                     Activity Log
                 </button>
             </div>
+            <div class="sidebar-nav-divider"></div>
+            <div class="sidebar-nav sidebar-nav-bottom">
+                <button class="sidebar-nav-item" onclick="showSettingsModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </button>
+                <div class="sidebar-darkmode-toggle">
+                    <button class="sidebar-darkmode-btn" id="sidebarDarkmodeBtn"
+                        onclick="applyDarkMode(!document.body.classList.contains('dark-mode'))"></button>
+                    <div class="sidebar-darkmode-label">Dark mode</div>
+                </div>
+            </div>
             <div class="sidebar-footer">
                 <div class="sidebar-org-pill">
-                    <div class="sidebar-org-name" id="sidebarOrgName">Carrier Canvas</div>
-                    <div class="sidebar-rep-name" id="sidebarRepName">—</div>
+                    <div class="sidebar-avatar" id="sidebarAvatar">CC</div>
+                    <div class="sidebar-org-info">
+                        <div class="sidebar-org-name" id="sidebarOrgName">Carrier Canvas</div>
+                        <div class="sidebar-rep-name" id="sidebarRepName">—</div>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -3707,8 +3897,13 @@
             <!-- Topbar -->
             <div class="topbar">
                 <div class="topbar-left">
-                    <div class="topbar-title">Acquisitions</div>
-                    <div class="topbar-subtitle">Campaign · <span id="topbarOrgName">—</span></div>
+                    <div class="topbar-title" id="topbarTitle">Acquisitions</div>
+                    <div class="topbar-subtitle">
+                        Campaign ·&nbsp;<details class="campaign-switcher" id="campaignSwitcher">
+                            <summary><span id="topbarOrgName">—</span><span class="campaign-switcher-chevron">▾</span></summary>
+                            <div class="tabs" id="acquisitionTabs"></div>
+                        </details>
+                    </div>
                 </div>
                 <div class="topbar-right">
                     <div class="global-search-container">
@@ -3717,11 +3912,12 @@
                     <div class="add-carrier-wrap">
                         <button class="btn-add-carrier" onclick="toggleAddCarrierDropdown(event)">+ Add Carrier</button>
                         <div class="add-carrier-menu" id="addCarrierMenu" style="display:none;">
-                            <div class="add-carrier-menu-item" onclick="showAddCarrierModal(); closeAddCarrierDropdown()">Add carrier manually</div>
-                            <div class="add-carrier-menu-item" onclick="showImportCarriersModal(); closeAddCarrierDropdown()">Import carriers</div>
-                            <div class="add-carrier-menu-item" onclick="showImportEmailModal(); closeAddCarrierDropdown()">Import email</div>
+                            <div class="add-carrier-menu-item" onclick="showAddCarrierModal(); closeAddCarrierDropdown()">Add carrier</div>
+                            <div class="add-carrier-menu-item" onclick="showImportCarriersModal(); closeAddCarrierDropdown()">Import from Excel</div>
+                            <div class="add-carrier-menu-item" onclick="showBulkEmail(); closeAddCarrierDropdown()">Bulk email</div>
+                            <div class="add-carrier-menu-item" onclick="showFilesModal(); closeAddCarrierDropdown()">Files</div>
                             <div class="add-carrier-menu-divider"></div>
-                            <div class="add-carrier-menu-item danger" onclick="removeAllCarriers(); closeAddCarrierDropdown()">Remove all carriers</div>
+                            <div class="add-carrier-menu-item danger" onclick="showRemoveCarrierModal(); closeAddCarrierDropdown()">Remove carrier</div>
                         </div>
                     </div>
                 </div>
@@ -3765,8 +3961,6 @@
                             <button class="btn-ghost-sm" onclick="showImportCarriersModal()">Import</button>
                         </div>
                     </div>
-                    <!-- Acquisition tabs -->
-                    <div class="tabs" id="acquisitionTabs"></div>
                     <!-- Carriers -->
                     <div class="carriers-list" id="carriersList"></div>
                 </div>
@@ -3774,10 +3968,14 @@
                 <!-- Activity Panel -->
                 <div class="activity-panel" id="activityPanel">
                     <div class="activity-panel-header">
-                        <span class="activity-panel-title">Activity</span>
+                        <span class="activity-panel-title" id="activityPanelTitle">Activity</span>
                         <button class="activity-add-btn" onclick="showActivityModal()">+ Add</button>
                     </div>
                     <div class="activity-list" id="activityList"></div>
+                    <div class="activity-empty-state">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>Select a carrier<br>to view activity</span>
+                    </div>
                 </div>
             </div> <!-- End of acquisitionsPage -->
 
@@ -13092,11 +13290,23 @@ Mergers & Acquisitions Team`
             const nameEl = document.getElementById('topbarOrgName');
             const orgEl = document.getElementById('sidebarOrgName');
             const repEl = document.getElementById('sidebarRepName');
+            const avatarEl = document.getElementById('sidebarAvatar');
             if (nameEl && acq) nameEl.textContent = acq.name;
             if (orgEl && acq) orgEl.textContent = acq.name;
             if (repEl && window.currentUser) {
-                repEl.textContent = window.currentUser.displayName || window.currentUser.email || '';
+                const displayName = window.currentUser.displayName || window.currentUser.email || '';
+                repEl.textContent = displayName;
+                // Generate initials for the avatar
+                if (avatarEl) {
+                    const parts = displayName.trim().split(/\s+/);
+                    avatarEl.textContent = parts.length >= 2
+                        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                        : displayName.slice(0, 2).toUpperCase();
+                }
             }
+            // Close campaign switcher after selecting a tab
+            const switcher = document.getElementById('campaignSwitcher');
+            if (switcher) switcher.open = false;
         }
 
         // Watch acquisition tabs for changes to update topbar
