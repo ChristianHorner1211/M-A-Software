@@ -495,6 +495,13 @@
             box-sizing: border-box;
         }
 
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--background-alt);
@@ -503,6 +510,10 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             font-size: 15px;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         /* ==================== CUSTOM SCROLLBAR ==================== */
@@ -2958,7 +2969,7 @@
         /* ==================== APP SHELL LAYOUT ==================== */
 
         /* Suppress old layout rules */
-        .container { max-width: none; margin: 0; padding: 0; }
+        .container { display: flex; height: 100vh; overflow: hidden; max-width: none; margin: 0; padding: 0; }
         header { display: none !important; }
         .drawer, .drawer-overlay, .hamburger-menu { display: none !important; }
         .tabs-container { display: none !important; }
@@ -2974,6 +2985,7 @@
         /* App Shell */
         .app-shell {
             display: flex;
+            width: 100%;
             height: 100vh;
             overflow: hidden;
             background: #0a0c14;
@@ -2982,13 +2994,13 @@
         /* Sidebar */
         .sidebar {
             width: 220px;
+            height: 100vh;
             flex-shrink: 0;
             background: #0f1120;
             border-right: 0.5px solid rgba(255,255,255,0.06);
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            overflow-y: auto;
         }
         .sidebar-logo {
             padding: 20px;
@@ -3075,6 +3087,7 @@
         /* Main Wrapper */
         .main-wrapper {
             flex: 1;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -3167,6 +3180,7 @@
             flex-shrink: 0;
             background: #0a0c14;
             border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            min-height: 0;
         }
         .stat-item {
             flex: 1;
@@ -3190,12 +3204,17 @@
         }
 
         /* Acquisitions page fills body-area as a flex row */
+        #acquisitionsPage {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
         #acquisitionsPage.active {
             display: flex !important;
             flex: 1;
             overflow: hidden;
             min-height: 0;
-            height: 100%;
         }
 
         /* List Panel */
@@ -3205,6 +3224,7 @@
             flex-direction: column;
             overflow: hidden;
             min-width: 0;
+            min-height: 0;
             border-right: 0.5px solid rgba(255,255,255,0.06);
         }
 
@@ -3439,7 +3459,7 @@
             background: #0f1120;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-y: auto;
         }
         .activity-panel-header {
             height: 44px;
