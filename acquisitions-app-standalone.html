@@ -2347,9 +2347,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 28px;
-            flex-shrink: 0;
+            padding: 14px 28px;
             border-bottom: 0.5px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
         }
         body.dark-mode .state-detail-header {
             background: #0a0c14;
@@ -2362,26 +2362,29 @@
         .state-detail-title,
         .state-detail-header h2,
         .state-detail-header .state-name {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 500;
             color: rgba(255,255,255,0.9);
-            margin-bottom: 0;
+            margin: 0;
         }
 
         .back-button,
         button[class*="back"] {
-            background: rgba(255,255,255,0.06);
+            font-weight: 400;
+            font-size: 13px;
+            background: rgba(255,255,255,0.05);
             border: 0.5px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.55);
             border-radius: 8px;
             padding: 7px 14px;
-            font-size: 13px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .back-button:hover,
         button[class*="back"]:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
         }
 
         .locations-grid {
@@ -2409,16 +2412,17 @@
         }
 
         .location-card {
-            background: #1a1d27;
-            border: 0.5px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 18px 20px;
+            background: #16192a;
+            border: 0.5px solid rgba(255,255,255,0.07);
             cursor: pointer;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, background 0.15s;
         }
 
         .location-card:hover {
-            border-color: rgba(255,255,255,0.16);
+            background: #1c2035;
+            border-color: rgba(255,255,255,0.14);
         }
 
         body:not(.dark-mode) .location-card {
@@ -2429,18 +2433,19 @@
         .location-card-header,
         .location-card h3,
         .location-card .location-name {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             color: rgba(255,255,255,0.9);
-            margin-bottom: 6px;
+            margin: 0 0 6px 0;
         }
 
         .location-card-address,
-        .location-card .location-address {
+        .location-card .location-address,
+        .location-card p {
             font-size: 12px;
-            color: rgba(255,255,255,0.35);
-            margin-bottom: 12px;
+            color: rgba(255,255,255,0.3);
             line-height: 1.5;
+            margin: 0 0 12px 0;
         }
 
         .location-card-stats {
@@ -2455,13 +2460,16 @@
             margin: 12px 0;
         }
 
-        .location-card .carrier-count {
+        .location-card .carrier-count,
+        .location-card p:last-child {
             font-size: 12px;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.35);
+            margin: 0;
         }
 
-        .location-card .carrier-count strong {
-            color: rgba(255,255,255,0.8);
+        .location-card .carrier-count strong,
+        .location-card p:last-child strong {
+            color: rgba(255,255,255,0.75);
             font-weight: 500;
         }
 
@@ -2489,47 +2497,47 @@
         }
 
         .add-location-card {
+            border-radius: 10px;
+            border: 0.5px dashed rgba(255,255,255,0.12);
             background: transparent;
-            border: 0.5px dashed rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 8px;
             cursor: pointer;
-            min-height: 120px;
+            min-height: 130px;
             transition: border-color 0.15s, background 0.15s;
         }
 
         .add-location-card:hover {
-            border-color: rgba(99,102,241,0.5);
-            background: rgba(99,102,241,0.05);
+            border-color: rgba(99,102,241,0.4);
+            background: rgba(99,102,241,0.04);
         }
 
         .add-location-icon {
-            font-size: 24px;
-            color: rgba(255,255,255,0.3);
+            font-size: 20px;
+            color: rgba(255,255,255,0.2);
         }
 
         .add-location-text {
-            font-size: 13px;
-            color: rgba(255,255,255,0.3);
+            font-size: 12px;
+            color: rgba(255,255,255,0.25);
         }
 
-        /* Fix 6: New from Acquisitions button */
         .btn-from-acquisitions {
-            background: rgba(255,255,255,0.05);
+            background: transparent;
             border: 0.5px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.55);
             border-radius: 8px;
             padding: 7px 14px;
             font-size: 13px;
+            font-weight: 400;
             cursor: pointer;
         }
         .btn-from-acquisitions:hover {
-            background: rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
         }
 
         /* Fix 7: + Add Location button in state detail header */
@@ -4269,15 +4277,13 @@
         <!-- State Detail Page -->
         <div id="stateDetailPage" class="state-detail-page">
             <div class="state-detail-header">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <button class="back-button" onclick="backToMap()">← Back to Map</button>
-                        <h1 class="state-detail-title" id="stateDetailTitle" style="display: inline; margin-left: 15px;">State Details</h1>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
-                        <button class="btn-from-acquisitions" onclick="showImportFromAcquisitionModal()">New from Acquisitions</button>
-                    </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="back-button" onclick="backToMap()">← Back to Map</button>
+                    <h1 class="state-detail-title" id="stateDetailTitle">State Details</h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="btn btn-primary" onclick="showAddLocationModal()">+ Add Location</button>
+                    <button class="btn-from-acquisitions" onclick="showImportFromAcquisitionModal()">New from Acquisitions</button>
                 </div>
             </div>
 
