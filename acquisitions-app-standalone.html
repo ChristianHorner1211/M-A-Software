@@ -3082,6 +3082,206 @@
         #stateDetailPage.active,
         #searchResultsPage.active { display: flex !important; flex: 1; overflow: hidden; }
 
+        /* ==================== CARRIER DETAIL PAGE ==================== */
+        .carrier-detail-page { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+        .carrier-detail-page.active { display: flex !important; }
+
+        .carrier-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            background: #0f1120;
+            flex-shrink: 0;
+        }
+        .carrier-detail-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.95);
+            margin: 0;
+        }
+        .carrier-detail-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .carrier-detail-status-badge.done { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+        .carrier-detail-status-badge.outstanding { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+
+        .carrier-detail-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            gap: 0;
+            overflow: hidden;
+        }
+        .carrier-detail-panel {
+            display: flex;
+            flex-direction: column;
+            width: 320px;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            overflow: hidden;
+        }
+        .carrier-detail-email-panel {
+            flex: 1;
+            width: auto;
+            border-right: none;
+        }
+        .carrier-detail-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.02);
+            flex-shrink: 0;
+        }
+        .carrier-detail-panel-header h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.75);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .carrier-detail-contacts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .carrier-detail-contact-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+        .carrier-detail-contact-card:hover {
+            background: rgba(255,255,255,0.07);
+        }
+        .carrier-detail-contact-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 4px;
+        }
+        .carrier-detail-contact-role {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 8px;
+        }
+        .carrier-detail-contact-info {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.7;
+        }
+        .carrier-detail-contact-info a {
+            color: #6366f1;
+            text-decoration: none;
+        }
+        .carrier-detail-contact-info a:hover { text-decoration: underline; }
+        .carrier-detail-email-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+        .carrier-detail-email-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: border-color 0.15s;
+        }
+        .carrier-detail-email-item:hover {
+            border-color: rgba(255,255,255,0.14);
+        }
+        .carrier-detail-email-item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 14px 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .carrier-detail-email-subject {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.88);
+            margin-bottom: 3px;
+        }
+        .carrier-detail-email-meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+        .carrier-detail-email-direction {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .carrier-detail-email-direction.sent { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .carrier-detail-email-direction.received { background: rgba(34,197,94,0.12); color: #4ade80; }
+        .carrier-detail-email-body {
+            display: none;
+            padding: 0 16px 14px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            white-space: pre-wrap;
+            line-height: 1.65;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .carrier-detail-email-body.open { display: block; }
+        .carrier-detail-email-actions {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px 14px;
+        }
+        .carrier-detail-empty {
+            color: rgba(255,255,255,0.3);
+            font-size: 13px;
+            padding: 24px 0;
+            text-align: center;
+        }
+        .carrier-name-link {
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .carrier-name-link:hover {
+            text-decoration: underline;
+            text-decoration-color: rgba(255,255,255,0.4);
+        }
+
+        /* Light mode overrides for carrier detail page */
+        body:not(.dark-mode) .carrier-detail-header { background: #ffffff; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-title { color: #0f172a; }
+        body:not(.dark-mode) .carrier-detail-panel { border-right-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-panel-header { background: #f8fafc; border-bottom-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-panel-header h3 { color: #64748b; }
+        body:not(.dark-mode) .carrier-detail-contact-card { background: #f8fafc; border-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-contact-card:hover { background: #f1f5f9; }
+        body:not(.dark-mode) .carrier-detail-contact-name { color: #0f172a; }
+        body:not(.dark-mode) .carrier-detail-contact-role { color: #94a3b8; }
+        body:not(.dark-mode) .carrier-detail-contact-info { color: #475569; }
+        body:not(.dark-mode) .carrier-detail-email-item { background: #ffffff; border-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-email-item:hover { border-color: #cbd5e1; }
+        body:not(.dark-mode) .carrier-detail-email-subject { color: #0f172a; }
+        body:not(.dark-mode) .carrier-detail-email-meta { color: #94a3b8; }
+        body:not(.dark-mode) .carrier-detail-email-body { color: #475569; border-top-color: #e2e8f0; }
+        body:not(.dark-mode) .carrier-detail-empty { color: #94a3b8; }
+
         /* ==================== APP SHELL ==================== */
         .app-shell {
             display: flex !important;  /* overrides showMainApp() inline style="display:block" */
@@ -4303,6 +4503,48 @@
                 <!-- Search results will be rendered here -->
             </div>
         </div> <!-- End of searchResultsPage -->
+
+        <!-- Carrier Detail Page -->
+        <div id="carrierDetailPage" class="carrier-detail-page">
+            <div class="carrier-detail-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="back-button" onclick="backFromCarrierDetail()">← Back</button>
+                    <div>
+                        <h1 class="carrier-detail-title" id="carrierDetailTitle">Carrier</h1>
+                        <div id="carrierDetailSubtitle" style="font-size: 13px; opacity: 0.6; margin-top: 2px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="carrierDetailStatusBadge" class="carrier-detail-status-badge"></span>
+                    <button class="btn btn-secondary" id="carrierDetailToggleStatusBtn" onclick="toggleCarrierDetailStatus()">Mark Done</button>
+                    <button class="btn btn-primary" onclick="emailCarrierFromDetail()">✉ Send Email</button>
+                </div>
+            </div>
+
+            <div class="carrier-detail-body">
+                <!-- Contacts Panel -->
+                <div class="carrier-detail-panel">
+                    <div class="carrier-detail-panel-header">
+                        <h3>📇 Contacts</h3>
+                        <button class="btn btn-success btn-small" onclick="addContactFromDetail()">+ Add Contact</button>
+                    </div>
+                    <div id="carrierDetailContacts" class="carrier-detail-contacts-list">
+                        <!-- Contacts rendered here -->
+                    </div>
+                </div>
+
+                <!-- Email History Panel -->
+                <div class="carrier-detail-panel carrier-detail-email-panel">
+                    <div class="carrier-detail-panel-header">
+                        <h3>📧 Email History</h3>
+                        <button class="btn btn-primary btn-small" onclick="emailCarrierFromDetail()">+ New Email</button>
+                    </div>
+                    <div id="carrierDetailEmails" class="carrier-detail-email-list">
+                        <!-- Emails rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End of carrierDetailPage -->
 
             </div><!-- end body-area -->
         </div><!-- end main-wrapper -->
@@ -6804,7 +7046,7 @@ Mergers & Acquisitions Team`
                     <div class="carrier-header">
                         <div class="carrier-toggle">▶</div>
                         <div class="carrier-info">
-                            <div class="carrier-name">${carrier.name} ${responseBadge}</div>
+                            <div class="carrier-name"><span class="carrier-name-link" data-carrier-code-link="${carrier.code}">${carrier.name}</span> ${responseBadge}</div>
                             <div class="carrier-code">Code: ${carrier.code} | ${contactCount} contact${contactCount !== 1 ? 's' : ''}</div>
                         </div>
                         <div class="carrier-actions">
@@ -6839,6 +7081,12 @@ Mergers & Acquisitions Team`
                 carrierHeader.addEventListener('click', (e) => {
                     // Don't toggle if clicking on action buttons in btn-group
                     if (e.target.closest('.btn-group')) {
+                        return;
+                    }
+                    // Navigate to carrier detail page if clicking on the carrier name link
+                    if (e.target.closest('.carrier-name-link')) {
+                        e.stopPropagation();
+                        showCarrierDetailPage(carrier.code);
                         return;
                     }
                     carrierItem.classList.toggle('expanded');
@@ -7011,6 +7259,11 @@ Mergers & Acquisitions Team`
                     });
                 });
             }, 0);
+
+            // If the carrier detail page is currently open, refresh it too
+            if (currentDetailCarrierCode && document.getElementById('carrierDetailPage').classList.contains('active')) {
+                showCarrierDetailPage(currentDetailCarrierCode);
+            }
         }
 
         function showImportEmailModal() {
@@ -11861,6 +12114,7 @@ Mergers & Acquisitions Team`
             const acquisitionsPage = document.getElementById('acquisitionsPage');
             const codeManagementPage = document.getElementById('codeManagementPage');
             const stateDetailPage = document.getElementById('stateDetailPage');
+            const carrierDetailPage = document.getElementById('carrierDetailPage');
             const statsRow = document.getElementById('statsRow');
             const topbarTitle = document.getElementById('topbarTitle');
 
@@ -11868,6 +12122,7 @@ Mergers & Acquisitions Team`
             acquisitionsPage.classList.remove('active');
             codeManagementPage.classList.remove('active');
             stateDetailPage.classList.remove('active');
+            if (carrierDetailPage) carrierDetailPage.classList.remove('active');
 
             // Remove active class from all nav buttons
             document.getElementById('navAcquisitions').classList.remove('active');
@@ -11895,7 +12150,184 @@ Mergers & Acquisitions Team`
                 document.getElementById('navCodeManagement').classList.add('active');
                 if (statsRow) statsRow.style.display = 'none';
                 if (topbarTitle) topbarTitle.textContent = 'Code Management';
+            } else if (pageName === 'carrierDetail') {
+                if (carrierDetailPage) carrierDetailPage.classList.add('active');
+                document.getElementById('navAcquisitions').classList.add('active');
+                if (statsRow) statsRow.style.display = 'none';
             }
+        }
+
+        // Track which carrier is currently being viewed in detail
+        let currentDetailCarrierCode = null;
+
+        function showCarrierDetailPage(carrierCode) {
+            const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+            if (!acquisition) return;
+            const carrier = acquisition.carriers.find(c => c.code === carrierCode);
+            if (!carrier) return;
+
+            currentDetailCarrierCode = carrierCode;
+
+            // Set header info
+            document.getElementById('carrierDetailTitle').textContent = carrier.name;
+            document.getElementById('carrierDetailSubtitle').textContent = `Code: ${carrier.code}`;
+
+            // Status badge & toggle button
+            const badge = document.getElementById('carrierDetailStatusBadge');
+            const toggleBtn = document.getElementById('carrierDetailToggleStatusBtn');
+            if (carrier.status === 'done') {
+                badge.textContent = 'Done';
+                badge.className = 'carrier-detail-status-badge done';
+                toggleBtn.textContent = 'Mark Outstanding';
+            } else {
+                badge.textContent = 'Outstanding';
+                badge.className = 'carrier-detail-status-badge outstanding';
+                toggleBtn.textContent = 'Mark Done';
+            }
+
+            // Render contacts
+            const contactsContainer = document.getElementById('carrierDetailContacts');
+            if (carrier.contacts && carrier.contacts.length > 0) {
+                contactsContainer.innerHTML = carrier.contacts.map(contact => `
+                    <div class="carrier-detail-contact-card" data-contact-id="${contact.id || ''}" data-carrier-code="${carrier.code}">
+                        <div class="carrier-detail-contact-name">${contact.name || 'Unknown'}</div>
+                        ${contact.role ? `<div class="carrier-detail-contact-role">${contact.role}</div>` : ''}
+                        <div class="carrier-detail-contact-info">
+                            ${contact.email ? `<div>✉ <a href="mailto:${contact.email}">${contact.email}</a></div>` : ''}
+                            ${contact.phone ? `<div>📞 ${contact.phone}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                contactsContainer.innerHTML = '<div class="carrier-detail-empty">No contacts yet. Add one above.</div>';
+            }
+
+            // Render email history
+            const emailsContainer = document.getElementById('carrierDetailEmails');
+            const carrierEmails = activities.filter(a =>
+                a.acquisitionId === currentAcquisitionId &&
+                a.carrierCode === carrierCode &&
+                (a.type === 'email' || a.type === 'email-received')
+            ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            if (carrierEmails.length > 0) {
+                emailsContainer.innerHTML = carrierEmails.map((email, idx) => {
+                    const isSent = email.type === 'email' || !email.type || email.type === 'email';
+                    const direction = (email.type === 'email-received') ? 'received' : 'sent';
+                    const dirLabel = direction === 'received' ? 'Received' : 'Sent';
+                    const date = new Date(email.timestamp);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                    const lines = (email.notes || '').split('\n');
+                    const subjectLine = lines[0] || '(No subject)';
+                    const bodyText = lines.slice(1).join('\n').trim();
+                    const emailId = `cdp-email-${carrierCode}-${idx}`;
+                    return `
+                        <div class="carrier-detail-email-item">
+                            <div class="carrier-detail-email-item-header" onclick="toggleDetailEmail('${emailId}')">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="carrier-detail-email-subject">${subjectLine}</div>
+                                    <div class="carrier-detail-email-meta">${dateStr}</div>
+                                </div>
+                                <span class="carrier-detail-email-direction ${direction}">${dirLabel}</span>
+                            </div>
+                            <div class="carrier-detail-email-body" id="${emailId}">
+                                <div style="padding: 14px 0 6px;">${bodyText || '<em style="opacity:0.5">No body content</em>'}</div>
+                                <div class="carrier-detail-email-actions">
+                                    <button class="btn btn-small" onclick="replyToEmailFromDetail('${email.id || ''}')">↩ Reply</button>
+                                    <button class="btn btn-small" onclick="forwardEmailFromDetail('${email.id || ''}')">→ Forward</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                emailsContainer.innerHTML = '<div class="carrier-detail-empty">No email history yet.</div>';
+            }
+
+            // Add right-click context menu on contact cards
+            setTimeout(() => {
+                const contactCards = contactsContainer.querySelectorAll('.carrier-detail-contact-card');
+                contactCards.forEach(card => {
+                    card.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        const contactId = card.getAttribute('data-contact-id');
+                        const code = card.getAttribute('data-carrier-code');
+                        showContactContextMenu(e.clientX, e.clientY, contactId, code);
+                    });
+                });
+            }, 0);
+
+            showPage('carrierDetail');
+            document.getElementById('topbarTitle').textContent = carrier.name;
+        }
+
+        function toggleDetailEmail(emailId) {
+            const body = document.getElementById(emailId);
+            if (!body) return;
+            body.classList.toggle('open');
+        }
+
+        function backFromCarrierDetail() {
+            currentDetailCarrierCode = null;
+            showPage('acquisitions');
+            document.getElementById('topbarTitle').textContent = 'Acquisitions';
+            document.getElementById('statsRow').style.display = '';
+        }
+
+        function toggleCarrierDetailStatus() {
+            if (!currentDetailCarrierCode) return;
+            toggleCarrierStatus(currentDetailCarrierCode);
+            // Refresh the header after a short delay for Firebase save
+            setTimeout(() => {
+                const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
+                if (!acquisition) return;
+                const carrier = acquisition.carriers.find(c => c.code === currentDetailCarrierCode);
+                if (!carrier) return;
+                const badge = document.getElementById('carrierDetailStatusBadge');
+                const toggleBtn = document.getElementById('carrierDetailToggleStatusBtn');
+                if (carrier.status === 'done') {
+                    badge.textContent = 'Done';
+                    badge.className = 'carrier-detail-status-badge done';
+                    toggleBtn.textContent = 'Mark Outstanding';
+                } else {
+                    badge.textContent = 'Outstanding';
+                    badge.className = 'carrier-detail-status-badge outstanding';
+                    toggleBtn.textContent = 'Mark Done';
+                }
+            }, 300);
+        }
+
+        function emailCarrierFromDetail() {
+            if (!currentDetailCarrierCode) return;
+            emailCarrier(currentDetailCarrierCode);
+        }
+
+        function addContactFromDetail() {
+            if (!currentDetailCarrierCode) return;
+            showCarrierContacts(currentDetailCarrierCode);
+            setTimeout(() => showAddContactForm(), 100);
+        }
+
+        function replyToEmailFromDetail(activityId) {
+            const email = activities.find(a => a.id === activityId);
+            if (!email) return;
+            const lines = (email.notes || '').split('\n');
+            const subjectLine = lines[0] || '';
+            const bodyText = lines.slice(1).join('\n').trim();
+            const date = new Date(email.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            replyToEmail(email, subjectLine, bodyText, formattedDate);
+        }
+
+        function forwardEmailFromDetail(activityId) {
+            const email = activities.find(a => a.id === activityId);
+            if (!email) return;
+            const lines = (email.notes || '').split('\n');
+            const subjectLine = lines[0] || '';
+            const bodyText = lines.slice(1).join('\n').trim();
+            const date = new Date(email.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            forwardEmail(email, subjectLine, bodyText, formattedDate);
         }
 
         // Initialize US Map with click handlers
