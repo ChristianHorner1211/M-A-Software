@@ -432,26 +432,25 @@
         /* Dark mode toggle switch */
         .dark-mode-toggle-wrap {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: 14px 0;
+            gap: 6px;
+            padding: 12px 0;
         }
 
         .dark-mode-toggle-wrap span {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--gray-700);
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
         }
 
-        body.dark-mode .dark-mode-toggle-wrap span {
-            color: #c8c8c8;
+        body:not(.dark-mode) .dark-mode-toggle-wrap span {
+            color: var(--gray-700);
         }
 
         .toggle-switch {
             position: relative;
-            width: 48px;
-            height: 26px;
-            flex-shrink: 0;
+            width: 36px;
+            height: 20px;
         }
 
         .toggle-switch input {
@@ -464,29 +463,29 @@
             position: absolute;
             cursor: pointer;
             inset: 0;
-            background: #ccc;
-            border-radius: 26px;
-            transition: 0.25s;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            transition: 0.2s;
         }
 
         .toggle-slider::before {
             content: '';
             position: absolute;
-            height: 20px;
-            width: 20px;
+            height: 14px;
+            width: 14px;
             left: 3px;
             bottom: 3px;
             background: white;
             border-radius: 50%;
-            transition: 0.25s;
+            transition: 0.2s;
         }
 
         .toggle-switch input:checked + .toggle-slider {
-            background: #3C3B6E;
+            background: #6366f1;
         }
 
         .toggle-switch input:checked + .toggle-slider::before {
-            transform: translateX(22px);
+            transform: translateX(16px);
         }
 
         * {
@@ -2978,11 +2977,15 @@
         .content-area { display: block; }
 
         /* ==================== PAGE VISIBILITY ==================== */
-        .page-container { display: none !important; }
-        #acquisitionsPage.page-container.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
-        #codeManagementPage.page-container.active,
-        #stateDetailPage.page-container.active,
-        #searchResultsPage.page-container.active { display: flex !important; flex: 1; overflow: hidden; }
+        .page-container { display: none; }
+        .page-container.active { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+        #acquisitionsPage.active { display: flex !important; flex: 1; overflow: hidden; min-height: 0; }
+        #codeManagementPage.active {
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        #stateDetailPage.active,
+        #searchResultsPage.active { display: flex !important; flex: 1; overflow: hidden; }
 
         /* ==================== APP SHELL ==================== */
         .app-shell {
@@ -3318,14 +3321,30 @@
         }
         .stat-item {
             flex: 1;
-            padding: 16px 24px;
+            padding: 16px 28px;
             border-right: 0.5px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         .stat-item:last-child { border-right: none; }
-        .stat-value { font-size: 22px; font-weight: 500; color: white; line-height: 1.1; margin-bottom: 3px; }
+        .stat-value {
+            font-size: 26px;
+            font-weight: 500;
+            color: white;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            font-weight: 400;
+        }
+        .stat-value.stat-outstanding { color: #ef4444; }
+        .stat-value.stat-completed { color: #22c55e; }
+        .stat-value.stat-total { color: rgba(255,255,255,0.9); }
+        .stat-value.stat-emails { color: rgba(255,255,255,0.9); }
+        /* Legacy class names */
         .stat-done { color: #22c55e; }
-        .stat-outstanding { color: #ef4444; }
-        .stat-label { font-size: 11px; color: rgba(255,255,255,0.3); }
 
         /* Body area — flex:1 container below topbar+stats, holds all pages */
         .body-area {
@@ -3385,12 +3404,12 @@
 
         /* List Header */
         .list-header {
-            height: 44px;
-            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
+            height: 44px;
+            flex-shrink: 0;
             border-bottom: 0.5px solid rgba(255,255,255,0.04);
             background: #0a0c14;
         }
@@ -3436,6 +3455,11 @@
             box-shadow: none !important;
         }
 
+        /* No red/green border bleed onto parent containers */
+        .list-panel { border-left: none !important; }
+        .carriers-list { border-left: none !important; }
+        #acquisitionsPage { border-left: none !important; }
+
         /* Carrier item — flat row with left status border */
         .carrier-item {
             position: relative;
@@ -3445,10 +3469,10 @@
             height: 56px !important;
             padding: 0 24px 0 20px !important;
             background: transparent !important;
-            border-bottom: 0.5px solid rgba(255,255,255,0.04) !important;
-            border-left: 3px solid transparent !important;
-            border-top: none !important;
-            border-right: none !important;
+            border-left: 3px solid transparent;
+            border-bottom: 0.5px solid rgba(255,255,255,0.04);
+            border-right: none;
+            border-top: none;
             border-radius: 0 !important;
             overflow: visible !important;
             transition: background 120ms, border-left-color 120ms !important;
@@ -3460,107 +3484,108 @@
         .carrier-item:nth-child(odd) { background: transparent !important; }
         .carrier-item:hover { background: rgba(255,255,255,0.02) !important; }
         /* Status left border */
-        .carrier-item.done { border-left-color: #22c55e !important; }
-        .carrier-item.outstanding { border-left-color: #ef4444 !important; }
-
-        /* Done button = ghost green; outstanding "Mark Done" = muted */
-        .carrier-item.done .carrier-actions .btn-group button:first-child {
-            border-color: rgba(34,197,94,0.5) !important;
-            color: #22c55e !important;
+        .carrier-item.outstanding {
+            border-left: 3px solid #ef4444;
+            border-right: none;
+            border-top: none;
+            border-bottom: 0.5px solid rgba(255,255,255,0.04);
         }
-        .carrier-item.outstanding .carrier-actions .btn-group button:first-child {
-            border-color: rgba(255,255,255,0.08) !important;
-            color: rgba(255,255,255,0.35) !important;
+        .carrier-item.done {
+            border-left: 3px solid #22c55e;
+            border-right: none;
+            border-top: none;
+            border-bottom: 0.5px solid rgba(255,255,255,0.04);
         }
 
         /* Carrier header — make it take full row width */
         .carrier-header {
-            display: flex !important;
-            align-items: center !important;
-            flex: 1 !important;
-            padding: 0 !important;
-            background: transparent !important;
-            min-width: 0;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 0;
         }
         .carrier-header:hover { background: transparent !important; }
         .carrier-toggle { display: none !important; }
-        .carrier-info { flex: 1; min-width: 0; }
+        .carrier-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
         .carrier-name {
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            color: rgba(255,255,255,0.9) !important;
-            margin-bottom: 0 !important;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .carrier-code {
-            font-size: 11px !important;
-            color: rgba(255,255,255,0.3) !important;
-            font-weight: 400 !important;
-            margin-top: 1px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Carrier action buttons */
-        .carrier-actions { display: flex !important; align-items: center !important; gap: 6px !important; }
-        .carrier-actions .btn-group {
+        .carrier-actions {
             display: flex;
+            align-items: center;
             gap: 6px;
-            background: transparent !important;
-            padding: 0 !important;
-            border-radius: 0 !important;
+            flex-shrink: 0;
         }
-        .carrier-actions .btn-group button {
-            height: auto !important;
-            padding: 5px 10px !important;
-            font-size: 12px !important;
-            font-weight: 400 !important;
-            border-radius: 6px !important;
-            border: 0.5px solid rgba(255,255,255,0.1) !important;
-            background: transparent !important;
-            color: rgba(255,255,255,0.5) !important;
-            box-shadow: none !important;
-            transform: none !important;
-            transition: all 120ms !important;
+        .carrier-actions .btn-group {
+            display: contents;
         }
-        .carrier-actions .btn-group button:hover {
-            border-color: rgba(255,255,255,0.25) !important;
-            color: rgba(255,255,255,0.8) !important;
-            transform: none !important;
-            background: transparent !important;
+
+        /* Mark Done button (outstanding state) */
+        .carrier-item.outstanding .carrier-actions button:first-of-type {
+            background: transparent;
+            border: 0.5px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.5);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
         }
-        /* Done state handled in carrier-item section above */
+
+        /* Done button */
+        .carrier-item.done .carrier-actions button:first-of-type {
+            background: transparent;
+            border: 0.5px solid #22c55e;
+            color: #22c55e;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
         /* Email button */
-        .carrier-actions .btn-group button:last-child {
-            background: rgba(99,102,241,0.15) !important;
-            border: 0.5px solid rgba(99,102,241,0.3) !important;
-            color: #818cf8 !important;
-            font-weight: 400 !important;
-        }
-        .carrier-actions .btn-group button:last-child:hover {
-            background: rgba(99,102,241,0.25) !important;
-            color: #818cf8 !important;
-            transform: none !important;
+        .carrier-actions button.email-btn,
+        .carrier-actions button:nth-of-type(2) {
+            background: rgba(99,102,241,0.15);
+            border: 0.5px solid rgba(99,102,241,0.3);
+            color: #818cf8;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
         /* Trash button injected by JS observer */
         .carrier-delete-btn {
+            opacity: 0;
+            transition: opacity 0.15s;
             background: transparent;
             border: none;
-            color: rgba(255,255,255,0.2);
-            font-size: 14px;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
+            color: rgba(255,255,255,0.25);
+            font-size: 13px;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 120ms, color 120ms, background 120ms;
-            flex-shrink: 0;
-            padding: 0;
-            margin-left: 4px;
+            padding: 4px 6px;
         }
         .carrier-item:hover .carrier-delete-btn { opacity: 1; }
         .carrier-delete-btn:hover { color: #ef4444 !important; background: rgba(239,68,68,0.1); }
@@ -3593,11 +3618,11 @@
         .activity-empty-state svg { opacity: 0.3; }
         .activity-list:not(:empty) ~ .activity-empty-state { display: none; }
         .activity-panel-header {
-            height: 44px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding: 0 18px;
+            height: 44px;
             border-bottom: 0.5px solid rgba(255,255,255,0.06);
             flex-shrink: 0;
         }
@@ -3657,7 +3682,7 @@
         body:not(.dark-mode) .stats-row { background: white; border-bottom-color: #e2e8f0; }
         body:not(.dark-mode) .stat-item { border-right-color: #e2e8f0; }
         body:not(.dark-mode) .stat-value { color: #0f172a; }
-        body:not(.dark-mode) .stat-label { color: #64748b; }
+        body:not(.dark-mode) .stat-label { color: #94a3b8; }
         body:not(.dark-mode) .list-header { background: white; border-bottom-color: #e2e8f0; }
         body:not(.dark-mode) .list-panel { border-right-color: #e2e8f0; }
         body:not(.dark-mode) .filter-tab { color: #64748b; }
@@ -3679,7 +3704,7 @@
         body:not(.dark-mode) .carrier-item:nth-child(odd) { background: white !important; }
         body:not(.dark-mode) .carrier-item:hover { background: #f8fafc !important; }
         body:not(.dark-mode) .carrier-name { color: #0f172a !important; }
-        body:not(.dark-mode) .carrier-code { color: #64748b !important; }
+        body:not(.dark-mode) .carrier-code { color: #94a3b8 !important; }
         body:not(.dark-mode) .carrier-actions .btn-group button {
             border-color: #e2e8f0 !important;
             color: #64748b !important;
@@ -3732,7 +3757,7 @@
         body:not(.dark-mode) .topbar-subtitle { color: #64748b; }
         body:not(.dark-mode) .stats-row { background: white; border-bottom: 1px solid #e2e8f0; }
         body:not(.dark-mode) .stat-value { color: #0f172a; }
-        body:not(.dark-mode) .stat-label { color: #64748b; }
+        body:not(.dark-mode) .stat-label { color: #94a3b8; }
         body:not(.dark-mode) .stat-item { border-right-color: #e2e8f0; }
         body:not(.dark-mode) .list-panel { background: white; color: #0f172a; border-right-color: #e2e8f0; }
         body:not(.dark-mode) .list-header { background: white; border-bottom: 1px solid #e2e8f0; }
@@ -3767,6 +3792,27 @@
         body.dark-mode .carrier-name { color: rgba(255,255,255,0.9) !important; }
         body.dark-mode .carrier-code { color: rgba(255,255,255,0.3) !important; }
         body.dark-mode .activity-panel { background: #0f1120; border-left: 0.5px solid rgba(255,255,255,0.06); }
+
+        /* ==================== DARK MODE NOTIFICATION MODAL ==================== */
+        body.dark-mode .custom-notification-box {
+            background: #1e2235;
+            color: rgba(255,255,255,0.9);
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+        body.dark-mode .custom-notification-title {
+            color: white;
+        }
+        body.dark-mode .custom-notification-message {
+            color: rgba(255,255,255,0.6);
+        }
+        body.dark-mode .custom-notification-btn-primary {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+        }
 
     </style>
 </head>
@@ -3899,8 +3945,8 @@
                 <div class="topbar-left">
                     <div class="topbar-title" id="topbarTitle">Acquisitions</div>
                     <div class="topbar-subtitle">
-                        Campaign ·&nbsp;<details class="campaign-switcher" id="campaignSwitcher">
-                            <summary><span id="topbarOrgName">—</span><span class="campaign-switcher-chevron">▾</span></summary>
+                        Campaign<span id="topbarCampaignSep"> ·&nbsp;</span><details class="campaign-switcher" id="campaignSwitcher">
+                            <summary><span id="topbarOrgName"></span><span class="campaign-switcher-chevron">▾</span></summary>
                             <div class="tabs" id="acquisitionTabs"></div>
                         </details>
                     </div>
@@ -11730,6 +11776,8 @@ Mergers & Acquisitions Team`
             const acquisitionsPage = document.getElementById('acquisitionsPage');
             const codeManagementPage = document.getElementById('codeManagementPage');
             const stateDetailPage = document.getElementById('stateDetailPage');
+            const statsRow = document.getElementById('statsRow');
+            const topbarTitle = document.getElementById('topbarTitle');
 
             // Hide all pages
             acquisitionsPage.classList.remove('active');
@@ -11744,6 +11792,8 @@ Mergers & Acquisitions Team`
             if (pageName === 'acquisitions') {
                 acquisitionsPage.classList.add('active');
                 document.getElementById('navAcquisitions').classList.add('active');
+                if (statsRow) statsRow.style.display = '';
+                if (topbarTitle) topbarTitle.textContent = 'Acquisitions';
 
                 // Auto-sync emails when switching to acquisitions
                 if (appSettings.outlook.connected && msalInstance) {
@@ -11752,10 +11802,14 @@ Mergers & Acquisitions Team`
             } else if (pageName === 'codeManagement') {
                 codeManagementPage.classList.add('active');
                 document.getElementById('navCodeManagement').classList.add('active');
+                if (statsRow) statsRow.style.display = 'none';
+                if (topbarTitle) topbarTitle.textContent = 'Code Management';
                 initializeUSMap();
             } else if (pageName === 'stateDetail') {
                 stateDetailPage.classList.add('active');
                 document.getElementById('navCodeManagement').classList.add('active');
+                if (statsRow) statsRow.style.display = 'none';
+                if (topbarTitle) topbarTitle.textContent = 'Code Management';
             }
         }
 
@@ -13288,10 +13342,21 @@ Mergers & Acquisitions Team`
         function updateTopbarInfo() {
             const acq = (window.acquisitions || []).find(a => a.id === window.currentAcquisitionId);
             const nameEl = document.getElementById('topbarOrgName');
+            const sepEl = document.getElementById('topbarCampaignSep');
             const orgEl = document.getElementById('sidebarOrgName');
             const repEl = document.getElementById('sidebarRepName');
             const avatarEl = document.getElementById('sidebarAvatar');
-            if (nameEl && acq) nameEl.textContent = acq.name;
+            if (nameEl) {
+                if (acq) {
+                    nameEl.textContent = acq.name;
+                    if (sepEl) sepEl.style.display = '';
+                } else {
+                    const firstTabSpan = document.querySelector('#acquisitionTabs .tab > span');
+                    const nm = firstTabSpan ? firstTabSpan.textContent.trim() : '';
+                    nameEl.textContent = nm;
+                    if (sepEl) sepEl.style.display = nm ? '' : 'none';
+                }
+            }
             if (orgEl && acq) orgEl.textContent = acq.name;
             if (repEl && window.currentUser) {
                 const displayName = window.currentUser.displayName || window.currentUser.email || '';
