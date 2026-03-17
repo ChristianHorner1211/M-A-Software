@@ -5811,7 +5811,7 @@
             outlook: {
                 connected: false,
                 email: null,
-                accessToken: null,
+                lastConnected: null,
                 lastEmailSync: null
             },
             emailSignature: '',
@@ -6137,25 +6137,48 @@ Mergers & Acquisitions Team`
         }
 
         function initializeMSAL() {
-            if (!appSettings.msal.clientId) {
-                console.log('MSAL Client ID not found');
+            const clientId = HARDCODED_MSAL_CLIENT_ID;
+
+            if (!clientId) {
+                console.error('MSAL Client ID not configured');
                 return false;
             }
 
             try {
                 const msalConfig = {
                     auth: {
-                        clientId: appSettings.msal.clientId,
+                        clientId: clientId,
                         authority: 'https://login.microsoftonline.com/common',
-                        redirectUri: window.location.origin + window.location.pathname
+                        redirectUri: window.location.origin + window.location.pathname,
+                        postLogoutRedirectUri: window.location.origin + window.location.pathname,
+                        navigateToLoginRequestUrl: true
                     },
                     cache: {
-                        cacheLocation: 'localStorage',
-                        storeAuthStateInCookie: false
+                        cacheLocation: 'localStorage',  // Persist across browser sessions
+                        storeAuthStateInCookie: true,   // Better cross-browser support
+                        secureCookies: window.location.protocol === 'https:'
+                    },
+                    system: {
+                        loggerOptions: {
+                            logLevel: 3,  // Error only in production
+                            piiLoggingEnabled: false
+                        },
+                        allowRedirectInIframe: false
                     }
                 };
 
                 msalInstance = new msal.PublicClientApplication(msalConfig);
+
+                // Check for existing accounts on init
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    console.log('MSAL: Found existing account:', accounts[0].username);
+                    // Restore Outlook connection state
+                    appSettings.outlook.connected = true;
+                    appSettings.outlook.email = accounts[0].username;
+                }
+
+                console.log('MSAL initialized successfully');
                 return true;
             } catch (error) {
                 console.error('MSAL initialization error:', error);
@@ -6862,6 +6885,9 @@ Mergers & Acquisitions Team`
                 if (acquisitions.length > 0) {
                     selectAcquisition(acquisitions[0].id);
                 }
+
+                // Validate Outlook connection after loading data
+                validateOutlookConnection();
 
                 showSyncStatus('synced', 'Synced');
                 setTimeout(() => hideSyncStatus(), 3000);
@@ -8960,10 +8986,33 @@ Mergers & Acquisitions Team`
 
             // Check if Outlook is connected
             if (appSettings.outlook.connected && msalInstance) {
-                // Send individual emails to each carrier via Microsoft Graph API
+                // Send individual emails via Microsoft Graph API
+                let token;
                 try {
-                    const token = await getAccessToken();
+                    token = await getAccessToken();
+                } catch (tokenError) {
+                    showError(
+                        'Outlook Connection Issue\n\n' +
+                        tokenError.message + '\n\n' +
+                        'Your emails have been saved as drafts in the activity log.'
+                    );
 
+                    // Log as drafts instead
+                    for (const carrier of selectedCarriers) {
+                        const carrierEmails = carrier.contacts?.filter(c => c.email).map(c => c.email) || [];
+                        await addActivityLog({
+                            type: 'email',
+                            contact: carrierEmails[0] || 'Unknown',
+                            carrier: carrier.name,
+                            notes: `Draft (not sent): ${subject}\n\n${body}`,
+                            attachments: [...emailAttachments]
+                        });
+                    }
+                    closeEmailModal();
+                    return;
+                }
+
+                try {
                     // Handle reply to existing email (special case)
                     if (replyContext && replyContext.messageId) {
                         console.log('Replying to email with messageId:', replyContext.messageId);
@@ -11423,33 +11472,44 @@ Mergers & Acquisitions Team`
             const connectedView = document.getElementById('outlookConnectedView');
             const syncBtn = document.getElementById('syncEmailsBtn');
 
-            if (appSettings.outlook.connected) {
-                statusIcon.textContent = '🟢';
-                statusText.textContent = 'Connected';
-                statusText.style.color = '#27ae60';
-                accountInfo.style.display = 'block';
-                emailSpan.textContent = appSettings.outlook.email;
-                disconnectedView.style.display = 'none';
-                connectedView.style.display = 'block';
+            if (appSettings.outlook.connected && appSettings.outlook.email) {
+                // Connected state
+                if (statusIcon) statusIcon.textContent = '🟢';
+                if (statusText) {
+                    statusText.textContent = 'Connected';
+                    statusText.style.color = '#10B981';
+                }
+                if (accountInfo) accountInfo.style.display = 'block';
+                if (emailSpan) emailSpan.textContent = appSettings.outlook.email;
+                if (disconnectedView) disconnectedView.style.display = 'none';
+                if (connectedView) connectedView.style.display = 'block';
                 if (syncBtn) syncBtn.disabled = false;
             } else {
-                statusIcon.textContent = '⚫';
-                statusText.textContent = 'Not Connected';
-                statusText.style.color = '#7f8c8d';
-                accountInfo.style.display = 'none';
-                disconnectedView.style.display = 'block';
-                connectedView.style.display = 'none';
+                // Disconnected state
+                if (statusIcon) statusIcon.textContent = '⚫';
+                if (statusText) {
+                    statusText.textContent = 'Not Connected';
+                    statusText.style.color = '#6B7280';
+                }
+                if (accountInfo) accountInfo.style.display = 'none';
+                if (disconnectedView) disconnectedView.style.display = 'block';
+                if (connectedView) connectedView.style.display = 'none';
                 if (syncBtn) syncBtn.disabled = true;
             }
         }
 
         function saveOutlookSession() {
-            const session = {
-                connected: appSettings.outlook.connected || false,
-                email: appSettings.outlook.email || null,
-                accessToken: appSettings.outlook.accessToken || null
-            };
-            localStorage.setItem('carriercanvas_outlook', JSON.stringify(session));
+            try {
+                const session = {
+                    connected: appSettings.outlook.connected,
+                    email: appSettings.outlook.email,
+                    lastConnected: appSettings.outlook.lastConnected,
+                    lastEmailSync: appSettings.outlook.lastEmailSync
+                };
+                localStorage.setItem('carriercanvas_outlook', JSON.stringify(session));
+            } catch (e) {
+                console.warn('Could not save Outlook session:', e);
+            }
         }
 
         function loadOutlookSession() {
@@ -11457,52 +11517,160 @@ Mergers & Acquisitions Team`
                 const saved = localStorage.getItem('carriercanvas_outlook');
                 if (saved) {
                     const session = JSON.parse(saved);
-                    appSettings.outlook = { ...appSettings.outlook, ...session };
+                    appSettings.outlook = {
+                        ...appSettings.outlook,
+                        connected: session.connected || false,
+                        email: session.email || null,
+                        lastConnected: session.lastConnected || null,
+                        lastEmailSync: session.lastEmailSync || null
+                    };
                     console.log('Loaded Outlook session from device storage');
                 }
             } catch (e) {
-                console.error('Error loading Outlook session:', e);
+                console.warn('Could not load Outlook session:', e);
             }
         }
 
         async function connectOutlook() {
             if (!msalInstance) {
-                showWarning('Please configure your Azure AD Client ID in Settings first.\n\n1. Go to Settings\n2. Add your Azure AD Client ID\n3. Save and reload the page');
+                showError('Outlook integration is not available. Please refresh the page and try again.');
                 return;
             }
 
+            // Check if already have an account
+            const existingAccounts = msalInstance.getAllAccounts();
+            if (existingAccounts.length > 0) {
+                // Already have an account — try to use it
+                try {
+                    const token = await getAccessToken();
+                    if (token) {
+                        appSettings.outlook.connected = true;
+                        appSettings.outlook.email = existingAccounts[0].username;
+                        saveOutlookSession();
+                        updateOutlookConnectionUI();
+                        showSuccess('Outlook already connected as ' + existingAccounts[0].username);
+                        return;
+                    }
+                } catch (e) {
+                    // Token failed, proceed with new login
+                    console.log('Existing account token failed, requesting new login');
+                }
+            }
+
             try {
+                showSyncStatus('syncing', 'Connecting to Outlook...');
+
                 const loginRequest = {
-                    scopes: ['User.Read', 'Mail.Send', 'Mail.Read']
+                    scopes: ['User.Read', 'Mail.Send', 'Mail.Read', 'Mail.ReadWrite'],
+                    prompt: 'select_account'  // Always show account picker
                 };
 
                 const loginResponse = await msalInstance.loginPopup(loginRequest);
 
-                if (loginResponse) {
+                if (loginResponse && loginResponse.account) {
                     appSettings.outlook.connected = true;
                     appSettings.outlook.email = loginResponse.account.username;
-                    appSettings.outlook.accessToken = loginResponse.accessToken;
+                    appSettings.outlook.lastConnected = new Date().toISOString();
                     saveOutlookSession();
-                    saveAppSettings();
-
                     updateOutlookConnectionUI();
-                    showSuccess('Outlook account connected successfully!\n\nYou can now send emails directly through your Outlook account.');
+
+                    hideSyncStatus();
+                    showSuccess(
+                        '✅ Outlook Connected!\n\n' +
+                        'Account: ' + loginResponse.account.username + '\n\n' +
+                        'You can now:\n' +
+                        '• Send emails directly through Outlook\n' +
+                        '• Sync replies from carriers\n' +
+                        '• Track email conversations'
+                    );
                 }
             } catch (error) {
+                hideSyncStatus();
                 console.error('Outlook connection error:', error);
+
+                if (error.message.includes('user_cancelled') ||
+                    error.message.includes('popup_window_error')) {
+                    // User closed popup — not an error
+                    showInfo('Outlook connection cancelled.');
+                    return;
+                }
+
+                if (error.message.includes('popup_blocked')) {
+                    showError(
+                        'Popup Blocked\n\n' +
+                        'Please allow popups for this site and try again.\n\n' +
+                        'Look for a popup blocker icon in your browser\'s address bar.'
+                    );
+                    return;
+                }
+
                 showError('Failed to connect Outlook: ' + error.message);
             }
         }
 
-        function disconnectOutlook() {
-            if (confirm('Are you sure you want to disconnect your Outlook account?')) {
+        async function disconnectOutlook() {
+            const confirmed = await confirmAction(
+                'You will need to reconnect to send emails or sync replies.',
+                'Disconnect Outlook?'
+            );
+
+            if (!confirmed) return;
+
+            try {
+                // Clear MSAL cache for this account
+                if (msalInstance) {
+                    const accounts = msalInstance.getAllAccounts();
+                    for (const account of accounts) {
+                        await msalInstance.clearCache({
+                            account: account
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('Error clearing MSAL cache:', e);
+            }
+
+            // Reset app state
+            appSettings.outlook.connected = false;
+            appSettings.outlook.email = null;
+            appSettings.outlook.lastConnected = null;
+            appSettings.outlook.lastEmailSync = null;
+
+            // Clear local session
+            localStorage.removeItem('carriercanvas_outlook');
+
+            saveOutlookSession();
+            updateOutlookConnectionUI();
+            showSuccess('Outlook disconnected successfully.');
+        }
+
+        async function validateOutlookConnection() {
+            if (!appSettings.outlook.connected || !msalInstance) {
+                return;
+            }
+
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length === 0) {
+                // MSAL cache was cleared — reset state
+                console.log('Outlook: No cached accounts found, resetting connection state');
                 appSettings.outlook.connected = false;
                 appSettings.outlook.email = null;
-                appSettings.outlook.accessToken = null;
                 saveOutlookSession();
-                saveAppSettings();
                 updateOutlookConnectionUI();
-                showSuccess('Outlook account disconnected');
+                return;
+            }
+
+            // Try a silent token acquisition to verify connection is still valid
+            try {
+                const token = await getAccessToken();
+                if (token) {
+                    console.log('Outlook connection validated');
+                    appSettings.outlook.email = accounts[0].username;
+                    updateOutlookConnectionUI();
+                }
+            } catch (e) {
+                console.warn('Outlook connection validation failed:', e.message);
+                // Don't reset — let user try again when they actually need it
             }
         }
 
@@ -11542,26 +11710,72 @@ Mergers & Acquisitions Team`
 
         async function getAccessToken() {
             if (!msalInstance) {
-                throw new Error('MSAL not initialized');
+                throw new Error('Outlook is not configured. Please refresh the page.');
             }
 
             const accounts = msalInstance.getAllAccounts();
+
             if (accounts.length === 0) {
-                throw new Error('No accounts found. Please reconnect.');
+                // No cached account — user needs to connect
+                appSettings.outlook.connected = false;
+                appSettings.outlook.email = null;
+                updateOutlookConnectionUI();
+                throw new Error('Outlook session expired. Please reconnect your Outlook account in Settings.');
             }
 
             const request = {
-                scopes: ['User.Read', 'Mail.Send', 'Mail.Read'],
-                account: accounts[0]
+                scopes: ['User.Read', 'Mail.Send', 'Mail.Read', 'Mail.ReadWrite'],
+                account: accounts[0],
+                forceRefresh: false  // Let MSAL decide if refresh is needed
             };
 
             try {
+                // Try silent token acquisition first (uses refresh token automatically)
                 const response = await msalInstance.acquireTokenSilent(request);
+                console.log('Token acquired silently, expires:', new Date(response.expiresOn));
                 return response.accessToken;
-            } catch (error) {
-                // Silent token acquisition failed, try interactive
-                const response = await msalInstance.acquireTokenPopup(request);
-                return response.accessToken;
+
+            } catch (silentError) {
+                console.warn('Silent token acquisition failed:', silentError.message);
+
+                // Check what kind of error
+                if (silentError instanceof msal.InteractionRequiredAuthError) {
+                    // User interaction required — try popup
+                    console.log('Attempting interactive token acquisition...');
+
+                    try {
+                        const response = await msalInstance.acquireTokenPopup(request);
+                        console.log('Token acquired via popup');
+
+                        // Update connection state
+                        appSettings.outlook.connected = true;
+                        appSettings.outlook.email = response.account.username;
+                        saveOutlookSession();
+                        updateOutlookConnectionUI();
+
+                        return response.accessToken;
+
+                    } catch (popupError) {
+                        console.error('Popup token acquisition failed:', popupError);
+
+                        if (popupError.message.includes('popup_window_error') ||
+                            popupError.message.includes('user_cancelled')) {
+                            throw new Error('Sign-in was cancelled. Please try again.');
+                        }
+
+                        // Connection is broken — reset state
+                        appSettings.outlook.connected = false;
+                        appSettings.outlook.email = null;
+                        saveOutlookSession();
+                        updateOutlookConnectionUI();
+
+                        throw new Error('Outlook session expired. Please reconnect in Settings.');
+                    }
+                } else {
+                    // Other error — likely network or config issue
+                    console.error('Token acquisition error:', silentError);
+                    throw new Error('Unable to connect to Outlook. Please check your internet connection.');
+                }
             }
         }
 
@@ -11768,7 +11982,7 @@ Mergers & Acquisitions Team`
 
         async function syncEmails() {
             if (!appSettings.outlook.connected || !msalInstance) {
-                console.log('Outlook not connected, skipping auto-sync');
+                console.log('Outlook not connected, skipping sync');
                 return;
             }
 
@@ -11779,8 +11993,23 @@ Mergers & Acquisitions Team`
                 syncBtn.disabled = true;
             }
 
+            let token;
             try {
-                const token = await getAccessToken();
+                token = await getAccessToken();
+            } catch (tokenError) {
+                console.error('Sync failed - token error:', tokenError);
+                if (syncBtn) {
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
+                }
+                showError(
+                    'Unable to Sync Emails\n\n' +
+                    tokenError.message
+                );
+                return;
+            }
+
+            try {
 
                 console.log('=== Email Sync Debug ===');
 
