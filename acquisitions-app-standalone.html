@@ -111,14 +111,6 @@
             background: #1a1d27;
         }
 
-        body.dark-mode .carrier-item.done {
-            border-left: 4px solid #22c55e !important;
-        }
-
-        body.dark-mode .carrier-item.outstanding {
-            border-left: 4px solid #ef4444 !important;
-        }
-
         body.dark-mode .carrier-item:hover {
             background: #222638;
         }
@@ -1167,14 +1159,6 @@
             transform: rotate(90deg);
         }
 
-        .carrier-item.done {
-            border-left: 4px solid #22c55e;
-        }
-
-        .carrier-item.outstanding {
-            border-left: 4px solid #ef4444;
-        }
-
         .carrier-content {
             max-height: 0;
             overflow: hidden;
@@ -1204,16 +1188,6 @@
         }
 
         .carrier-item.has-response {
-            background: linear-gradient(to right, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0.02) 25%, transparent 50%);
-            border-left: 4px solid var(--primary);
-        }
-
-        .carrier-item.has-response.done {
-            background: linear-gradient(to right, rgba(16, 185, 129, 0.10) 0%, rgba(16, 185, 129, 0.02) 25%, transparent 50%);
-            border-left: 4px solid var(--success);
-        }
-
-        .carrier-item.has-response.outstanding {
             background: linear-gradient(to right, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0.02) 25%, transparent 50%);
             border-left: 4px solid var(--primary);
         }
@@ -3974,20 +3948,6 @@
         .carrier-item:nth-child(even),
         .carrier-item:nth-child(odd) { background: transparent !important; }
         .carrier-item:hover { background: rgba(255,255,255,0.02) !important; }
-        /* Status left border */
-        .carrier-item.outstanding {
-            border-left: 3px solid #ef4444;
-            border-right: none;
-            border-top: none;
-            border-bottom: 0.5px solid rgba(255,255,255,0.04);
-        }
-        .carrier-item.done {
-            border-left: 3px solid #22c55e;
-            border-right: none;
-            border-top: none;
-            border-bottom: 0.5px solid rgba(255,255,255,0.04);
-        }
-
         /* Carrier header — make it take full row width */
         .carrier-header {
             display: flex;
@@ -4028,30 +3988,6 @@
         }
         .carrier-actions .btn-group {
             display: contents;
-        }
-
-        /* Mark Done button (outstanding state) */
-        .carrier-item.outstanding .carrier-actions button:first-of-type {
-            background: transparent;
-            border: 0.5px solid rgba(255,255,255,0.15);
-            color: rgba(255,255,255,0.5);
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        /* Done button */
-        .carrier-item.done .carrier-actions button:first-of-type {
-            background: transparent;
-            border: 0.5px solid #22c55e;
-            color: #22c55e;
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
         }
 
         /* Email button */
@@ -4189,8 +4125,6 @@
             border-bottom-color: #e2e8f0 !important;
         }
         body:not(.dark-mode) .carrier-item { background: white !important; border-bottom-color: #f1f5f9 !important; border-left-color: transparent !important; }
-        body:not(.dark-mode) .carrier-item.done { border-left-color: #22c55e !important; }
-        body:not(.dark-mode) .carrier-item.outstanding { border-left-color: #ef4444 !important; }
         body:not(.dark-mode) .carrier-item:nth-child(even),
         body:not(.dark-mode) .carrier-item:nth-child(odd) { background: white !important; }
         body:not(.dark-mode) .carrier-item:hover { background: #f8fafc !important; }
@@ -4200,14 +4134,6 @@
             border-color: #e2e8f0 !important;
             color: #64748b !important;
             background: transparent !important;
-        }
-        body:not(.dark-mode) .carrier-item.done .carrier-actions .btn-group button:first-child {
-            border-color: rgba(34,197,94,0.5) !important;
-            color: #22c55e !important;
-        }
-        body:not(.dark-mode) .carrier-item.outstanding .carrier-actions .btn-group button:first-child {
-            border-color: #e2e8f0 !important;
-            color: #94a3b8 !important;
         }
         body:not(.dark-mode) .carrier-actions .btn-group button:last-child {
             background: rgba(37,99,235,0.08) !important;
@@ -4306,6 +4232,76 @@
             padding: 10px 24px;
         }
 
+
+        /* ── Carrier row status colors (canonical, must stay last) ── */
+        body:not(.dark-mode) .carrier-item.done {
+          background-color: #14532d !important;
+          border-left: none !important;
+          border-bottom: 0.5px solid rgba(0,0,0,0.12) !important;
+        }
+        body:not(.dark-mode) .carrier-item.done .carrier-name {
+          color: rgba(255,255,255,0.95) !important;
+        }
+        body:not(.dark-mode) .carrier-item.done .carrier-code {
+          color: rgba(255,255,255,0.5) !important;
+        }
+        body:not(.dark-mode) .carrier-item.done:hover {
+          background-color: #166534 !important;
+        }
+        body:not(.dark-mode) .carrier-item.outstanding {
+          background-color: #7f1d1d !important;
+          border-left: none !important;
+          border-bottom: 0.5px solid rgba(0,0,0,0.12) !important;
+        }
+        body:not(.dark-mode) .carrier-item.outstanding .carrier-name {
+          color: rgba(255,255,255,0.95) !important;
+        }
+        body:not(.dark-mode) .carrier-item.outstanding .carrier-code {
+          color: rgba(255,255,255,0.5) !important;
+        }
+        body:not(.dark-mode) .carrier-item.outstanding:hover {
+          background-color: #991b1b !important;
+        }
+        body:not(.dark-mode) .carrier-item.done .carrier-actions button,
+        body:not(.dark-mode) .carrier-item.outstanding .carrier-actions button {
+          background: rgba(255,255,255,0.1) !important;
+          border: 0.5px solid rgba(255,255,255,0.2) !important;
+          color: rgba(255,255,255,0.85) !important;
+        }
+        body.dark-mode .carrier-item.done {
+          background-color: #1a3a2a !important;
+          border-left: none !important;
+          border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
+        }
+        body.dark-mode .carrier-item.done .carrier-name {
+          color: rgba(255,255,255,0.9) !important;
+        }
+        body.dark-mode .carrier-item.done .carrier-code {
+          color: rgba(255,255,255,0.4) !important;
+        }
+        body.dark-mode .carrier-item.done:hover {
+          background-color: #1f4a33 !important;
+        }
+        body.dark-mode .carrier-item.outstanding {
+          background-color: #3a1a1a !important;
+          border-left: none !important;
+          border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
+        }
+        body.dark-mode .carrier-item.outstanding .carrier-name {
+          color: rgba(255,255,255,0.9) !important;
+        }
+        body.dark-mode .carrier-item.outstanding .carrier-code {
+          color: rgba(255,255,255,0.4) !important;
+        }
+        body.dark-mode .carrier-item.outstanding:hover {
+          background-color: #4a2020 !important;
+        }
+        body.dark-mode .carrier-item.done .carrier-actions button,
+        body.dark-mode .carrier-item.outstanding .carrier-actions button {
+          background: rgba(255,255,255,0.08) !important;
+          border: 0.5px solid rgba(255,255,255,0.15) !important;
+          color: rgba(255,255,255,0.7) !important;
+        }
     </style>
 </head>
 <body>
