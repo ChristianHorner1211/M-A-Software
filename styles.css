@@ -933,7 +933,6 @@ body.dark-mode .modal-content label {
   margin-bottom: 16px !important;
 }
 
-/* ── Carrier row status colors ── */
 body:not(.dark-mode) .carrier-item.done {
   background-color: #14532d !important;
   border-left: none !important;
@@ -971,7 +970,6 @@ body:not(.dark-mode) .carrier-item.outstanding .carrier-actions button {
 body.dark-mode .carrier-item.done {
   background-color: #1a3a2a !important;
   border-left: none !important;
-  border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
 }
 body.dark-mode .carrier-item.done .carrier-name {
   color: rgba(255,255,255,0.9) !important;
@@ -979,22 +977,15 @@ body.dark-mode .carrier-item.done .carrier-name {
 body.dark-mode .carrier-item.done .carrier-code {
   color: rgba(255,255,255,0.4) !important;
 }
-body.dark-mode .carrier-item.done:hover {
-  background-color: #1f4a33 !important;
-}
 body.dark-mode .carrier-item.outstanding {
   background-color: #3a1a1a !important;
   border-left: none !important;
-  border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
 }
 body.dark-mode .carrier-item.outstanding .carrier-name {
   color: rgba(255,255,255,0.9) !important;
 }
 body.dark-mode .carrier-item.outstanding .carrier-code {
   color: rgba(255,255,255,0.4) !important;
-}
-body.dark-mode .carrier-item.outstanding:hover {
-  background-color: #4a2020 !important;
 }
 body.dark-mode .carrier-item.done .carrier-actions button,
 body.dark-mode .carrier-item.outstanding .carrier-actions button {
