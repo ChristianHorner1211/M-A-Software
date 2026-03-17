@@ -1878,32 +1878,6 @@
             background: #1e4fa8;
         }
 
-        .google-signin-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            padding: 12px 24px;
-            background: white;
-            border: 2px solid #dce4ec;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            color: #2c3e50;
-            transition: all 0.3s ease;
-        }
-
-        .google-signin-btn:hover {
-            border-color: #3498db;
-            background: #f8f9fa;
-        }
-
-        .google-icon {
-            width: 20px;
-            height: 20px;
-        }
 
         .sync-status {
             position: fixed;
@@ -4625,6 +4599,16 @@
         </div>
     </div>
 
+    <!-- Error Screen -->
+    <div id="errorScreen" class="auth-container" style="display: none;">
+        <div class="auth-box" style="max-width: 480px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h2 style="color: #e74c3c; margin-bottom: 12px;">Configuration Error</h2>
+            <p id="errorScreenMessage" style="color: #555; margin-bottom: 24px;"></p>
+            <p style="font-size: 13px; color: #aaa;">Please contact your administrator or check the browser console for details.</p>
+        </div>
+    </div>
+
     <!-- Main App -->
     <div id="mainApp" class="app-shell" style="display: none;">
 
@@ -5541,7 +5525,7 @@
                         <a href="https://console.firebase.google.com" target="_blank" style="color: #3498db;">Get your config from Firebase Console</a>
                     </p>
                     <p style="font-size: 12px; color: #e74c3c; margin-bottom: 15px;">
-                        ⚠️ <strong>Important:</strong> All keys must be quoted with double quotes. Include "storageBucket" to enable logo uploads. Without Firebase, data is saved only to your browser's localStorage.
+                        ⚠️ <strong>Important:</strong> All keys must be quoted with double quotes. Include "storageBucket" to enable logo uploads. Firebase is required — sign-in and all data storage depend on it.
                     </p>
                     <textarea id="firebaseConfig" rows="8" placeholder='Paste your Firebase config JSON here:&#10;{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}'></textarea>
                 </div>
@@ -6022,7 +6006,8 @@ Mergers & Acquisitions Team`
         function initializeFirebase() {
             // Load Firebase config from settings
             if (!appSettings.firebase.config) {
-                console.log('Firebase config not found - using localStorage mode');
+                console.error('Firebase config not found');
+                showErrorScreen('Firebase is not configured. Please contact your administrator.');
                 return false;
             }
 
@@ -6051,29 +6036,10 @@ Mergers & Acquisitions Team`
                         loadDataFromFirebase();
                     } else {
                         currentUser = null;
-
-                        // If user explicitly signed out, always show the auth screen
-                        if (intentionalSignOut) {
-                            intentionalSignOut = false;
-                            showAuthScreen();
-                            return;
-                        }
-
-                        // Load from localStorage as fallback when not signed in on initial load
-                        console.log('Not signed in - loading from localStorage');
-                        const hasLocalData = loadDataFromLocalStorage();
-
-                        if (hasLocalData) {
-                            // User has local data, show main app
-                            showMainApp();
-                            renderAcquisitionTabs();
-                            if (acquisitions.length > 0) {
-                                selectAcquisition(acquisitions[0].id);
-                            }
-                        } else {
-                            // No local data, show auth screen
-                            showAuthScreen();
-                        }
+                        intentionalSignOut = false;
+                        acquisitions = [];
+                        activities = [];
+                        showAuthScreen();
                     }
                 });
 
@@ -6081,15 +6047,7 @@ Mergers & Acquisitions Team`
                 return true;
             } catch (error) {
                 console.error('Firebase initialization error:', error);
-
-                // Clear invalid Firebase config
-                console.log('Clearing invalid Firebase config and using localStorage mode');
-                appSettings.firebase.config = '';
-                saveAppSettings();
-
-                // Don't show alert on every page load - just log it
-                console.warn('Firebase not configured properly. Using localStorage mode. Go to Settings to configure Firebase.');
-
+                showErrorScreen('Firebase configuration error: ' + error.message + '. Please contact your administrator.');
                 return false;
             }
         }
@@ -6123,21 +6081,6 @@ Mergers & Acquisitions Team`
 
         // ==================== AUTHENTICATION FUNCTIONS ====================
 
-        async function signInWithGoogle() {
-            if (!firebaseAuth) {
-                showWarning('Please configure Firebase in Settings first.\n\n1. Go to Settings\n2. Add your Firebase configuration\n3. Save and reload the page');
-                return;
-            }
-
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                await firebaseAuth.signInWithPopup(provider);
-                // onAuthStateChanged will handle the rest
-            } catch (error) {
-                console.error('Sign-in error:', error);
-                showError('Sign-in failed: ' + error.message);
-            }
-        }
 
         async function signInWithMicrosoft() {
             if (!firebaseAuth) return;
@@ -6440,8 +6383,17 @@ Mergers & Acquisitions Team`
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('orgOnboardingScreen').style.display = 'none';
+            document.getElementById('errorScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'none';
             currentOrgId = null;
+        }
+
+        function showErrorScreen(message) {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('orgOnboardingScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('errorScreenMessage').textContent = message;
+            document.getElementById('errorScreen').style.display = 'flex';
         }
 
         function showMainApp() {
@@ -6458,39 +6410,16 @@ Mergers & Acquisitions Team`
         }
 
         function initializeApp() {
-            // Load settings from localStorage
-            loadSettings();
+            // Load device-specific Outlook session
+            loadOutlookSession();
 
-            // Load custom templates from localStorage
-            loadCustomTemplates();
-
-            // Load state offices from localStorage
-            loadStateOffices();
-
-            // Initialize Firebase if configured
-            const firebaseInitialized = initializeFirebase();
+            // Initialize Firebase (mandatory — shows error screen if not configured)
+            initializeFirebase();
 
             // Initialize MSAL if configured
             initializeMSAL();
 
-            if (!firebaseInitialized) {
-                // If Firebase not configured, load from localStorage or sample data
-                showMainApp();
-
-                // Try to load from localStorage first
-                const hasLocalData = loadDataFromLocalStorage();
-
-                if (!hasLocalData) {
-                    // If no local data, load sample data
-                    loadSampleData();
-                }
-
-                renderAcquisitionTabs();
-                if (acquisitions.length > 0) {
-                    selectAcquisition(acquisitions[0].id);
-                }
-            }
-            // If Firebase is configured, onAuthStateChanged will handle the rest
+            // onAuthStateChanged will handle showing auth screen or main app
 
             // Setup signature image upload handler
             const signatureImageUpload = document.getElementById('signatureImageUpload');
@@ -6664,18 +6593,19 @@ Mergers & Acquisitions Team`
         let currentEditingTemplateId = null;
 
         function loadCustomTemplates() {
-            const saved = localStorage.getItem('emailTemplates');
-            if (saved) {
-                try {
-                    emailTemplates = JSON.parse(saved);
-                } catch (e) {
-                    console.error('Error loading templates:', e);
-                }
-            }
+            // Templates are loaded from Firebase in loadDataFromFirebase()
+            // This is a no-op kept for compatibility
         }
 
-        function saveTemplatesToLocalStorage() {
-            localStorage.setItem('emailTemplates', JSON.stringify(emailTemplates));
+        async function saveTemplatesToFirebase() {
+            if (!firestore || !currentUser || !currentOrgId) return;
+            try {
+                await firestore.collection('organizations').doc(currentOrgId)
+                    .collection('settings').doc('emailTemplates')
+                    .set({ templates: emailTemplates });
+            } catch (e) {
+                console.error('Error saving email templates to Firebase:', e);
+            }
         }
 
         function showTemplateManager() {
@@ -6754,7 +6684,7 @@ Mergers & Acquisitions Team`
                 showSuccess('Template created successfully!');
             }
 
-            saveTemplatesToLocalStorage();
+            saveTemplatesToFirebase();
             renderTemplateManagerList();
         }
 
@@ -6764,7 +6694,7 @@ Mergers & Acquisitions Team`
             const template = emailTemplates[currentEditingTemplateId];
             if (confirm(`Are you sure you want to delete "${template.name}"?`)) {
                 delete emailTemplates[currentEditingTemplateId];
-                saveTemplatesToLocalStorage();
+                saveTemplatesToFirebase();
                 showTemplateEditorEmpty();
                 renderTemplateManagerList();
                 showSuccess('Template deleted successfully!');
@@ -6775,18 +6705,8 @@ Mergers & Acquisitions Team`
 
         async function loadDataFromFirebase() {
             if (!firestore || !currentUser) {
-                // If Firebase not available, load from localStorage
-                console.log('Firebase not available, loading from localStorage');
-                const hasLocalData = loadDataFromLocalStorage();
-
-                if (!hasLocalData) {
-                    console.log('No localStorage data found');
-                }
-
-                renderAcquisitionTabs();
-                if (acquisitions.length > 0) {
-                    selectAcquisition(acquisitions[0].id);
-                }
+                console.error('Cannot load data — Firebase or user not available');
+                showErrorScreen('Unable to connect to Firebase. Please sign in again.');
                 return;
             }
 
@@ -6829,7 +6749,6 @@ Mergers & Acquisitions Team`
                 if (stateOfficesDoc.exists && stateOfficesDoc.data().data) {
                     stateOffices = stateOfficesDoc.data().data;
                     migrateStateOfficesData();
-                    localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
                     console.log('Loaded stateOffices from Firebase');
                 }
 
@@ -6842,14 +6761,18 @@ Mergers & Acquisitions Team`
                         ...appSettings,
                         ...cloudSettings,
                         firebase: { ...appSettings.firebase, config: HARDCODED_FIREBASE_CONFIG },
-                        outlook: appSettings.outlook // keep local outlook session (device-specific)
+                        outlook: appSettings.outlook // keep device-specific outlook session
                     };
-                    localStorage.setItem('appSettings', JSON.stringify(appSettings));
                     console.log('Loaded appSettings from Firebase');
                 }
 
-                // Update localStorage to match Firebase (not the other way around)
-                saveDataToLocalStorage();
+                // Load email templates from Firebase
+                const templatesDoc = await firestore.collection('organizations').doc(currentOrgId)
+                    .collection('settings').doc('emailTemplates').get();
+                if (templatesDoc.exists && templatesDoc.data().templates) {
+                    emailTemplates = { ...emailTemplates, ...templatesDoc.data().templates };
+                    console.log('Loaded email templates from Firebase');
+                }
 
                 renderAcquisitionTabs();
                 if (acquisitions.length > 0) {
@@ -6860,29 +6783,12 @@ Mergers & Acquisitions Team`
                 setTimeout(() => hideSyncStatus(), 3000);
             } catch (error) {
                 console.error('Error loading data from Firebase:', error);
-
-                // Fallback to localStorage if Firebase fails
-                console.log('Falling back to localStorage due to Firebase error');
-                const hasLocalData = loadDataFromLocalStorage();
-
-                if (!hasLocalData) {
-                    console.log('No localStorage data found');
-                }
-
-                renderAcquisitionTabs();
-                if (acquisitions.length > 0) {
-                    selectAcquisition(acquisitions[0].id);
-                }
-
-                showSyncStatus('error', 'Using local data');
-                setTimeout(() => hideSyncStatus(), 5000);
+                showSyncStatus('error', 'Failed to load data');
+                showErrorScreen('Failed to load data from Firebase: ' + error.message);
             }
         }
 
         async function saveAcquisitionToFirebase(acquisition) {
-            // Always save to localStorage first (immediate backup)
-            saveDataToLocalStorage();
-
             if (!firestore || !currentUser) return;
 
             try {
@@ -6902,9 +6808,6 @@ Mergers & Acquisitions Team`
         }
 
         async function saveActivityToFirebase(activity) {
-            // Always save to localStorage first (immediate backup)
-            saveDataToLocalStorage();
-
             if (!firestore || !currentUser) return;
 
             try {
@@ -6926,9 +6829,6 @@ Mergers & Acquisitions Team`
         async function markActivityComplete(activityTimestamp) {
             // Remove from local array
             activities = activities.filter(a => a.timestamp !== activityTimestamp);
-
-            // Save to localStorage
-            saveDataToLocalStorage();
 
             // Delete from Firebase
             if (firestore && currentUser) {
@@ -7057,44 +6957,9 @@ Mergers & Acquisitions Team`
             }, hideDelay);
         }
 
-        // ========================================
-        // LOCAL STORAGE PERSISTENCE (FALLBACK)
-        // ========================================
 
-        function saveDataToLocalStorage() {
-            try {
-                // Save acquisitions (includes carriers with files)
-                localStorage.setItem('acquisitions', JSON.stringify(acquisitions));
-
-                // Save activities
-                localStorage.setItem('activities', JSON.stringify(activities));
-
-                console.log('Data saved to localStorage');
-            } catch (error) {
-                console.error('Error saving to localStorage:', error);
-                // If storage quota exceeded, try to save without file data
-                if (error.name === 'QuotaExceededError') {
-                    try {
-                        const acquisitionsWithoutLargeFiles = acquisitions.map(acq => ({
-                            ...acq,
-                            carriers: acq.carriers.map(carrier => ({
-                                ...carrier,
-                                files: carrier.files ? carrier.files.slice(0, 5) : [] // Limit to 5 files
-                            }))
-                        }));
-                        localStorage.setItem('acquisitions', JSON.stringify(acquisitionsWithoutLargeFiles));
-                        localStorage.setItem('activities', JSON.stringify(activities));
-                        console.warn('Saved with limited files due to storage quota');
-                    } catch (e) {
-                        console.error('Failed to save even with limits:', e);
-                    }
-                }
-            }
-        }
-
-        // Save stateOffices to localStorage AND Firebase
+        // Save stateOffices to Firebase
         async function saveStateOffices() {
-            localStorage.setItem('stateOffices', JSON.stringify(stateOffices));
             if (!firestore || !currentUser || !currentOrgId) return;
             try {
                 await firestore.collection('organizations').doc(currentOrgId)
@@ -7105,9 +6970,8 @@ Mergers & Acquisitions Team`
             }
         }
 
-        // Save appSettings to localStorage AND Firebase (excludes device-specific tokens)
+        // Save appSettings to Firebase (excludes device-specific tokens)
         async function saveAppSettings() {
-            localStorage.setItem('appSettings', JSON.stringify(appSettings));
             if (!firestore || !currentUser || !currentOrgId) return;
             try {
                 const { outlook, ...settingsToSync } = appSettings;
@@ -7121,34 +6985,6 @@ Mergers & Acquisitions Team`
             }
         }
 
-        function loadDataFromLocalStorage() {
-            try {
-                // Load acquisitions
-                const savedAcquisitions = localStorage.getItem('acquisitions');
-                if (savedAcquisitions) {
-                    acquisitions = JSON.parse(savedAcquisitions);
-                    console.log('Loaded acquisitions from localStorage:', acquisitions.length);
-                }
-
-                // Load activities
-                const savedActivities = localStorage.getItem('activities');
-                if (savedActivities) {
-                    activities = JSON.parse(savedActivities);
-                    console.log('Loaded activities from localStorage:', activities.length);
-                }
-
-                return acquisitions.length > 0;
-            } catch (error) {
-                console.error('Error loading from localStorage:', error);
-                return false;
-            }
-        }
-
-        function clearLocalStorageData() {
-            localStorage.removeItem('acquisitions');
-            localStorage.removeItem('activities');
-            console.log('Cleared data from localStorage');
-        }
 
         function loadSampleData() {
             const sampleAcquisitions = [
@@ -7299,9 +7135,6 @@ Mergers & Acquisitions Team`
                 if (currentAcquisitionId === contextMenuAcquisitionId) {
                     currentAcquisitionId = acquisitions.length > 0 ? acquisitions[0].id : null;
                 }
-
-                // Save to localStorage after deletion
-                saveDataToLocalStorage();
 
                 renderAcquisitionTabs();
                 if (currentAcquisitionId) {
@@ -8373,9 +8206,6 @@ Mergers & Acquisitions Team`
                     console.log('Deleted from Firestore');
                 }
 
-                // Save updated data to localStorage
-                saveDataToLocalStorage();
-
                 // Refresh the display
                 renderCarriersList();
                 renderActivityLog();
@@ -8718,23 +8548,14 @@ Mergers & Acquisitions Team`
                         }
 
                         setFileUploadStatus('❌ ' + errorMessage, 'error');
-                        console.log('Attempting to upload to localStorage as fallback...');
-
-                        // Fall back to localStorage mode with proper async handling
-                        try {
-                            await uploadToLocalStorage(files, acquisition);
-                            fileInput.value = '';
-                        } catch (lsError) {
-                            setFileUploadStatus('❌ ' + errorMessage + '\n\nLocal fallback also failed: ' + lsError.message, 'error');
-                        }
                         if (btn) { btn.disabled = false; btn.textContent = 'Upload'; }
                         return;
                     }
                 } else {
-                    // Fall back to base64 localStorage mode
-                    console.log('Using localStorage mode for file storage');
-                    await uploadToLocalStorage(files, acquisition);
-                    fileInput.value = '';
+                    // Firebase Storage not available — require sign-in
+                    setFileUploadStatus('❌ File upload requires Firebase Storage. Please sign in first.', 'error');
+                    if (btn) { btn.disabled = false; btn.textContent = 'Upload'; }
+                    return;
                 }
             } catch (error) {
                 console.error('Unexpected error in uploadFiles:', error);
@@ -8744,82 +8565,6 @@ Mergers & Acquisitions Team`
             }
         }
 
-        // Helper function to handle localStorage uploads with proper async handling
-        async function uploadToLocalStorage(files, acquisition) {
-            try {
-                // Check file sizes before uploading
-                const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit for localStorage
-                const largeFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
-
-                if (largeFiles.length > 0) {
-                    const fileNames = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join('\n');
-                    throw new Error(
-                        `The following files are too large for local storage (max 5MB):\n\n${fileNames}\n\n` +
-                        `To upload large files, you need to configure Firebase Storage:\n` +
-                        `1. Go to Settings (⚙️ icon)\n` +
-                        `2. Add your Firebase configuration with storageBucket\n` +
-                        `3. Configure Storage security rules in Firebase Console`
-                    );
-                }
-
-                const filePromises = Array.from(files).map(file => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-
-                        reader.onload = function(e) {
-                            try {
-                                const fileData = {
-                                    name: file.name,
-                                    size: file.size,
-                                    type: file.type,
-                                    data: e.target.result,
-                                    uploadedAt: new Date().toISOString()
-                                };
-
-                                // Try to save to check if we're exceeding localStorage quota
-                                const testAcquisition = JSON.parse(JSON.stringify(acquisition));
-                                testAcquisition.files = [...(testAcquisition.files || []), fileData];
-                                try {
-                                    localStorage.setItem('test_acquisition', JSON.stringify(testAcquisition));
-                                    localStorage.removeItem('test_acquisition');
-                                } catch (storageError) {
-                                    if (storageError.name === 'QuotaExceededError') {
-                                        reject(new Error(
-                                            `Storage quota exceeded. Your browser's localStorage is full.\n\n` +
-                                            `Options:\n` +
-                                            `1. Delete some files from other acquisitions\n` +
-                                            `2. Configure Firebase Storage for unlimited file storage (Settings ⚙️)`
-                                        ));
-                                        return;
-                                    }
-                                    throw storageError;
-                                }
-
-                                acquisition.files.push(fileData);
-                                resolve();
-                            } catch (error) {
-                                reject(error);
-                            }
-                        };
-
-                        reader.onerror = function(error) {
-                            console.error('FileReader error:', error);
-                            reject(new Error('Failed to read file: ' + file.name));
-                        };
-
-                        reader.readAsDataURL(file);
-                    });
-                });
-
-                await Promise.all(filePromises);
-                displayFiles();
-                await saveAcquisitionToFirebase(acquisition);
-                showStatus('Files uploaded to local storage');
-            } catch (error) {
-                console.error('Error uploading to localStorage:', error);
-                throw error; // Re-throw to preserve the detailed error message
-            }
-        }
 
         async function downloadFile(index) {
             const acquisition = acquisitions.find(a => a.id === currentAcquisitionId);
@@ -9675,9 +9420,6 @@ Mergers & Acquisitions Team`
                 ...activities[activityIndex],
                 ...updatedData
             };
-
-            // Save to localStorage
-            saveDataToLocalStorage();
 
             // Save to Firebase
             await saveActivityToFirebase(activities[activityIndex]);
@@ -11320,26 +11062,8 @@ Mergers & Acquisitions Team`
         }
 
         function loadSettings() {
-            // Load settings from localStorage
-            const savedSettings = localStorage.getItem('appSettings');
-            if (savedSettings) {
-                try {
-                    const parsed = JSON.parse(savedSettings);
-                    // Deep merge to preserve nested objects
-                    // Always keep the hardcoded Firebase config — never let localStorage override it
-                    appSettings = {
-                        ...appSettings,
-                        ...parsed,
-                        firebase: { ...appSettings.firebase, ...(parsed.firebase || {}), config: HARDCODED_FIREBASE_CONFIG },
-                        msal: { ...appSettings.msal, ...(parsed.msal || {}), clientId: HARDCODED_MSAL_CLIENT_ID },
-                        outlook: { ...appSettings.outlook, ...(parsed.outlook || {}) }
-                    };
-                    console.log('Settings loaded from localStorage:', appSettings);
-                } catch (e) {
-                    console.error('Error loading settings:', e);
-                }
-            }
-
+            // appSettings are loaded from Firebase in loadDataFromFirebase()
+            // Hardcoded Firebase/MSAL config is always used
             // Populate form fields if elements exist
             const emailSig = document.getElementById('emailSignature');
             const firebaseConfigEl = document.getElementById('firebaseConfig');
@@ -11635,6 +11359,28 @@ Mergers & Acquisitions Team`
             }
         }
 
+        function saveOutlookSession() {
+            const session = {
+                connected: appSettings.outlook.connected || false,
+                email: appSettings.outlook.email || null,
+                accessToken: appSettings.outlook.accessToken || null
+            };
+            localStorage.setItem('carriercanvas_outlook', JSON.stringify(session));
+        }
+
+        function loadOutlookSession() {
+            try {
+                const saved = localStorage.getItem('carriercanvas_outlook');
+                if (saved) {
+                    const session = JSON.parse(saved);
+                    appSettings.outlook = { ...appSettings.outlook, ...session };
+                    console.log('Loaded Outlook session from device storage');
+                }
+            } catch (e) {
+                console.error('Error loading Outlook session:', e);
+            }
+        }
+
         async function connectOutlook() {
             if (!msalInstance) {
                 showWarning('Please configure your Azure AD Client ID in Settings first.\n\n1. Go to Settings\n2. Add your Azure AD Client ID\n3. Save and reload the page');
@@ -11652,6 +11398,7 @@ Mergers & Acquisitions Team`
                     appSettings.outlook.connected = true;
                     appSettings.outlook.email = loginResponse.account.username;
                     appSettings.outlook.accessToken = loginResponse.accessToken;
+                    saveOutlookSession();
                     saveAppSettings();
 
                     updateOutlookConnectionUI();
@@ -11668,6 +11415,7 @@ Mergers & Acquisitions Team`
                 appSettings.outlook.connected = false;
                 appSettings.outlook.email = null;
                 appSettings.outlook.accessToken = null;
+                saveOutlookSession();
                 saveAppSettings();
                 updateOutlookConnectionUI();
                 showSuccess('Outlook account disconnected');
@@ -13527,19 +13275,9 @@ Mergers & Acquisitions Team`
             loadOfficesList(stateCode);
         }
 
-        // Load state offices from localStorage on startup
+        // Load state offices — data loaded from Firebase in loadDataFromFirebase()
         function loadStateOffices() {
-            const saved = localStorage.getItem('stateOffices');
-            if (saved) {
-                try {
-                    stateOffices = JSON.parse(saved);
-                    // Migrate old data structure to include carriers array
-                    migrateStateOfficesData();
-                } catch (e) {
-                    console.error('Error loading state offices:', e);
-                    stateOffices = {};
-                }
-            }
+            // No-op: stateOffices are loaded from Firebase in loadDataFromFirebase()
         }
 
         // Migrate existing stateOffices data to include carriers array
@@ -14234,16 +13972,9 @@ Mergers & Acquisitions Team`
                     }
                 }
 
-                // Save appSettings first before bulk data
+                // Save appSettings to Firebase (async, best-effort on unload)
                 saveAppSettings();
-                console.log('appSettings saved before bulk data on beforeunload');
-
-                // Save all acquisitions and activities data
-                saveDataToLocalStorage();
-
-                // Force synchronous save to localStorage
-                saveAppSettings();
-                console.log('All settings saved before page unload');
+                console.log('appSettings save triggered on beforeunload');
             } catch (error) {
                 console.error('Error saving data on beforeunload:', error);
             }
@@ -14467,8 +14198,7 @@ Mergers & Acquisitions Team`
         }
         function getLocationsForState(state) {
           try {
-            const data = JSON.parse(localStorage.getItem('stateOffices_' + state) || '[]');
-            return data;
+            return stateOffices[state] || [];
           } catch(e) { return []; }
         }
         function toggleMobileStateDropdown() {
