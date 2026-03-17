@@ -717,6 +717,141 @@ body:not(.dark-mode) .office-modal-content .close {
     }
 }
 
+/* ── Mobile Layout Fixes (max-width: 768px) ── */
+
+/* FIX 1 — TOPBAR ON MOBILE */
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 44px 16px 12px;
+    height: auto;
+  }
+  .topbar-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .topbar-left .page-title {
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .topbar-right {
+    display: flex;
+    gap: 8px;
+  }
+  .topbar-right .global-search-input {
+    flex: 1;
+    width: auto;
+    font-size: 13px;
+    padding: 9px 14px;
+  }
+  .btn-add-carrier {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}
+
+/* FIX 2 — HIDE BULK EMAIL AND IMPORT ON MOBILE */
+@media (max-width: 768px) {
+  .list-header-actions {
+    display: none;
+  }
+}
+
+/* FIX 3 — CAMPAIGN SWITCHER ON MOBILE */
+@media (max-width: 768px) {
+  .topbar-subtitle {
+    display: flex !important;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    margin-top: 2px;
+  }
+  .campaign-switcher summary {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    padding: 0;
+  }
+  .campaign-switcher .tabs {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 200;
+    border-radius: 12px;
+    min-width: unset;
+    width: calc(100vw - 32px);
+  }
+  .campaign-switcher .tab {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+  .campaign-new-btn {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+}
+
+/* FIX 4 — CARRIER ROW TRUNCATION */
+@media (max-width: 768px) {
+  .carrier-actions .btn-group {
+    display: contents;
+  }
+  .carrier-actions button:first-of-type {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .carrier-actions button:first-of-type::after {
+    content: '✓';
+    font-size: 14px;
+  }
+  .carrier-item.done .carrier-actions button:first-of-type::after {
+    content: '✓';
+    color: #4ade80;
+    font-size: 14px;
+  }
+  .carrier-actions button:nth-of-type(2) {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .carrier-actions button:nth-of-type(2)::after {
+    content: '✉';
+    font-size: 14px;
+  }
+  .carrier-delete-btn {
+    display: none;
+  }
+}
+
+/* FIX 5 — LIST HEADER PADDING ON MOBILE */
+@media (max-width: 768px) {
+  .list-header {
+    padding: 0 12px;
+    height: 48px;
+  }
+  .filter-tab {
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+}
+
 /* ── Dark Mode: Modal Overrides ── */
 
 body.dark-mode .modal,
