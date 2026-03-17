@@ -196,14 +196,84 @@ header h1 {
     cursor: pointer;
 }
 
-.carrier-item.done {
-    background: rgba(39, 174, 96, 0.15);
-    border-left: 4px solid #B22234;
+/* Light mode — deep rich colors */
+body:not(.dark-mode) .carrier-item.done {
+    background: #14532d !important;
+    border-left: none !important;
+    border-bottom: 0.5px solid rgba(0,0,0,0.12) !important;
+}
+body:not(.dark-mode) .carrier-item.done .carrier-name {
+    color: rgba(255,255,255,0.95) !important;
+}
+body:not(.dark-mode) .carrier-item.done .carrier-code {
+    color: rgba(255,255,255,0.5) !important;
+}
+body:not(.dark-mode) .carrier-item.outstanding {
+    background: #7f1d1d !important;
+    border-left: none !important;
+    border-bottom: 0.5px solid rgba(0,0,0,0.12) !important;
+}
+body:not(.dark-mode) .carrier-item.outstanding .carrier-name {
+    color: rgba(255,255,255,0.95) !important;
+}
+body:not(.dark-mode) .carrier-item.outstanding .carrier-code {
+    color: rgba(255,255,255,0.5) !important;
+}
+body:not(.dark-mode) .carrier-item.done:hover {
+    background: #166534 !important;
+}
+body:not(.dark-mode) .carrier-item.outstanding:hover {
+    background: #991b1b !important;
+}
+body:not(.dark-mode) .carrier-item.done .carrier-actions button,
+body:not(.dark-mode) .carrier-item.outstanding .carrier-actions button {
+    background: rgba(255,255,255,0.1) !important;
+    border: 0.5px solid rgba(255,255,255,0.2) !important;
+    color: rgba(255,255,255,0.85) !important;
+}
+body:not(.dark-mode) .carrier-item.done .carrier-actions button:hover,
+body:not(.dark-mode) .carrier-item.outstanding .carrier-actions button:hover {
+    background: rgba(255,255,255,0.18) !important;
 }
 
-.carrier-item.outstanding {
-    background: rgba(231, 76, 60, 0.15);
-    border-left: 4px solid #e74c3c;
+/* Dark mode — muted dark tones */
+body.dark-mode .carrier-item.done {
+    background: #1a3a2a !important;
+    border-left: none !important;
+    border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
+}
+body.dark-mode .carrier-item.done .carrier-name {
+    color: rgba(255,255,255,0.9) !important;
+}
+body.dark-mode .carrier-item.done .carrier-code {
+    color: rgba(255,255,255,0.4) !important;
+}
+body.dark-mode .carrier-item.outstanding {
+    background: #3a1a1a !important;
+    border-left: none !important;
+    border-bottom: 0.5px solid rgba(0,0,0,0.2) !important;
+}
+body.dark-mode .carrier-item.outstanding .carrier-name {
+    color: rgba(255,255,255,0.9) !important;
+}
+body.dark-mode .carrier-item.outstanding .carrier-code {
+    color: rgba(255,255,255,0.4) !important;
+}
+body.dark-mode .carrier-item.done:hover {
+    background: #1f4a33 !important;
+}
+body.dark-mode .carrier-item.outstanding:hover {
+    background: #4a2020 !important;
+}
+body.dark-mode .carrier-item.done .carrier-actions button,
+body.dark-mode .carrier-item.outstanding .carrier-actions button {
+    background: rgba(255,255,255,0.08) !important;
+    border: 0.5px solid rgba(255,255,255,0.15) !important;
+    color: rgba(255,255,255,0.7) !important;
+}
+body.dark-mode .carrier-item.done .carrier-actions button:hover,
+body.dark-mode .carrier-item.outstanding .carrier-actions button:hover {
+    background: rgba(255,255,255,0.14) !important;
 }
 
 .carrier-item:hover {
